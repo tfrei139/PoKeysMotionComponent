@@ -44,13 +44,13 @@ author "T.Frei";
 // States of the component
 // ------------------------------------
 enum State {
-    SHUTDOWN = -2,          // Exit component (Set externally only)
     CREATED = -1,           // Component created, but not yet parametrized 
-    INIT = 0,               // Not connected (Set externally only)
-    IDLE = 1,               // Connected but PE not running
-    RUNNING = 2,            // Connected and PE running state (not moving)
-    RUNNINGWITHMOTION = 3,  // Connected and PE running state (moving)
+    INIT = 0,               // Start connection (Set externally only)
+    IDLE = 1,               // Connected and PE stopped state
+    ENABLED = 2,            // Connected and PE running state (not moving)
+    MOVING = 3,             // Connected and PE running state (moving)
     ESTOP = 4,              // ESTOP toggled
+    SHUTDOWN = 5,           // Exit component (Set externally only)
 };
 
 // ------------------------------------
@@ -89,13 +89,6 @@ void user_mainloop(void) {
             struct timespec* cycleStart = GetStartTime();
             
             switch (internal_state) {
-                case SHUTDOWN:
-                    SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
-                    HaltSpindle();
-                    
-                    run = false;
-                    return;
-                
                 case CREATED:
                     // Wait until prince HAL awakes us.
                     usleep(1000);
@@ -125,7 +118,7 @@ void user_mainloop(void) {
                     // Machine is enabled from LinuxCNC  
                     if (machine_is_on == true) {
                         SetPulseEngineStatus(PK_PEState_peRUNNING, "Set PE Running from IDLE");
-                        internal_state = RUNNING;
+                        internal_state = ENABLED;
                         break;
                     }
                     
@@ -135,7 +128,7 @@ void user_mainloop(void) {
 
                     break;
                     
-                case RUNNING:  
+                case ENABLED:  
                     ReadPulseEngineStatus();
                     ProcessEStop(InstanceVariable);
                     
@@ -148,7 +141,7 @@ void user_mainloop(void) {
                     // Machine is disabled from LinuxCNC  
                     if (machine_is_on == false) {
                         HaltSpindle();
-                        SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from RUNNING");
+                        SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
                         internal_state = IDLE;
                         break;
                     }
@@ -165,12 +158,12 @@ void user_mainloop(void) {
                         usleep(10000);
                         overrideCycleTime = true;
                         rtapi_print_msg(RTAPI_MSG_ERR, "Going to motion\n");
-                        internal_state = RUNNINGWITHMOTION;
+                        internal_state = MOVING;
                         break;
                     }
 
                     break;
-                case RUNNINGWITHMOTION:                                
+                case MOVING:                                
                     ProcessMoveCommand(InstanceVariable);
                     ProcessEStop(InstanceVariable);
                     
@@ -184,7 +177,7 @@ void user_mainloop(void) {
                     // Machine is disabled from LinuxCNC 
                     if (machine_is_on == false) {
                         HaltSpindle();
-                        SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from RUNNINGWITHMOTION(!)");
+                        SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
                         internal_state = IDLE;
                         break;
@@ -206,6 +199,12 @@ void user_mainloop(void) {
                     }
                     
                     break;
+                case SHUTDOWN:
+                    SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
+                    HaltSpindle();
+                    
+                    run = false;
+                    return;
             }
 
             ProcessCycleTime(cycleStart, overrideCycleTime, originState, internal_state);
@@ -413,8 +412,8 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                 }
                 
                 if (dataToReceive[0].s == EndOfMotionPacket) {
-                    rtapi_print_msg(RTAPI_MSG_ERR, "End of motion going to RUNNING state!\n");
-                    componentInstance->internal_state = RUNNING;
+                    rtapi_print_msg(RTAPI_MSG_ERR, "End of motion going to ENABLED state!\n");
+                    componentInstance->internal_state = ENABLED;
                     break;
                 }                
 
@@ -451,8 +450,8 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                 
             //PrintElapsedTime(streamStart, "StreamRead");
         } else {
-            rtapi_print_msg(RTAPI_MSG_ERR, "Buffer underrun? EndOfMotion Packet missing? Going to RUNNING state!\n");
-            componentInstance->internal_state = RUNNING;
+            rtapi_print_msg(RTAPI_MSG_ERR, "Buffer underrun? EndOfMotion Packet missing? Going to ENABLED state!\n");
+            componentInstance->internal_state = ENABLED;
         }
         
         hal_stream_detach(&stream);
@@ -551,13 +550,13 @@ void ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum 
 inline const char* GetStateName(enum State state) {
    switch (state) 
    {
-      case SHUTDOWN: return "SHUTDOWN";
       case CREATED: return "CREATED";
       case INIT: return "INIT";
       case IDLE: return "IDLE";
-      case RUNNING: return "RUNNING";
-      case RUNNINGWITHMOTION: return "RUNNINGWITHMOTION";
+      case ENABLED: return "ENABLED";
+      case MOVING: return "MOVING";
       case ESTOP: return "ESTOP";
+      case SHUTDOWN: return "SHUTDOWN";
       default: return "UNDEFINED";
    }
 }

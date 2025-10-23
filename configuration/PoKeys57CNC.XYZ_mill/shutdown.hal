@@ -1,3 +1,3 @@
 # Include your shutdown HAL commands here
-setp PoKeysPulseEngine.0.internal-state -2
+setp PoKeysPulseEngine.0.internal-state 5
 waitusr PoKeysPulseEngine
