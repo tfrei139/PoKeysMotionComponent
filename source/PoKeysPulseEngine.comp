@@ -54,7 +54,7 @@ enum State {
 };
 
 // ------------------------------------
-// "Globals" private members, TODO make instance variable
+// "Globals" members. TODO make instance variable when switching to C component
 // ------------------------------------
 sPoKeysDevice* _device;
 
