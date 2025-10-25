@@ -9,12 +9,12 @@ loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD servo_period_nsec=[EM
 # PoKeys components
 #*******************
 
-loadusr -W PoKeysPulseEngine
-setp PoKeysPulseEngine.0.device-serial 40760
-setp PoKeysPulseEngine.0.axis.0.step-scale 800.0
-setp PoKeysPulseEngine.0.axis.1.step-scale 800.0
-setp PoKeysPulseEngine.0.axis.2.step-scale 1600.0
-setp PoKeysPulseEngine.0.internal-state 0
+loadusr -W PoKeysController
+setp PoKeysController.0.device-serial 40760
+setp PoKeysController.0.axis.0.step-scale 800.0
+setp PoKeysController.0.axis.1.step-scale 800.0
+setp PoKeysController.0.axis.2.step-scale 1600.0
+setp PoKeysController.0.internal-state 0
 
 loadrt PoKeysMotionBuffer
 setp PoKeysMotionBuffer.0.axis.0.step-scale 800.0
@@ -23,11 +23,11 @@ setp PoKeysMotionBuffer.0.axis.2.step-scale 1600.0
 
 # external output signals
 net machine-is-on => PoKeysMotionBuffer.0.machine-is-on
-net machine-is-on => PoKeysPulseEngine.0.machine-is-on
+net machine-is-on => PoKeysController.0.machine-is-on
 
 # buffer detects motion
 net buffer-in-motion <= PoKeysMotionBuffer.0.in-motion
-net buffer-in-motion => PoKeysPulseEngine.0.buffer-in-motion
+net buffer-in-motion => PoKeysController.0.buffer-in-motion
 
 # Indicators that motion should happen
 net motion-jog-is-active <= motion.jog-is-active 
@@ -50,7 +50,7 @@ loadrt estop_latch
 net estop-loopout estop-latch.0.ok-out => iocontrol.0.emc-enable-in
 net estop-loopin iocontrol.0.user-enable-out => estop-latch.0.ok-in
 net estop-reset iocontrol.0.user-request-enable => estop-latch.0.reset
-net remote-estop estop-latch.0.fault-in <= PoKeysPulseEngine.0.machine-estop
+net remote-estop estop-latch.0.fault-in <= PoKeysController.0.machine-estop
 
 #*******************
 # Assign functions
@@ -66,17 +66,17 @@ addf estop-latch.0            servo-thread
 #*******************
 
 net x-override-limit <= halui.joint.0.override-limits
-net x-override-limit => PoKeysPulseEngine.0.axis.0.override-limit
+net x-override-limit => PoKeysController.0.axis.0.override-limit
 
 net x-pos-cmd      <= joint.0.motor-pos-cmd
 net x-pos-cmd      => PoKeysMotionBuffer.0.axis.0.position-command
 
-net x-pos-fb       <= PoKeysPulseEngine.0.axis.0.position-feedback
+net x-pos-fb       <= PoKeysController.0.axis.0.position-feedback
 net x-pos-fb       => joint.0.motor-pos-fb
 
-net min-x          <=  PoKeysPulseEngine.0.axis.0.limit-negative
+net min-x          <=  PoKeysController.0.axis.0.limit-negative
 net min-x          =>  joint.0.neg-lim-sw-in
-net max-x          <=  PoKeysPulseEngine.0.axis.0.limit-positive
+net max-x          <=  PoKeysController.0.axis.0.limit-positive
 net max-x          =>  joint.0.pos-lim-sw-in
 
 #*******************
@@ -84,17 +84,17 @@ net max-x          =>  joint.0.pos-lim-sw-in
 #*******************
 
 net y-override-limit <= halui.joint.1.override-limits
-net y-override-limit => PoKeysPulseEngine.0.axis.1.override-limit
+net y-override-limit => PoKeysController.0.axis.1.override-limit
 
 net y-pos-cmd      <= joint.1.motor-pos-cmd
 net y-pos-cmd      => PoKeysMotionBuffer.0.axis.1.position-command
 
-net y-pos-fb       <= PoKeysPulseEngine.0.axis.1.position-feedback
+net y-pos-fb       <= PoKeysController.0.axis.1.position-feedback
 net y-pos-fb       => joint.1.motor-pos-fb
 
-net min-y          <=  PoKeysPulseEngine.0.axis.1.limit-negative
+net min-y          <=  PoKeysController.0.axis.1.limit-negative
 net min-y          =>  joint.1.neg-lim-sw-in
-net max-y          <=  PoKeysPulseEngine.0.axis.1.limit-positive
+net max-y          <=  PoKeysController.0.axis.1.limit-positive
 net max-y          =>  joint.1.pos-lim-sw-in
 
 #*******************
@@ -102,17 +102,17 @@ net max-y          =>  joint.1.pos-lim-sw-in
 #*******************
 
 net z-override-limit <= halui.joint.2.override-limits
-net z-override-limit => PoKeysPulseEngine.0.axis.2.override-limit
+net z-override-limit => PoKeysController.0.axis.2.override-limit
 
 net z-pos-cmd      <= joint.2.motor-pos-cmd
 net z-pos-cmd      => PoKeysMotionBuffer.0.axis.2.position-command
 
-net z-pos-fb       <= PoKeysPulseEngine.0.axis.2.position-feedback
+net z-pos-fb       <= PoKeysController.0.axis.2.position-feedback
 net z-pos-fb       => joint.2.motor-pos-fb
 
-net min-z          <=  PoKeysPulseEngine.0.axis.2.limit-negative
+net min-z          <=  PoKeysController.0.axis.2.limit-negative
 net max-z          =>  joint.2.pos-lim-sw-in
-net max-z          <=  PoKeysPulseEngine.0.axis.2.limit-positive
+net max-z          <=  PoKeysController.0.axis.2.limit-positive
 net max-z          =>  joint.2.pos-lim-sw-in
 
 #*******************
@@ -120,12 +120,12 @@ net max-z          =>  joint.2.pos-lim-sw-in
 #*******************
 
 net spindle-enable <= spindle.0.on
-net spindle-enable => PoKeysPulseEngine.0.spindle-on
+net spindle-enable => PoKeysController.0.spindle-on
 
 #*******************
 # Probe
 #*******************
-net probe-in     <=  PoKeysPulseEngine.0.probe
+net probe-in     <=  PoKeysController.0.probe
 net probe-in     =>  motion.probe-input
 
 #******************************

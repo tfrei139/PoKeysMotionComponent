@@ -1,0 +1,1 @@
+linuxcnc ~/linuxcnc/PoKeys57CNC.XYZ_mill/Pokeys57CNC_XYZ_mill.ini 2>&1 logfile.txt

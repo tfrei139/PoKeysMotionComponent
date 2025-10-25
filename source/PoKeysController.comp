@@ -1,6 +1,5 @@
-component PoKeysPulseEngine;
+component PoKeysController;
 
-pin out bit connected = false;
 pin out bit machine_estop = false;
 pin out bit probe = false;
 
@@ -97,7 +96,7 @@ void user_mainloop(void) {
                     
                 case INIT:
                     if (!ConnectPokeysDevice(InstanceVariable)) {
-                        run = false;
+                        run = false; // TODO can we inform lcnc somehow that it will shutdown?
                         return;
                     }
         
@@ -154,10 +153,10 @@ void user_mainloop(void) {
                     // Check if motion is commanded
                     if (buffer_in_motion == true) {
                         // switching states gives us at most "CycleTimeMs" of buffer.
-                        // sleep specific time to give the buffer extra time (10ms) to fill up.
-                        usleep(10000);
+                        // sleep specific time to give the buffer extra time (20ms) to fill up.
+                        usleep(20000);
                         overrideCycleTime = true;
-                        rtapi_print_msg(RTAPI_MSG_ERR, "Going to motion\n");
+                        rtapi_print_msg(RTAPI_MSG_DBG, "Going to motion\n");
                         internal_state = MOVING;
                         break;
                     }
@@ -216,7 +215,6 @@ void user_mainloop(void) {
 // Undefine the component members, otherwise passing the comp_state and using it will break.
 // Alternative: write a C component implementation
 // ------------------------------------
-#undef connected
 #undef machine_estop
 #undef probe
 #undef machine_is_on
@@ -281,7 +279,6 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         }        
     }
     
-    *componentInstance->connected = true;
     return true;
 }
 
@@ -412,7 +409,7 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                 }
                 
                 if (dataToReceive[0].s == EndOfMotionPacket) {
-                    rtapi_print_msg(RTAPI_MSG_ERR, "End of motion going to ENABLED state!\n");
+                    rtapi_print_msg(RTAPI_MSG_DBG, "End of motion going to ENABLED state!\n");
                     componentInstance->internal_state = ENABLED;
                     break;
                 }                
@@ -538,8 +535,12 @@ void ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum 
         } else {
             const char* currentStateName = GetStateName(currentState);
             const char* nextStateName = GetStateName(nextState);
-                        
-            rtapi_print_msg(RTAPI_MSG_ERR, "Cycle greater than %f!ms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
+            
+            if (t_ms <= CycleTimeMs + 3.0) {
+                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle greater than %fms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
+            } else {
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle greater than %f!ms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
+            }
         }
     }   
 }
