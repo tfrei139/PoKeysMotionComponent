@@ -20,7 +20,8 @@ The drawback, that we consistently need to send unnecessary data. And add potent
 While an userpace component can read from the machine ini file, an RT component cannot.  
 So to keep the configuration consistent for both, both will be configured using the HAL pins and parameters.
 
-Old example: requires `option extra_link_args "... -llinuxcncini";`
+Old example:  
+Requires `option extra_link_args "... -llinuxcncini";`
 ```C
 const char* ini_path = getenv("INI_FILE_NAME");
     

@@ -7,7 +7,7 @@ This walkthrough should help you setup this component on a clean installation of
 
 ## Getting the component
 Either you copy the source directly to your LinuxCNC system or get it via Git.  
-The walkthorugh is written with the assumption to use Git, with a folder name "git" in your home directory.
+The walkthrough is written with the assumption to use Git, with a folder name "git" in your home directory.
 
 ### Setting up Git repository
 ```bash
@@ -58,17 +58,15 @@ Restart the computer (In theory you can run `udevadm control --reload-rules`, bu
 
 ## Compiling the components
 ```bash
-cd ~/git/PoKeysMotionComponent/source
-sudo halcompile --install PoKeysController.comp
-sudo halcompile --install PoKeysMotionBuffer.comp
+sh ~git/PoKeysMotionComponent/scripts/compile.sh
 ```
 
 ## Copying and adapting the configuration
-Copy the example configuration from `~/git/PoKeysMotionComponent/configuration` to `~/linuxcnc/configuration`.
+Copy the example configuration from `~/git/PoKeysMotionComponent/configuration` to `~/linuxcnc/configs`.
 
 In the "hal" file:
 1. Adapt the serial number `setp PoKeysController.0.device-serial 0`
-1. Adapt the step-scale for each axis `setp PoKeysController.0.axis.D.step-scale 800.0` and `setp PoKeysMotionBuffer.0.axis.D.step-scale 800.0` (1mm == 800 pulses)
+1. Adapt the step-scale for each axis `setp PoKeysController.0.axis.D.step-scale 800.0` and `setp PoKeysMotionBuffer.0.axis.D.step-scale 800.0` (example given: 1mm == 800 pulses)
 
 In the "ini" file:
 1. Choose your preferred UI "axis" for a simple standard UI, "gmoccapy" for a touchscreen optimized one
