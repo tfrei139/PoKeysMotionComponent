@@ -1,0 +1,169 @@
+component PoKeysMotionBuffer;
+
+pin in bit machine_is_on = false "HALUI: Only when the machine is enabled, motion can happend";
+pin in bit motion_in_position = true "When the motion planner is not in position, we stream the commanded position";
+pin in bit motion_jog_is_active = false "When the motion planner is jogging, in position remains true. We stream the commanded position";
+
+pin out bit in_motion = false "Indicates that the stream is open";
+
+pin in float axis.#.position_command [3] "Commanded position by the motion controller";
+pin out float axis.#.last_position [3] "Internal tracking of last commanded position (DEBUG)";
+pin out float axis.#.pulses_leftover [3] "Internal tracking of partial pulses (DEBUG)";
+
+param rw float axis.#.step_scale [3] "1 unit equals x pulses";
+param r float axis.#.step_width [3] "1 pulse equals x units (DEBUG)";
+
+function _;
+option userspace no;
+option extra_setup yes;
+option extra_cleanup yes;
+
+license "GPL"; // indicates GPL v2 or later
+author "T.Frei";
+;;
+#include <rtapi_math.h>
+#include <stdlib.h> // for "abs"
+
+#define NumberOfAxis 3
+#define SharedMemoryKey 57       // Arbitrary number
+#define BufferDepth 128          // Buffer on PoKeys side would be 128
+#define EndOfMotionPacket 0x0101 // Arbitrary number > uint8
+//#define MeasureTime
+
+hal_stream_t* MotionStream;
+bool IsInit = false;
+
+// ------------------------------------
+// Setup function
+// ------------------------------------
+EXTRA_SETUP() {
+#ifdef MeasureTime
+    long long startTime = rtapi_get_time();
+#endif
+
+    MotionStream = hal_malloc(sizeof(hal_stream_t));
+    int ret = hal_stream_create(MotionStream, comp_id, SharedMemoryKey, BufferDepth, "SSS");
+    int exitCode = 0;
+    
+    if(ret < 0) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "Failed to create stream: %d\n", ret);
+        hal_exit(comp_id);
+        
+        exitCode = ret;
+    } else {
+        //rtapi_print_msg(RTAPI_MSG_DBG, "Created stream: %d\n", ret);
+    }
+    
+#ifdef MeasureTime
+    long long endTime = rtapi_get_time();
+    long int deltaTime = (long int)(endTime - startTime) / 1000;
+    rtapi_print_msg(RTAPI_MSG_DBG, "BUFFER SETUP took: %dus\n", deltaTime);
+#endif
+
+    return exitCode;
+}
+
+// ------------------------------------
+// Cleanup function
+// ------------------------------------
+EXTRA_CLEANUP() { 
+#ifdef MeasureTime
+    long long startTime = rtapi_get_time();
+#endif
+
+	//rtapi_print_msg(RTAPI_MSG_DBG, "Buffer cleanup stream\n");
+    hal_stream_detach(MotionStream);
+    free(MotionStream);
+    
+#ifdef MeasureTime
+    long long endTime = rtapi_get_time();
+    long int deltaTime = (long int)(endTime - startTime) / 1000;
+    rtapi_print_msg(RTAPI_MSG_DBG, "BUFFER CLEANUP took: %dus\n", deltaTime);
+#endif   
+}
+
+// ------------------------------------
+// Main Function
+// ------------------------------------
+FUNCTION(_) {
+    if (!machine_is_on && IsInit) {
+        IsInit = false;
+        in_motion = false;
+        return;        
+    }
+    
+    if (machine_is_on && !IsInit) {
+        for (int i = 0; i < NumberOfAxis; i++) {
+            axis_last_position(i) = axis_position_command(i);
+            axis_pulses_leftover(i) = 0.0f;
+            axis_step_width(i) = 1 / fabs(axis_step_scale(i));
+        }
+        IsInit = true;
+        return;
+    }
+
+	if (motion_in_position == false || motion_jog_is_active == true) {
+		for (int i = 0; i < NumberOfAxis; i++) {
+#ifdef MeasureTime
+            long long startTime = rtapi_get_time();
+#endif
+			union hal_stream_data dataToSend[NumberOfAxis];
+    
+            for (int i = 0; i < NumberOfAxis; i++) {
+                float differenceInPosition = axis_position_command(i) - axis_last_position(i);
+                
+                if (fabs(differenceInPosition) < axis_step_width(i)) {            
+                    dataToSend[i].s = 0;
+                } else {
+					axis_last_position(i) = axis_position_command(i);
+                
+                    float pulsesDifference = differenceInPosition * axis_step_scale(i);
+                    int32_t pulses = floor(pulsesDifference);
+                    axis_pulses_leftover(i) += (pulsesDifference - pulses);
+                    
+                    if (axis_pulses_leftover(i) >= 1.0f) {
+                        pulses++;
+                        axis_pulses_leftover(i) -= 1.0f;
+                    }
+                    else if (axis_pulses_leftover(i) <= -1.0f) {
+                        pulses--;
+                        axis_pulses_leftover(i) += 1.0f;                    
+                    }
+                    
+                    int32_t motion = abs(pulses) & 127;
+                                
+                    if (pulses < 0) {
+                        motion |= (1<<7);
+                    }
+
+                    dataToSend[i].s = motion;
+                }
+            }
+            
+            if (hal_stream_write(MotionStream, dataToSend) < 0) {   
+                //rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER full: %d\n", BufferDepth);
+            }
+            
+            in_motion = true;
+            
+#ifdef MeasureTime
+            long long endTime = rtapi_get_time();
+            long int deltaTime = (long int)(endTime - startTime) / 1000;
+            
+            if (deltaTime >= 50) {
+				rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER SEND took: %dus\n", deltaTime);
+			}
+#endif
+            
+            return;            
+        }
+	}
+    
+    if (in_motion == true) {
+        in_motion = false;
+        
+        union hal_stream_data dataToSend[NumberOfAxis];
+        dataToSend[0].s = EndOfMotionPacket; 
+        hal_stream_write(MotionStream, dataToSend);
+    }    
+}

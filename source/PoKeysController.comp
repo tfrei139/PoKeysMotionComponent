@@ -1,0 +1,575 @@
+component PoKeysController;
+
+pin out bit machine_estop = false;
+pin out bit probe = false;
+
+pin in bit machine_is_on = false;
+pin in bit spindle_on = false;
+pin in bit buffer_in_motion = false;
+
+pin out float axis.#.position_feedback [3];
+pin out bit axis.#.limit_positive [3];
+pin out bit axis.#.limit_negative [3];
+pin in bit axis.#.override_limit [3];
+
+param rw signed internal_state = -1 "Current component state";
+param rw unsigned device_serial = 0 "PoKeys Device Serial";
+
+param rw float axis.#.step_scale [3];
+
+option userspace yes;
+option extra_link_args "-L/usr/lib -lPoKeys";
+
+license "GPL"; // indicates GPL v2 or later
+author "T.Frei";
+;;
+#include <PoKeysLib.h>      // For PoKeys communication
+#include <rtapi_math.h>     // For fabs()
+#include <time.h>           // For clock_gettime()
+#include <unistd.h>         // For struct useconds_t
+
+#define ComponentStruct __comp_state    // Internal struct of linuxCNC component
+#define InstanceVariable __comp_inst    // Internal variable of linuxCNC component
+
+#define NumberOfAxis 3
+#define SpindleRelais 7
+#define ProbePinNumber 18         // 0-Based Pin 19
+#define EstopPinNumber 51         // 0-Based Pin 52
+#define CycleTimeMs 5.0f          // Target cycle time of uspace component
+#define SharedMemoryKey 57        // Arbitrary number
+#define EndOfMotionPacket 0x0101  // Arbitrary number > uint8
+
+// ------------------------------------
+// States of the component
+// ------------------------------------
+enum State {
+    CREATED = -1,           // Component created, but not yet parametrized 
+    INIT = 0,               // Start connection (Set externally only)
+    IDLE = 1,               // Connected and PE stopped state
+    ENABLED = 2,            // Connected and PE running state (not moving)
+    MOVING = 3,             // Connected and PE running state (moving)
+    ESTOP = 4,              // ESTOP toggled
+    SHUTDOWN = 5,           // Exit component (Set externally only)
+};
+
+// ------------------------------------
+// "Globals" members. TODO make instance variable when switching to C component
+// ------------------------------------
+sPoKeysDevice* _device;
+
+// ------------------------------------
+// Function declarations
+// ------------------------------------
+
+bool ConnectPokeysDevice(struct ComponentStruct* componentInstance);
+void ReadPulseEngineStatus();
+void SetPulseEngineStatus(enum ePK_PEState state, const char* log);
+void ProcessLimitOverride(struct ComponentStruct* componentInstance);
+void ProcessEStop(struct ComponentStruct* componentInstance);
+void ProcessProbe(struct ComponentStruct* componentInstance);
+void ProcessMoveCommand(struct ComponentStruct* componentInstance);
+void ProcessPositions(struct ComponentStruct* componentInstance);
+void ProcessSpindle(struct ComponentStruct* componentInstance);
+void HaltSpindle();
+struct timespec* GetStartTime();
+void ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, enum State currentState, enum State nextState);
+const char* GetStateName(enum State state);
+void PrintElapsedTime(struct timespec* startTime, const char* log);
+
+// ------------------------------------
+// Main Loop
+// ------------------------------------
+void user_mainloop(void) {
+    bool run = true;
+    while(run) {
+        FOR_ALL_INSTS() {
+            bool overrideCycleTime = false;
+            enum State originState = internal_state;
+            struct timespec* cycleStart = GetStartTime();
+            
+            switch (internal_state) {
+                case CREATED:
+                    // Wait until prince HAL awakes us.
+                    usleep(1000);
+                    overrideCycleTime = true;                    
+                    break;
+                    
+                case INIT:
+                    if (!ConnectPokeysDevice(InstanceVariable)) {
+                        run = false; // TODO can we inform lcnc somehow that it will shutdown?
+                        return;
+                    }
+        
+                    internal_state = IDLE;    
+                    overrideCycleTime = true;             
+                    break;
+                
+                case IDLE:     
+                    ReadPulseEngineStatus();
+                    ProcessEStop(InstanceVariable);
+                    
+                    // Set Estop from PoKeys  
+                    if (machine_estop == true) {
+                        internal_state = ESTOP;
+                        break;
+                    }
+                    
+                    // Machine is enabled from LinuxCNC  
+                    if (machine_is_on == true) {
+                        SetPulseEngineStatus(PK_PEState_peRUNNING, "Set PE Running from IDLE");
+                        internal_state = ENABLED;
+                        break;
+                    }
+                    
+                    ProcessProbe(InstanceVariable);
+                    ProcessPositions(InstanceVariable);
+                    ProcessLimitOverride(InstanceVariable);
+
+                    break;
+                    
+                case ENABLED:  
+                    ReadPulseEngineStatus();
+                    ProcessEStop(InstanceVariable);
+                    
+                    // Set Estop from PoKeys  
+                    if (machine_estop == true) {
+                        internal_state = ESTOP;
+                        break;
+                    }
+                    
+                    // Machine is disabled from LinuxCNC  
+                    if (machine_is_on == false) {
+                        HaltSpindle();
+                        SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
+                        internal_state = IDLE;
+                        break;
+                    }
+                    
+                    ProcessProbe(InstanceVariable);
+                    ProcessPositions(InstanceVariable);
+                    ProcessSpindle(InstanceVariable);
+                    ProcessLimitOverride(InstanceVariable);
+                    
+                    // Check if motion is commanded
+                    if (buffer_in_motion == true) {
+                        // switching states gives us at most "CycleTimeMs" of buffer.
+                        // sleep specific time to give the buffer extra time (20ms) to fill up.
+                        usleep(20000);
+                        overrideCycleTime = true;
+                        rtapi_print_msg(RTAPI_MSG_DBG, "Going to motion\n");
+                        internal_state = MOVING;
+                        break;
+                    }
+
+                    break;
+                case MOVING:                                
+                    ProcessMoveCommand(InstanceVariable);
+                    ProcessEStop(InstanceVariable);
+                    
+                    // Set Estop from PoKeys 
+                    if (machine_estop == true) {
+                        // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
+                        internal_state = ESTOP;
+                        break;
+                    }
+                    
+                    // Machine is disabled from LinuxCNC 
+                    if (machine_is_on == false) {
+                        HaltSpindle();
+                        SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
+                        // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
+                        internal_state = IDLE;
+                        break;
+                    }
+                    
+                    ProcessProbe(InstanceVariable);
+                    ProcessPositions(InstanceVariable);
+                    ProcessSpindle(InstanceVariable);
+                    
+                    break;
+                case ESTOP:
+                    ReadPulseEngineStatus();
+                    ProcessEStop(InstanceVariable);
+                
+                    // Reset Estop from PoKeys                    
+                    if (machine_estop == false) {
+                        internal_state = IDLE;
+                        break;
+                    }
+                    
+                    break;
+                case SHUTDOWN:
+                    SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
+                    HaltSpindle();
+                    
+                    run = false;
+                    return;
+            }
+
+            ProcessCycleTime(cycleStart, overrideCycleTime, originState, internal_state);
+        }
+    }
+}
+
+// ------------------------------------
+// Undefine the component members, otherwise passing the comp_state and using it will break.
+// Alternative: write a C component implementation
+// ------------------------------------
+#undef machine_estop
+#undef probe
+#undef machine_is_on
+#undef spindle_on
+#undef buffer_in_motion
+#undef axis_position_feedback
+#undef axis_limit_positive
+#undef axis_limit_negative
+#undef internal_state
+#undef device_serial                    
+#undef axis_step_scale
+
+// ------------------------------------
+// Connects to the device. 
+// Returns false if no connection was possible.
+// ------------------------------------
+bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
+    if (componentInstance->device_serial == 0) { 
+        rtapi_print_msg(RTAPI_MSG_ERR, "No 'device-serial' set!\n");
+        return false;    
+    }
+    
+    _device = PK_ConnectToDeviceWSerial(componentInstance->device_serial, 2000);
+    if (_device == 0) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to Connect to device '%d'\n", componentInstance->device_serial);
+        return false;
+    }
+    
+    // connection 0=USB, 1=ETH, 2=FastUSB
+    rtapi_print_msg(RTAPI_MSG_ERR, "CONNECTED, connection type=%d\n", _device->connectionType);   
+
+    ReadPulseEngineStatus();
+    
+    if (_device->PEv2.PulseEngineState != PK_PEState_peSTOPPED) {
+        SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE stopped on connect(!)");
+    }
+    
+    int ret;
+    // Check basic PE setup.
+    // 0=Use external pulse generator and 1<<7=IO (PoKeysCNCaddon)
+    if (_device->PEv2.PulseEngineEnabled != NumberOfAxis || !(_device->PEv2.PulseGeneratorType & (0 | (1<<7)))) {
+        _device->PEv2.PulseEngineEnabled = NumberOfAxis;
+        _device->PEv2.PulseGeneratorType = 0 | (1<<7);
+        ret = PK_PEv2_PulseEngineSetup(_device);
+        rtapi_print_msg(RTAPI_MSG_DBG, "PE Setup:%d\n", ret);
+        
+        ret = PK_PEv2_PulseEngineReboot(_device);
+        rtapi_print_msg(RTAPI_MSG_DBG, "PE Reboot:%d\n", ret);
+        // In theory we should sleep, but it'l highly unlikely you'll start a motion 1 second after opening LCNC.
+        // TOOD or is the device communication down?
+    }
+    
+    for (int i = 0; i < NumberOfAxis; i++) {
+        _device->PEv2.param1 = i;
+        ret = PK_PEv2_AxisConfigurationGet(_device);
+        
+        if (_device->PEv2.AxesConfig[i] & (PK_AC_INTERNAL_PLANNER)) {
+            _device->PEv2.AxesConfig[i] &= ~(PK_AC_INTERNAL_PLANNER); // NOT internal = Buffer operated
+            _device->PEv2.param1 = i; // redundant?
+            ret = PK_PEv2_AxisConfigurationSet(_device);
+            rtapi_print_msg(RTAPI_MSG_DBG, "PE axis %d configured:%d\n", i, ret);
+        }        
+    }
+    
+    return true;
+}
+
+// ------------------------------------
+// Read the PulseEngines state, and positions and limits etc.
+// Also reads extended device status: IO, analog, encoders
+// ------------------------------------
+void ReadPulseEngineStatus() {
+    //struct timespec* requestStart = GetStartTime();
+    int ret = PK_PEv2_StatusGet(_device);
+    //PrintElapsedTime(requestStart, "Getting PE STATE");
+    rtapi_print_msg(RTAPI_MSG_DBG, "Getting status:%d, state=%d, limitOverride=%d\n", ret, _device->PEv2.PulseEngineState, _device->PEv2.LimitOverride);
+    
+    //struct timespec* requestIoStart = GetStartTime();
+    ret = PK_DigitalIOGet(_device);
+    //PrintElapsedTime(requestIoStart, "Read all Pins");
+    //rtapi_print_msg(RTAPI_MSG_DBG, "Read all pins:%d\n", ret);
+}
+
+// ------------------------------------
+// Sets the PulseEngines state
+// ------------------------------------
+void SetPulseEngineStatus(enum ePK_PEState state, const char* log) {
+    _device->PEv2.PulseEngineStateSetup = state;
+    
+    //struct timespec* requestStart = GetStartTime();
+    int ret = PK_PEv2_PulseEngineStateSet(_device);
+    //PrintElapsedTime(requestStart, "Setting PE STATE");
+    
+    rtapi_print_msg(RTAPI_MSG_ERR, "%s:%d\n", log, ret);
+}
+
+// ------------------------------------
+// If any axis has the limit switch overridden, we forward that to the PE.
+// Note: LCNC will reset the override as soon as the (jogging-)motion has finished.
+// ------------------------------------
+void ProcessLimitOverride(struct ComponentStruct* componentInstance) {
+    bool limitOverride = false;
+    
+    for (int i = 0; i < NumberOfAxis; i++) {
+        limitOverride |= *componentInstance->axis_override_limit[i];
+    }
+    
+    if (limitOverride == true && _device->PEv2.LimitOverride == 0) {
+        _device->PEv2.LimitOverrideSetup = 1;
+        int ret = PK_PEv2_PulseEngineStateSet(_device);
+        rtapi_print_msg(RTAPI_MSG_ERR, "SET LIMIT OVERRIDE TRUE:%d\n", ret);
+    } else if (limitOverride == false && _device->PEv2.LimitOverride == 1) {        
+        _device->PEv2.LimitOverrideSetup = 0;
+        int ret = PK_PEv2_PulseEngineStateSet(_device);
+        rtapi_print_msg(RTAPI_MSG_ERR, "SET LIMIT OVERRIDE FALSE:%d\n", ret);
+    }
+}
+
+// ------------------------------------
+// Reads the PulseEngine status, if an emergency stop has occured.
+// Since the PE will not reset when the switch is changed, we switch to stopped and from then on read the raw pin.
+// ------------------------------------
+void ProcessEStop(struct ComponentStruct* componentInstance) {
+    if (_device->PEv2.PulseEngineState == PK_PEState_peSTOP_EMERGENCY) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop due to PulseEngine\n");
+        
+        *componentInstance->machine_estop = true;
+        
+        SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE stopped due to ESTOP!");
+        HaltSpindle();        
+    } else {
+		bool currentEstop = 0 + *componentInstance->machine_estop;
+		     
+        uint8_t eStopPin = _device->Pins[EstopPinNumber].DigitalValueGet;
+		rtapi_print_msg(RTAPI_MSG_DBG, "Getting E-Stop:%d\n", eStopPin);
+		
+		if (currentEstop == 1 && eStopPin == 0) {
+			rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop is Reset (by pin)\n");
+            
+			*componentInstance->machine_estop = false;
+            
+		} else if (currentEstop == 0 && eStopPin > 0) {
+			rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop due to pin!\n");
+            
+			*componentInstance->machine_estop = true;
+            
+            HaltSpindle();
+		}
+    }     
+}
+
+// ------------------------------------
+// Gets the probe status from the pin information
+// ------------------------------------
+void ProcessProbe(struct ComponentStruct* componentInstance) {
+    uint8_t probePin = _device->Pins[ProbePinNumber].DigitalValueGet;
+    
+    if (probePin > 0) {
+        *componentInstance->probe = true;
+    } else {
+        *componentInstance->probe = false;
+    }
+}
+
+// ------------------------------------
+// Process streamed move command
+// ------------------------------------
+void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
+    hal_stream_t stream;
+    int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, "SSS");
+    
+    if (ret >= 0) {
+
+        bool streamReadable = hal_stream_readable(&stream);
+        if (streamReadable) {
+            _device->PEv2.motionBufferEntriesAccepted = 0;
+            _device->PEv2.newMotionBufferEntries = 0;
+            
+            int motionEntries = 0;
+            
+            //struct timespec* streamStart = GetStartTime();
+            do
+            {
+                union hal_stream_data dataToReceive[NumberOfAxis];
+                
+                uint32_t sampleId; // TODO inspecting the sampleId could detect buffer overruns. Unlikely in this scenario
+                ret = hal_stream_read(&stream, dataToReceive, &sampleId);
+                
+                if (ret != 0) {
+                    rtapi_print_msg(RTAPI_MSG_ERR, "Error reading stream:%d\n", ret);
+                    continue;
+                }
+                
+                if (dataToReceive[0].s == EndOfMotionPacket) {
+                    rtapi_print_msg(RTAPI_MSG_DBG, "End of motion going to ENABLED state!\n");
+                    componentInstance->internal_state = ENABLED;
+                    break;
+                }                
+
+                for (int i = 0; i < NumberOfAxis; i++) {
+                    uint8_t motion = dataToReceive[i].s;
+                    //rtapi_print_msg(RTAPI_MSG_ERR, "%d,", motion);
+                    _device->PEv2.MotionBuffer[(motionEntries * NumberOfAxis) + i] = motion; 
+                }
+                
+                //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
+                
+                motionEntries++;
+                
+                streamReadable = hal_stream_readable(&stream);
+                
+                // floor(56 bytes / number of axes enabled) = floor(56 / 3) = 18 max allowable packet size
+                if (streamReadable == false || motionEntries == 18) {
+                    _device->PEv2.newMotionBufferEntries = motionEntries;
+                    
+                    //struct timespec* requestStart = GetStartTime();
+                    ret = PK_PEv2_BufferFill(_device);
+                    //PrintElapsedTime(requestStart, "BufferFill");
+            
+                    if (_device->PEv2.motionBufferEntriesAccepted != motionEntries) {
+                        // TODO handle if not all buffer entries are accepted
+                        rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes NOT ALL BUFFER ENTRIES ACCEPTED (%d, accepted %d)%d\n", motionEntries, _device->PEv2.motionBufferEntriesAccepted, ret);
+                    }
+                    
+                    motionEntries = 0;
+                    //rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes (%d, accepted %d), Move commanded:%d\n", motionEntries, _device->PEv2.motionBufferEntriesAccepted, ret);
+                }
+            }
+            while (streamReadable);
+                
+            //PrintElapsedTime(streamStart, "StreamRead");
+        } else {
+            rtapi_print_msg(RTAPI_MSG_ERR, "Buffer underrun? EndOfMotion Packet missing? Going to ENABLED state!\n");
+            componentInstance->internal_state = ENABLED;
+        }
+        
+        hal_stream_detach(&stream);
+    } else {
+        rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error=%d\n", ret);
+    }
+}
+
+// ------------------------------------
+// Gets the Axis positions from the PEv2, and updates the pins.
+// ------------------------------------
+void ProcessPositions(struct ComponentStruct* componentInstance) {
+    for (int i = 0; i < NumberOfAxis; i++) {
+        *componentInstance->axis_position_feedback[i] = ((float)_device->PEv2.CurrentPosition[i]) / ((float)componentInstance->axis_step_scale[i]);
+        
+        //rtapi_print_msg(RTAPI_MSG_ERR, "%d: %fmm, ", i, *componentInstance->axis_position_feedback[i]);
+        
+        *componentInstance->axis_limit_positive[i] = (_device->PEv2.LimitStatusP >> i) & 0x01;
+        *componentInstance->axis_limit_negative[i] = (_device->PEv2.LimitStatusN >> i) & 0x01;
+    }
+    
+    //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
+}
+
+// ------------------------------------
+// Process Spindle relay on/off
+// ------------------------------------
+void ProcessSpindle(struct ComponentStruct* componentInstance) {    
+    //struct timespec* requestStart = GetStartTime();
+    int ret = PK_PEv2_ExternalOutputsGet(_device);
+    //PrintElapsedTime(requestStart, "GetExternalOutputs");
+    //rtapi_print_msg(RTAPI_MSG_DBG, "Getting Relay status:%d, %d\n", ret, _device->PEv2.ExternalOCOutputs);
+    
+    bool spindleOn = 0 + *componentInstance->spindle_on;
+    
+    // On Pokeys57CNC the outputs are all accessed using ExternalOCOutputs! 0=SSR2, 7=SSR1
+    if (spindleOn == true && ((_device->PEv2.ExternalOCOutputs >> SpindleRelais) & 0x01) == 0) {  
+        _device->PEv2.ExternalOCOutputs |= (1 << SpindleRelais);
+        ret = PK_PEv2_ExternalOutputsSet(_device);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Turn spindle on:%d\n", ret);
+    }
+    else if (spindleOn == false && ((_device->PEv2.ExternalOCOutputs >> SpindleRelais) & 0x01) == 1) {
+        _device->PEv2.ExternalOCOutputs &= (0 << SpindleRelais);
+        ret = PK_PEv2_ExternalOutputsSet(_device);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Turn spindle off:%d\n", ret);
+    }
+}
+
+// ------------------------------------
+// Spindle off (Set all relay off)
+// ------------------------------------
+void HaltSpindle() {
+    _device->PEv2.ExternalOCOutputs = 0;
+    int ret = PK_PEv2_ExternalOutputsSet(_device);
+    rtapi_print_msg(RTAPI_MSG_ERR, "Halt spindle:%d\n", ret);
+}
+
+// ------------------------------------
+// Get the current timestamp. Consumer must free the memory of the timestamp!
+// ------------------------------------
+struct timespec* GetStartTime() {
+    struct timespec* timeStamp;
+    timeStamp = malloc(sizeof(struct timespec));
+    clock_gettime(CLOCK_REALTIME, timeStamp);
+    
+    return timeStamp;
+}
+
+// ------------------------------------
+// Try to keep the cycle time within defined limits.
+// ------------------------------------
+void ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum State currentState, enum State nextState) {
+    struct timespec cycleEnd;
+    clock_gettime(CLOCK_REALTIME, &cycleEnd);
+    float t_ms = ((float)(cycleEnd.tv_sec - cycleStart->tv_sec) * 1.0e9 + (float)(cycleEnd.tv_nsec - cycleStart->tv_nsec)) / 1.0e6;
+    free(cycleStart);
+    
+    rtapi_print_msg(RTAPI_MSG_DBG, "Time elapsed %f ms\n", t_ms);
+    
+    if (!overrideCycleTime) {
+        if (t_ms <= CycleTimeMs) {
+            useconds_t sleepTimeUs = (CycleTimeMs - t_ms) * 1000;
+            usleep(sleepTimeUs);
+        } else {
+            const char* currentStateName = GetStateName(currentState);
+            const char* nextStateName = GetStateName(nextState);
+            
+            if (t_ms <= CycleTimeMs + 3.0) {
+                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle greater than %fms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
+            } else {
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle greater than %f!ms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
+            }
+        }
+    }   
+}
+
+// ------------------------------------
+// Helper method to get the state enum name.
+// ------------------------------------
+inline const char* GetStateName(enum State state) {
+   switch (state) 
+   {
+      case CREATED: return "CREATED";
+      case INIT: return "INIT";
+      case IDLE: return "IDLE";
+      case ENABLED: return "ENABLED";
+      case MOVING: return "MOVING";
+      case ESTOP: return "ESTOP";
+      case SHUTDOWN: return "SHUTDOWN";
+      default: return "UNDEFINED";
+   }
+}
+
+// ------------------------------------
+// Logs the difference of the timestamp and current time.
+// ------------------------------------
+void PrintElapsedTime(struct timespec* startTime, const char* log) {
+    struct timespec endTime;
+    clock_gettime(CLOCK_REALTIME, &endTime);
+    float t_ms = ((float)(endTime.tv_sec - startTime->tv_sec) * 1.0e9 + (float)(endTime.tv_nsec - startTime->tv_nsec)) / 1.0e6;
+    free(startTime);
+    
+    rtapi_print_msg(RTAPI_MSG_ERR, "%s took %f ms\n", log, t_ms);
+}
