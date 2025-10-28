@@ -389,6 +389,13 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
     if (ret >= 0) {
 
         bool streamReadable = hal_stream_readable(&stream);
+
+        if (!streamReadable) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "Potential Buffer underrun? EndOfMotion Packet missing? Try sleep\n");
+            usleep(50); // >50us would be a warning on the motion buffer side.
+            streamReadable = hal_stream_readable(&stream);
+        }
+
         if (streamReadable) {
             _device->PEv2.motionBufferEntriesAccepted = 0;
             _device->PEv2.newMotionBufferEntries = 0;
