@@ -391,8 +391,10 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
         bool streamReadable = hal_stream_readable(&stream);
 
         if (!streamReadable) {
+            // if the last cycle was slow (>5ms), we do not wait and almost "immediately" process the next motion state.
+            // since the servo thread may not have updated yet, we delay here to get at least one value here.
             rtapi_print_msg(RTAPI_MSG_ERR, "Potential Buffer underrun? EndOfMotion Packet missing? Try sleep\n");
-            usleep(50); // >50us would be a warning on the motion buffer side.
+            usleep(500); // half the time of the servo period (1ms).
             streamReadable = hal_stream_readable(&stream);
         }
 
@@ -407,8 +409,7 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
             {
                 union hal_stream_data dataToReceive[NumberOfAxis];
                 
-                uint32_t sampleId; // TODO inspecting the sampleId could detect buffer overruns. Unlikely in this scenario
-                ret = hal_stream_read(&stream, dataToReceive, &sampleId);
+                ret = hal_stream_read(&stream, dataToReceive, NULL);
                 
                 if (ret != 0) {
                     rtapi_print_msg(RTAPI_MSG_ERR, "Error reading stream:%d\n", ret);
