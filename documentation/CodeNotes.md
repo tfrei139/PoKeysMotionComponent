@@ -12,9 +12,12 @@ The component is mostly written to support multiple instances. However currently
 
 ## Design decision: Motion only streamed if necessary
 As the component was developed, creating distinct states of being enabled and in motion made more sense to me.
+When to motion stops and restarts, we ensure that we have filled the buffer again.
 
 It would be possible to stream the motion as soon as the machine is enabled in the UI. The benfit would be that there are less states to handle.
 The drawback, that we consistently need to send unnecessary data. And add potentially more overhead to the single existing state.  
+
+During my tests I did get occasional high cycle times for the user component (I assume due to the hardware). So the robustness of the mechanism is appreciated.
 
 ## Design decision: Parametrization using HAL
 While an userpace component can read from the machine ini file, an RT component cannot.  

@@ -140,8 +140,9 @@ FUNCTION(_) {
                 }
             }
             
-            if (hal_stream_write(MotionStream, dataToSend) < 0) {   
-                //rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER full: %d\n", BufferDepth);
+            int writeRes = hal_stream_write(MotionStream, dataToSend);
+            if (writeRes != 0) {   
+                rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun: %d\n", writeRes);
             }
             
             in_motion = true;
@@ -164,6 +165,10 @@ FUNCTION(_) {
         
         union hal_stream_data dataToSend[NumberOfAxis];
         dataToSend[0].s = EndOfMotionPacket; 
-        hal_stream_write(MotionStream, dataToSend);
+        int writeRes = hal_stream_write(MotionStream, dataToSend);
+
+        if (writeRes != 0) {   
+            rtapi_print_msg(RTAPI_MSG_ERR, "End of Motion BUFFER overrun: %d\n", writeRes);
+        }
     }    
 }

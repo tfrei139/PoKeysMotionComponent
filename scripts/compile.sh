@@ -1,2 +1,6 @@
-sudo halcompile --install ../source/PoKeysController.comp
-sudo halcompile --install ../source/PoKeysMotionBuffer.comp
+#!/usr/bin/env bash
+
+scriptDir=$(dirname "$0")
+
+sudo halcompile --install $scriptDir/../source/PoKeysController.comp
+sudo halcompile --install $scriptDir/../source/PoKeysMotionBuffer.comp
