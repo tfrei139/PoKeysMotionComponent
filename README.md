@@ -2,7 +2,7 @@
 LinuxCNC component to use a PoKeysCNC board for motion and simple IO
 
 ### State of the component
-**Experimental**
+**Experimental**. Tested with 5'000 line gcode file, ~20 minutes run time.
 
 ## Introduction
 This component aims to provide a simple integration of a PoKeysCNC controller into LinuxCNC.  
@@ -24,6 +24,7 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 - Redo logging (how are userspace components supposed to log?!)
 - Make number of axes configurable in HAL
 - Test/Extend probing
+- Technical: Benchmark component
 - Technical: convert to `C` component
 - Allow reading encoders for jogging
 - Add spindle speed support
