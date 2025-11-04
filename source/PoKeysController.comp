@@ -6,9 +6,9 @@ pin out bit probe = false;
 pin in bit machine_is_on = false;
 pin in bit buffer_in_motion = false;
 
-pin in bit solid_state_relay.# [2] "Solid state relays";
-pin in bit relay.# [2] "Relays";
-pin in bit open_collector.# [4] "Open collector digital outputs";
+pin in bit io.solid_state_relay.# [2] "Solid state relays";
+pin in bit io.relay.# [2] "Relays";
+pin in bit io.open_collector.# [4] "Open collector digital outputs";
 
 pin out float axis.#.position_feedback [3];
 pin out bit axis.#.limit_positive [3];
@@ -221,9 +221,9 @@ void user_mainloop(void) {
 #undef machine_estop
 #undef probe
 #undef machine_is_on
-#undef solid_state_relay
-#undef relay
-#undef open_collector
+#undef io_solid_state_relay
+#undef io_relay
+#undef io_open_collector
 #undef buffer_in_motion
 #undef axis_position_feedback
 #undef axis_limit_positive
@@ -504,14 +504,14 @@ void ProcessRelays(struct ComponentStruct* componentInstance) {
     //PrintElapsedTime(requestStart, "GetExternalOutputs");
     //rtapi_print_msg(RTAPI_MSG_DBG, "Getting Relay status:%d, %d\n", ret, _device->PEv2.ExternalOCOutputs);
     
-    bool ssr1on = 0 + *componentInstance->solid_state_relay[0];
-    bool ssr2on = 0 + *componentInstance->solid_state_relay[1];
-    bool relay1on = 0 + *componentInstance->relay[0];
-    bool relay2on = 0 + *componentInstance->relay[1];
-    bool oc1on = 0 + *componentInstance->open_collector[0];
-    bool oc2on = 0 + *componentInstance->open_collector[1];
-    bool oc3on = 0 + *componentInstance->open_collector[2];
-    bool oc4on = 0 + *componentInstance->open_collector[3];
+    bool ssr1on = 0 + *componentInstance->io_solid_state_relay[0];
+    bool ssr2on = 0 + *componentInstance->io_solid_state_relay[1];
+    bool relay1on = 0 + *componentInstance->io_relay[0];
+    bool relay2on = 0 + *componentInstance->io_relay[1];
+    bool oc1on = 0 + *componentInstance->io_open_collector[0];
+    bool oc2on = 0 + *componentInstance->io_open_collector[1];
+    bool oc3on = 0 + *componentInstance->io_open_collector[2];
+    bool oc4on = 0 + *componentInstance->io_open_collector[3];
     
     bool setNecessary = false;    
     setNecessary |= CompareRelayState(ssr1on, 7);
