@@ -17,7 +17,8 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 - 3 Axis (motor) motion control
 - E-Stop
 - Limit switches and override
-- Spindle On/Off
+- IO
+    - All relays (example Spindle on/off)
 
 ### Backlog
 - Enable homing
@@ -27,7 +28,6 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 - Technical: Benchmark component
 - Technical: convert to `C` component
 - Allow reading encoders for jogging
-- Add spindle speed support
 - More flexible IO?
 - Add coolant/mist support
 

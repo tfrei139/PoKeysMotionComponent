@@ -4,8 +4,11 @@ pin out bit machine_estop = false;
 pin out bit probe = false;
 
 pin in bit machine_is_on = false;
-pin in bit spindle_on = false;
 pin in bit buffer_in_motion = false;
+
+pin in bit solid_state_relay.# [2] "Solid state relays";
+pin in bit relay.# [2] "Relays";
+pin in bit open_collector.# [4] "Open collector digital outputs";
 
 pin out float axis.#.position_feedback [3];
 pin out bit axis.#.limit_positive [3];
@@ -32,7 +35,6 @@ author "T.Frei";
 #define InstanceVariable __comp_inst    // Internal variable of linuxCNC component
 
 #define NumberOfAxis 3
-#define SpindleRelais 7
 #define ProbePinNumber 18         // 0-Based Pin 19
 #define EstopPinNumber 51         // 0-Based Pin 52
 #define CycleTimeMs 5.0f          // Target cycle time of uspace component
@@ -69,8 +71,9 @@ void ProcessEStop(struct ComponentStruct* componentInstance);
 void ProcessProbe(struct ComponentStruct* componentInstance);
 void ProcessMoveCommand(struct ComponentStruct* componentInstance);
 void ProcessPositions(struct ComponentStruct* componentInstance);
-void ProcessSpindle(struct ComponentStruct* componentInstance);
-void HaltSpindle();
+void ProcessRelays(struct ComponentStruct* componentInstance);
+bool CompareRelayState(bool state, int offset);
+void SetRelaysOff();
 struct timespec* GetStartTime();
 void ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, enum State currentState, enum State nextState);
 const char* GetStateName(enum State state);
@@ -139,7 +142,7 @@ void user_mainloop(void) {
                     
                     // Machine is disabled from LinuxCNC  
                     if (machine_is_on == false) {
-                        HaltSpindle();
+                        SetRelaysOff();
                         SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
                         internal_state = IDLE;
                         break;
@@ -147,7 +150,7 @@ void user_mainloop(void) {
                     
                     ProcessProbe(InstanceVariable);
                     ProcessPositions(InstanceVariable);
-                    ProcessSpindle(InstanceVariable);
+                    ProcessRelays(InstanceVariable);
                     ProcessLimitOverride(InstanceVariable);
                     
                     // Check if motion is commanded
@@ -175,7 +178,7 @@ void user_mainloop(void) {
                     
                     // Machine is disabled from LinuxCNC 
                     if (machine_is_on == false) {
-                        HaltSpindle();
+                        SetRelaysOff();
                         SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
                         internal_state = IDLE;
@@ -184,7 +187,7 @@ void user_mainloop(void) {
                     
                     ProcessProbe(InstanceVariable);
                     ProcessPositions(InstanceVariable);
-                    ProcessSpindle(InstanceVariable);
+                    ProcessRelays(InstanceVariable);
                     
                     break;
                 case ESTOP:
@@ -200,7 +203,7 @@ void user_mainloop(void) {
                     break;
                 case SHUTDOWN:
                     SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
-                    HaltSpindle();
+                    SetRelaysOff();
                     
                     run = false;
                     return;
@@ -218,7 +221,9 @@ void user_mainloop(void) {
 #undef machine_estop
 #undef probe
 #undef machine_is_on
-#undef spindle_on
+#undef solid_state_relay
+#undef relay
+#undef open_collector
 #undef buffer_in_motion
 #undef axis_position_feedback
 #undef axis_limit_positive
@@ -267,6 +272,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         // TOOD or is the device communication down?
     }
     
+    // Set up axis configuration
     for (int i = 0; i < NumberOfAxis; i++) {
         _device->PEv2.param1 = i;
         ret = PK_PEv2_AxisConfigurationGet(_device);
@@ -278,6 +284,14 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             rtapi_print_msg(RTAPI_MSG_DBG, "PE axis %d configured:%d\n", i, ret);
         }        
     }
+
+    // Set up pin capabilities
+    ret = PK_PinConfigurationGet(_device);
+    rtapi_print_msg(RTAPI_MSG_ERR, "Getting pins =%d\n", ret);   
+
+    rtapi_print_msg(RTAPI_MSG_ERR, "Pins 16, type=%d\n", _device->Pins[15].PinFunction);   
+    rtapi_print_msg(RTAPI_MSG_ERR, "Pins 17, type=%d\n", _device->Pins[16].PinFunction);   
+    rtapi_print_msg(RTAPI_MSG_ERR, "Pins 18, type=%d\n", _device->Pins[17].PinFunction);   
     
     return true;
 }
@@ -344,7 +358,7 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
         *componentInstance->machine_estop = true;
         
         SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE stopped due to ESTOP!");
-        HaltSpindle();        
+        SetRelaysOff();        
     } else {
 		bool currentEstop = 0 + *componentInstance->machine_estop;
 		     
@@ -361,7 +375,7 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
             
 			*componentInstance->machine_estop = true;
             
-            HaltSpindle();
+            SetRelaysOff();
 		}
     }     
 }
@@ -482,36 +496,62 @@ void ProcessPositions(struct ComponentStruct* componentInstance) {
 }
 
 // ------------------------------------
-// Process Spindle relay on/off
+// Process relays on/off
 // ------------------------------------
-void ProcessSpindle(struct ComponentStruct* componentInstance) {    
+void ProcessRelays(struct ComponentStruct* componentInstance) {    
     //struct timespec* requestStart = GetStartTime();
     int ret = PK_PEv2_ExternalOutputsGet(_device);
     //PrintElapsedTime(requestStart, "GetExternalOutputs");
     //rtapi_print_msg(RTAPI_MSG_DBG, "Getting Relay status:%d, %d\n", ret, _device->PEv2.ExternalOCOutputs);
     
-    bool spindleOn = 0 + *componentInstance->spindle_on;
+    bool ssr1on = 0 + *componentInstance->solid_state_relay[0];
+    bool ssr2on = 0 + *componentInstance->solid_state_relay[1];
+    bool relay1on = 0 + *componentInstance->relay[0];
+    bool relay2on = 0 + *componentInstance->relay[1];
+    bool oc1on = 0 + *componentInstance->open_collector[0];
+    bool oc2on = 0 + *componentInstance->open_collector[1];
+    bool oc3on = 0 + *componentInstance->open_collector[2];
+    bool oc4on = 0 + *componentInstance->open_collector[3];
     
-    // On Pokeys57CNC the outputs are all accessed using ExternalOCOutputs! 0=SSR2, 7=SSR1
-    if (spindleOn == true && ((_device->PEv2.ExternalOCOutputs >> SpindleRelais) & 0x01) == 0) {  
-        _device->PEv2.ExternalOCOutputs |= (1 << SpindleRelais);
+    bool setNecessary = false;    
+    setNecessary |= CompareRelayState(ssr1on, 7);
+    setNecessary |= CompareRelayState(ssr2on, 0);
+    setNecessary |= CompareRelayState(relay1on, 2);
+    setNecessary |= CompareRelayState(relay2on, 1);
+    setNecessary |= CompareRelayState(oc1on, 3);
+    setNecessary |= CompareRelayState(oc2on, 4);
+    setNecessary |= CompareRelayState(oc3on, 5);
+    setNecessary |= CompareRelayState(oc4on, 6);
+
+    if (setNecessary) {  
         ret = PK_PEv2_ExternalOutputsSet(_device);
-        rtapi_print_msg(RTAPI_MSG_ERR, "Turn spindle on:%d\n", ret);
-    }
-    else if (spindleOn == false && ((_device->PEv2.ExternalOCOutputs >> SpindleRelais) & 0x01) == 1) {
-        _device->PEv2.ExternalOCOutputs &= (0 << SpindleRelais);
-        ret = PK_PEv2_ExternalOutputsSet(_device);
-        rtapi_print_msg(RTAPI_MSG_ERR, "Turn spindle off:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Change relays:%d\n", ret);
     }
 }
 
 // ------------------------------------
-// Spindle off (Set all relay off)
+// Compare actual relay state to expected state.
+// On Pokeys57CNC the outputs are all accessed using ExternalOCOutputs! 0=SSR2, 7=SSR1, etc. See protocol definition.
 // ------------------------------------
-void HaltSpindle() {
+inline bool CompareRelayState(bool state, int offset) {
+    if (state == true && ((_device->PEv2.ExternalOCOutputs >> offset) & 0x01) == 0) {  
+        _device->PEv2.ExternalOCOutputs |= (1 << offset);
+        return true;
+    } else if (state == false && ((_device->PEv2.ExternalOCOutputs >> offset) & 0x01) == 1) {
+        _device->PEv2.ExternalOCOutputs &= (0 << offset);
+        return true;
+    }
+
+    return false;
+}
+
+// ------------------------------------
+// Spindle off (Set all relays off)
+// ------------------------------------
+void SetRelaysOff() {
     _device->PEv2.ExternalOCOutputs = 0;
     int ret = PK_PEv2_ExternalOutputsSet(_device);
-    rtapi_print_msg(RTAPI_MSG_ERR, "Halt spindle:%d\n", ret);
+    rtapi_print_msg(RTAPI_MSG_ERR, "Turn all relays off:%d\n", ret);
 }
 
 // ------------------------------------

@@ -120,7 +120,7 @@ net max-z          =>  joint.2.pos-lim-sw-in
 #*******************
 
 net spindle-enable <= spindle.0.on
-net spindle-enable => PoKeysController.0.spindle-on
+net spindle-enable => PoKeysController.0.solid-state-relay[0]
 
 #*******************
 # Probe
