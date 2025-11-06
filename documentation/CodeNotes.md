@@ -49,3 +49,8 @@ rtapi_print_msg(RTAPI_MSG_ERR, "Got device serial from INI '%d',%d\n", deviceSer
 
 fclose(ini_file_ptr);
 ```
+
+## Relays behavior
+The relay pins are only "in". If we have a failure setting the signal on device side, or we shut down due to E-Stop, the pins will show the wrong state on lcnc side.
+"io" pins are not possible, for example the spindle signal does not support io.
+In my case I prefer to err on the side of caution and allow a mismatch. 

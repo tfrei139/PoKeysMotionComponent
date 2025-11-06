@@ -14,6 +14,8 @@ setp PoKeysController.0.device-serial 40760
 setp PoKeysController.0.axis.0.step-scale 800.0
 setp PoKeysController.0.axis.1.step-scale 800.0
 setp PoKeysController.0.axis.2.step-scale 1600.0
+setp PoKeysController.0.io.digital-pin-number.0 19 # Pin 19 is default for probing
+setp PoKeysController.0.io.estop-pin-number 52
 setp PoKeysController.0.internal-state 0
 
 loadrt PoKeysMotionBuffer
@@ -125,7 +127,7 @@ net spindle-enable => PoKeysController.0.io.solid-state-relay.0
 #*******************
 # Probe
 #*******************
-net probe-in     <=  PoKeysController.0.probe
+net probe-in     <=  PoKeysController.0.io.digital-pin.0
 net probe-in     =>  motion.probe-input
 
 #******************************
