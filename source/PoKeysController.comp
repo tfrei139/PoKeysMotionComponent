@@ -4,7 +4,8 @@ pin out bit machine_estop = false;
 pin in bit machine_is_on = false;
 pin in bit buffer_in_motion = false;
 
-pin out bit io.digital_pin.# [10] "Digital input pins";
+pin out bit io.input_pin.# [10] "Digital input pins";
+pin in bit io.output_pin.# [10] "Digital output pins";
 pin in bit io.solid_state_relay.# [2] "Solid state relays";
 pin in bit io.relay.# [2] "Relays";
 pin in bit io.open_collector.# [4] "Open collector digital outputs";
@@ -18,7 +19,8 @@ param rw signed internal_state = -1 "Current component state";
 param rw unsigned device_serial = 0 "PoKeys Device Serial";
 
 param rw float axis.#.step_scale [3];
-param rw signed io.digital_pin_number.# [10] "Digital input pin mapping";
+param rw signed io.input_pin_number.# [10] "Digital input pin mapping";
+param rw signed io.output_pin_number.# [10] "Digital output pin mapping";
 param rw signed io.estop_pin_number = 52 "Digital input pin mapping";
 
 option userspace yes;
@@ -36,7 +38,7 @@ author "T.Frei";
 #define InstanceVariable __comp_inst    // Internal variable of linuxCNC component
 
 #define NumberOfAxis 3
-#define NumberOfDigitalPins 10
+#define NumberOfDigitalPins 10    // Applies to both input and output pins. Can be raised as necessary
 #define CycleTimeMs 5.0f          // Target cycle time of uspace component
 #define SharedMemoryKey 57        // Arbitrary number
 #define EndOfMotionPacket 0x0101  // Arbitrary number > uint8
@@ -142,7 +144,6 @@ void user_mainloop(void) {
                     
                     // Machine is disabled from LinuxCNC  
                     if (machine_is_on == false) {
-                        SetRelaysOff();
                         SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
                         internal_state = IDLE;
                         break;
@@ -178,7 +179,6 @@ void user_mainloop(void) {
                     
                     // Machine is disabled from LinuxCNC 
                     if (machine_is_on == false) {
-                        SetRelaysOff();
                         SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
                         internal_state = IDLE;
@@ -192,6 +192,7 @@ void user_mainloop(void) {
                     break;
                 case ESTOP:
                     ReadPulseEngineStatus();
+                    ProcessDigitalPins(InstanceVariable);
                     ProcessEStop(InstanceVariable);
                 
                     // Reset Estop from PoKeys                    
@@ -220,8 +221,10 @@ void user_mainloop(void) {
 // ------------------------------------
 #undef machine_estop
 #undef machine_is_on
-#undef io_digital_pin
-#undef io_digital_pin_number
+#undef io_input_pin
+#undef io_input_pin_number
+#undef io_output_pin
+#undef io_output_pin_number
 #undef io_solid_state_relay
 #undef io_relay
 #undef io_open_collector
@@ -307,8 +310,9 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, Pins %d, type=%d, duty=%d, period=%d\n", n, _device->PWM.PWMpinIDs[n], _device->PWM.PWMenabledChannels[n], _device->PWM.PWMduty[n], _device->PWM.PWMperiod);
     }
 
+    // Verify digital pin capabilities with HAL configuration
     for (int i = 0; i < NumberOfDigitalPins; i++) {
-        int pinNumber = componentInstance->io_digital_pins[i];
+        int pinNumber = componentInstance->io_input_pin_number[i];
 
         if (pinNumber > 0) {
             // 0-based pin numbering
@@ -318,6 +322,19 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
                 rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read ok\n", i, pinNumber - 1);  
             } else {
                 rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read nok, actual: %d\n", i, pinNumber - 1, pinFunction);  
+            }
+        }
+
+        pinNumber = componentInstance->io_output_pin_number[i];
+
+        if (pinNumber > 0) {
+            // 0-based pin numbering
+            uint8_t pinFunction = _device->Pins[pinNumber - 1].PinFunction;
+        
+            if (pinFunction == ePK_PinCap.PK_PinCap_digitalOutput) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write ok\n", i, pinNumber - 1);  
+            } else {
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write nok, actual: %d\n", i, pinNumber - 1, pinFunction);  
             }
         }
     }
@@ -334,11 +351,6 @@ void ReadPulseEngineStatus() {
     int ret = PK_PEv2_StatusGet(_device);
     //PrintElapsedTime(requestStart, "Getting PE STATE");
     rtapi_print_msg(RTAPI_MSG_DBG, "Getting status:%d, state=%d, limitOverride=%d\n", ret, _device->PEv2.PulseEngineState, _device->PEv2.LimitOverride);
-    
-    //struct timespec* requestIoStart = GetStartTime();
-    ret = PK_DigitalIOGet(_device);
-    //PrintElapsedTime(requestIoStart, "Read all digital Pins");
-    //rtapi_print_msg(RTAPI_MSG_DBG, "Read all pins:%d\n", ret);
 }
 
 // ------------------------------------
@@ -411,27 +423,43 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
 }
 
 // ------------------------------------
-// Forwards the pin status from the device information
+// TODO
 // ------------------------------------
 void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
     for (int i = 0; i < NumberOfDigitalPins; i++) {
-        int pinNumber = componentInstance->io_digital_pin_number[i];
+        int pinNumber = componentInstance->io_output_pin_number[i];
+
+        if (pinNumber > 0) {
+            uint8_t pinState = *componentInstance->io_output_pin[i];
+
+            // 0-based pin numbering
+            _device->Pins[pinNumber - 1].DigitalValueSet = pinState;
+        }
+    }
+    
+    //struct timespec* requestIoStart = GetStartTime();
+    int ret = PK_DigitalIOSetGet(_device);
+    //PrintElapsedTime(requestIoStart, "Update all digital Pins");
+    //rtapi_print_msg(RTAPI_MSG_DBG, "Update all digital pins:%d\n", ret);
+    
+    for (int i = 0; i < NumberOfDigitalPins; i++) {
+        int pinNumber = componentInstance->io_input_pin_number[i];
 
         if (pinNumber > 0) {
             // 0-based pin numbering
             uint8_t pinState = _device->Pins[pinNumber - 1].DigitalValueGet;
         
             if (pinState > 0) {
-                *componentInstance->io_digital_pin[i] = true;
+                *componentInstance->io_input_pin[i] = true;
             } else {
-                *componentInstance->io_digital_pin[i] = false;
+                *componentInstance->io_input_pin[i] = false;
             }
         }
     }
 }
 
 // ------------------------------------
-// Process streamed move command
+// Process streamed move command and implicitly update PE status information
 // ------------------------------------
 void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
     hal_stream_t stream;
@@ -517,7 +545,7 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 }
 
 // ------------------------------------
-// Gets the Axis positions from the PEv2, and updates the pins.
+// Updates the HAL pins based on the current PE position information.
 // ------------------------------------
 void ProcessPositions(struct ComponentStruct* componentInstance) {
     for (int i = 0; i < NumberOfAxis; i++) {
@@ -583,7 +611,7 @@ inline bool CompareRelayState(bool state, int offset) {
 }
 
 // ------------------------------------
-// Spindle off (Set all relays off)
+// Set all relays off.
 // ------------------------------------
 void SetRelaysOff() {
     _device->PEv2.ExternalOCOutputs = 0;
