@@ -305,9 +305,9 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     rtapi_print_msg(RTAPI_MSG_ERR, "Pins 16, type=%d\n", _device->Pins[15].PinFunction);   // 2 PK_PinCap_digitalInput
     rtapi_print_msg(RTAPI_MSG_ERR, "Pins 17, type=%d\n", _device->Pins[16].PinFunction);   // 4 PK_PinCap_digitalOutput
     rtapi_print_msg(RTAPI_MSG_ERR, "Pins 18, type=%d\n", _device->Pins[17].PinFunction);   // 0 PK_PinCap_pinRestricted
-    for (n = 0; n < 6; n++)
+    for (int i = 0; i < 6; i++)
     {
-        rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, Pins %d, type=%d, duty=%d, period=%d\n", n, _device->PWM.PWMpinIDs[n], _device->PWM.PWMenabledChannels[n], _device->PWM.PWMduty[n], _device->PWM.PWMperiod);
+        rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, Pins %d, type=%d, duty=%d, period=%d\n", i, _device->PWM.PWMpinIDs[i], _device->PWM.PWMenabledChannels[i], _device->PWM.PWMduty[i], _device->PWM.PWMperiod);
     }
 
     // Verify digital pin capabilities with HAL configuration
@@ -318,10 +318,10 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             // 0-based pin numbering
             uint8_t pinFunction = _device->Pins[pinNumber - 1].PinFunction;
         
-            if (pinFunction == ePK_PinCap.PK_PinCap_digitalInput) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read ok\n", i, pinNumber - 1);  
+            if (pinFunction == 2) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read ok\n", i, pinNumber);  
             } else {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read nok, actual: %d\n", i, pinNumber - 1, pinFunction);  
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read nok, actual: %d\n", i, pinNumber, pinFunction);  
             }
         }
 
@@ -331,10 +331,10 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             // 0-based pin numbering
             uint8_t pinFunction = _device->Pins[pinNumber - 1].PinFunction;
         
-            if (pinFunction == ePK_PinCap.PK_PinCap_digitalOutput) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write ok\n", i, pinNumber - 1);  
+            if (pinFunction == 4) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write ok\n", i, pinNumber);  
             } else {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write nok, actual: %d\n", i, pinNumber - 1, pinFunction);  
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write nok, actual: %d\n", i, pinNumber, pinFunction);  
             }
         }
     }
@@ -440,8 +440,8 @@ void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
     //struct timespec* requestIoStart = GetStartTime();
     int ret = PK_DigitalIOSetGet(_device);
     //PrintElapsedTime(requestIoStart, "Update all digital Pins");
-    //rtapi_print_msg(RTAPI_MSG_DBG, "Update all digital pins:%d\n", ret);
-    
+    //rtapi_print_msg(RTAPI_MSG_DBG, "Update all digital pins:%d\n", ret); 
+
     for (int i = 0; i < NumberOfDigitalPins; i++) {
         int pinNumber = componentInstance->io_input_pin_number[i];
 
