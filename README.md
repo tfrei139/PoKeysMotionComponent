@@ -20,6 +20,7 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 - IO
     - All relays (example Spindle on/off)
     - Configurable digital input output pins
+    - PWM pins
 
 ### Backlog
 - Enable homing
