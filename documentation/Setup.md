@@ -71,3 +71,23 @@ In the "hal" file:
 In the "ini" file:
 1. Choose your preferred UI "axis" for a simple standard UI, "gmoccapy" for a touchscreen optimized one
 1. Adapt the `[AXIS_]` and `[JOINT_]` sections to match your set up
+
+### Setting up input and output pins
+In the hal file, you can define up to five digital input or output pins each.
+And the use of the SSR1/2, Relay1/2 and OC1..4 outputs
+
+Example of digital in, example "probe" 
+```
+setp PoKeysController.0.io.input-pin-number.0 19
+net probe-in     <=  PoKeysController.0.io.input-pin.0
+net probe-in     =>  motion.probe-input
+```
+`input-pin-number.0` defines that `input-pin.0` uses PoKeys pin 19 for probing.  
+Note: pins in the hal file are 1-based.
+
+Example of out, example "spindle"
+```
+net spindle-enable <= spindle.0.on
+net spindle-enable => PoKeysController.0.io.solid-state-relay.0
+```
+`solid-state-relay.0` stands for SSR1 on the PoKeys.

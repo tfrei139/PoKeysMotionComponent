@@ -19,6 +19,7 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 - Limit switches and override
 - IO
     - All relays (example Spindle on/off)
+    - Configurable digital input output pins
 
 ### Backlog
 - Enable homing
@@ -28,8 +29,6 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 - Technical: Benchmark component
 - Technical: convert to `C` component
 - Allow reading encoders for jogging
-- More flexible IO?
-- Add coolant/mist support
 
 ## Setup
 A walkthrough to set this component up is available here [Setup](documentation/Setup.md)

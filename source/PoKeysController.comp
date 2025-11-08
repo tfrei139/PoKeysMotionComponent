@@ -4,8 +4,8 @@ pin out bit machine_estop = false;
 pin in bit machine_is_on = false;
 pin in bit buffer_in_motion = false;
 
-pin out bit io.input_pin.# [10] "Digital input pins";
-pin in bit io.output_pin.# [10] "Digital output pins";
+pin out bit io.input_pin.# [5] "Digital input pins";
+pin in bit io.output_pin.# [5] "Digital output pins";
 pin in bit io.solid_state_relay.# [2] "Solid state relays";
 pin in bit io.relay.# [2] "Relays";
 pin in bit io.open_collector.# [4] "Open collector digital outputs";
@@ -19,9 +19,9 @@ param rw signed internal_state = -1 "Current component state";
 param rw unsigned device_serial = 0 "PoKeys Device Serial";
 
 param rw float axis.#.step_scale [3];
-param rw signed io.input_pin_number.# [10] "Digital input pin mapping";
-param rw signed io.output_pin_number.# [10] "Digital output pin mapping";
-param rw signed io.estop_pin_number = 52 "Digital input pin mapping";
+param rw signed io.input_pin_number.# [5] "Digital input pin mapping, index 1 based";
+param rw signed io.output_pin_number.# [5] "Digital output pin mapping, index 1 based";
+param rw signed io.estop_pin_number = 52 "E-Stop pin mapping, must match with PE set up";
 
 option userspace yes;
 option extra_link_args "-L/usr/lib -lPoKeys";
@@ -38,7 +38,7 @@ author "T.Frei";
 #define InstanceVariable __comp_inst    // Internal variable of linuxCNC component
 
 #define NumberOfAxis 3
-#define NumberOfDigitalPins 10    // Applies to both input and output pins. Can be raised as necessary
+#define NumberOfDigitalPins 5     // Applies to both input and output pins. Could be raised as necessary
 #define CycleTimeMs 5.0f          // Target cycle time of uspace component
 #define SharedMemoryKey 57        // Arbitrary number
 #define EndOfMotionPacket 0x0101  // Arbitrary number > uint8
@@ -128,6 +128,7 @@ void user_mainloop(void) {
                     
                     ProcessDigitalPins(InstanceVariable);
                     ProcessPositions(InstanceVariable);
+                    ProcessRelays(InstanceVariable);
                     ProcessLimitOverride(InstanceVariable);
 
                     break;
@@ -192,7 +193,7 @@ void user_mainloop(void) {
                     break;
                 case ESTOP:
                     ReadPulseEngineStatus();
-                    ProcessDigitalPins(InstanceVariable);
+                    ProcessDigitalPins(InstanceVariable); // necessary to update E-Stop pin
                     ProcessEStop(InstanceVariable);
                 
                     // Reset Estop from PoKeys                    
@@ -274,7 +275,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         ret = PK_PEv2_PulseEngineReboot(_device);
         rtapi_print_msg(RTAPI_MSG_DBG, "PE Reboot:%d\n", ret);
         // In theory we should sleep, but it'l highly unlikely you'll start a motion 1 second after opening LCNC.
-        // TOOD or is the device communication down?
+        // TOOD or is the device communication down during this time?
     }
 
     // Check estop setup
@@ -289,33 +290,22 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         ret = PK_PEv2_AxisConfigurationGet(_device);
         
         if (_device->PEv2.AxesConfig[i] & (PK_AC_INTERNAL_PLANNER)) {
-            _device->PEv2.AxesConfig[i] &= ~(PK_AC_INTERNAL_PLANNER); // NOT internal = Buffer operated
+            _device->PEv2.AxesConfig[i] &= ~(PK_AC_INTERNAL_PLANNER); // NOT internal => Buffer operated
             _device->PEv2.param1 = i; // redundant?
             ret = PK_PEv2_AxisConfigurationSet(_device);
             rtapi_print_msg(RTAPI_MSG_DBG, "PE axis %d configured:%d\n", i, ret);
         }        
     }
 
-    // Read pin capabilities
+    // Read and verify digital pin capabilities with HAL configuration
     ret = PK_PinConfigurationGet(_device);
-    rtapi_print_msg(RTAPI_MSG_ERR, "Getting pin info =%d\n", ret);
-    ret = PK_PWMConfigurationGet(_device);
-    rtapi_print_msg(RTAPI_MSG_ERR, "Getting PWM info =%d\n", ret);
+    rtapi_print_msg(RTAPI_MSG_DBG, "Getting pin info =%d\n", ret);
 
-    rtapi_print_msg(RTAPI_MSG_ERR, "Pins 16, type=%d\n", _device->Pins[15].PinFunction);   // 2 PK_PinCap_digitalInput
-    rtapi_print_msg(RTAPI_MSG_ERR, "Pins 17, type=%d\n", _device->Pins[16].PinFunction);   // 4 PK_PinCap_digitalOutput
-    rtapi_print_msg(RTAPI_MSG_ERR, "Pins 18, type=%d\n", _device->Pins[17].PinFunction);   // 0 PK_PinCap_pinRestricted
-    for (int i = 0; i < 6; i++)
-    {
-        rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, Pins %d, type=%d, duty=%d, period=%d\n", i, _device->PWM.PWMpinIDs[i], _device->PWM.PWMenabledChannels[i], _device->PWM.PWMduty[i], _device->PWM.PWMperiod);
-    }
-
-    // Verify digital pin capabilities with HAL configuration
+    // Verify digital pin capabilities
     for (int i = 0; i < NumberOfDigitalPins; i++) {
         int pinNumber = componentInstance->io_input_pin_number[i];
 
         if (pinNumber > 0) {
-            // 0-based pin numbering
             uint8_t pinFunction = _device->Pins[pinNumber - 1].PinFunction;
         
             if (pinFunction == 2) {
@@ -328,7 +318,6 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         pinNumber = componentInstance->io_output_pin_number[i];
 
         if (pinNumber > 0) {
-            // 0-based pin numbering
             uint8_t pinFunction = _device->Pins[pinNumber - 1].PinFunction;
         
             if (pinFunction == 4) {
@@ -338,6 +327,11 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             }
         }
     }
+
+    // Read and verify PWM pin capabilities
+    // TODO
+    //ret = PK_PWMConfigurationGet(_device);
+    //rtapi_print_msg(RTAPI_MSG_ERR, "Getting PWM info =%d\n", ret);
 
     return true;
 }
@@ -423,7 +417,7 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
 }
 
 // ------------------------------------
-// TODO
+// Process output and input digital pins.
 // ------------------------------------
 void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
     for (int i = 0; i < NumberOfDigitalPins; i++) {

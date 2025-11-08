@@ -20,7 +20,7 @@ The drawback, that we consistently need to send unnecessary data. And add potent
 During my tests I did get occasional high cycle times for the user component (I assume due to the hardware). So the robustness of the mechanism is appreciated.
 
 ## Design decision: Parametrization using HAL
-While an userpace component can read from the machine ini file, an RT component cannot.  
+While a userpace component can read from the machine ini file, an RT component cannot.  
 So to keep the configuration consistent for both, both will be configured using the HAL pins and parameters.
 
 Old example:  
@@ -52,5 +52,5 @@ fclose(ini_file_ptr);
 
 ## Relays behavior
 The relay pins are only "in". If we have a failure setting the signal on device side, or we shut down due to E-Stop, the pins will show the wrong state on lcnc side.
-"io" pins are not possible, for example the spindle signal does not support io.
-In my case I prefer to err on the side of caution and allow a mismatch. 
+"io" pins are not always possible, for example the spindle signal does not support io.
+In this case I prefer to err on the side of caution and allow a mismatch. 
