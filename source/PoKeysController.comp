@@ -23,7 +23,6 @@ param rw float axis.#.step_scale [3] "1 machine unit equals x pulses";
 param rw signed io.input_pin_number.# [5] "Digital input pin mapping, index 1 based";
 param rw signed io.output_pin_number.# [5] "Digital output pin mapping, index 1 based";
 param rw signed io.pwm_pin_number.# [6] "PWM channel pin mapping, index 1 based";
-param rw signed io.estop_pin_number = 52 "E-Stop pin mapping, must match with PE set up";
 
 option userspace yes;
 option extra_link_args "-L/usr/lib -lPoKeys";
@@ -39,6 +38,7 @@ author "T.Frei";
 #define InstanceVariable __comp_inst    // Internal variable of linuxCNC component
 
 #define NumberOfAxis 3
+#define EstopPinNumber 51         // 0-based 52  
 #define NumberOfDigitalPins 5     // Applies to both input and output pins. Could be raised as necessary
 #define CycleTimeMs 5.0f          // Target cycle time of uspace component
 #define SharedMemoryKey 57        // Arbitrary number
@@ -236,7 +236,6 @@ void user_mainloop(void) {
 #undef io_open_collector
 #undef io_pwm_pin
 #undef io_pwm_pin_number
-#undef io_estop_pin_number
 #undef buffer_in_motion
 #undef axis_position_feedback
 #undef axis_limit_positive
@@ -285,13 +284,6 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         rtapi_print_msg(RTAPI_MSG_DBG, "PE Reboot:%d\n", ret);
         // In theory we should sleep, but it'l highly unlikely you'll start a motion 1 second after opening LCNC.
         // TOOD or is the device communication down during this time?
-    }
-
-    // Check estop setup
-    ret = PK_PEv2_AdditionalParametersGet(_device);
-    if (_device->PEv2.EmergencyInputPin != componentInstance->io_estop_pin_number - 1) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop pin setup mismatch, PE=%d, Configured=%d\n", _device->PEv2.EmergencyInputPin + 1, componentInstance->io_estop_pin_number);
-        // configurationOk = false; // TODO why pin 62?
     }
     
     // Set up axis configuration
@@ -424,9 +416,8 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
         SetActiveOutputsOff();        
     } else {
 		bool currentEstop = 0 + *componentInstance->machine_estop;
-		     
-        int estopPinNumber = componentInstance->io_estop_pin_number - 1;
-        uint8_t eStopPin = _device->Pins[estopPinNumber].DigitalValueGet;
+
+        uint8_t eStopPin = _device->Pins[EstopPinNumber].DigitalValueGet;
 		rtapi_print_msg(RTAPI_MSG_DBG, "Getting E-Stop:%d\n", eStopPin);
 		
 		if (currentEstop == 1 && eStopPin == 0) {
