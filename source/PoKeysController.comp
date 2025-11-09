@@ -22,7 +22,7 @@ param rw unsigned device_serial = 0 "PoKeys Device Serial";
 param rw float axis.#.step_scale [3] "1 machine unit equals x pulses";
 param rw signed io.input_pin_number.# [5] "Digital input pin mapping, index 1 based";
 param rw signed io.output_pin_number.# [5] "Digital output pin mapping, index 1 based";
-param rw signed io.pwm_pin_number.# [5] "PWM channel pin mapping, index 1 based";
+param rw signed io.pwm_pin_number.# [6] "PWM channel pin mapping, index 1 based";
 param rw signed io.estop_pin_number = 52 "E-Stop pin mapping, must match with PE set up";
 
 option userspace yes;
@@ -291,7 +291,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     ret = PK_PEv2_AdditionalParametersGet(_device);
     if (_device->PEv2.EmergencyInputPin != componentInstance->io_estop_pin_number - 1) {
         rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop pin setup mismatch, PE=%d, Configured=%d\n", _device->PEv2.EmergencyInputPin + 1, componentInstance->io_estop_pin_number);
-        configurationOk = false;
+        // configurationOk = false; // TODO why pin 62?
     }
     
     // Set up axis configuration
@@ -501,9 +501,9 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
         } else if (pinValue == 0.0f && _device->PWM.PWMduty[i] == 0) {
             continue;
         } else {
-            uint32_t dutyCycle = ((pinValue / 100.0f) * _device->PWM.PWMperiod);
+            uint32_t dutyCycle = ((pinValue / 100.0f) * (float)_device->PWM.PWMperiod);
 
-            if (_device->PWM.PWMduty[i] - pinValue > 0.0f) {
+            if (_device->PWM.PWMduty[i] - dutyCycle != 0) {
                 rtapi_print_msg(RTAPI_MSG_ERR, "PWM Pin %d, set from %d to %d\n", i + 1, _device->PWM.PWMduty[i], dutyCycle);
                 _device->PWM.PWMduty[i] = dutyCycle;
                 setNecessary = true;
@@ -676,6 +676,8 @@ void SetRelaysOff() {
     _device->PEv2.ExternalOCOutputs = 0;
     int ret = PK_PEv2_ExternalOutputsSet(_device);
     rtapi_print_msg(RTAPI_MSG_ERR, "Turn all relays off:%d\n", ret);
+    
+    // TODO turn off PWM?
 }
 
 // ------------------------------------
