@@ -471,20 +471,20 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
     {
         float pinValue = *componentInstance->io_pwm_pin[i];
 
-        if (pinValue > 1f) {
+        if (pinValue > 1.0f) {
             rtapi_print_msg(RTAPI_MSG_ERR, "PWM pin %d, exceeds maximum value of 1.0!\n", i + 1);
 
-            if (_device->PWM.PWMduty[i] > 0f) {
+            if (_device->PWM.PWMduty[i] > 0.0f) {
                 // something wrong, let's stop here.
                 _device->PWM.PWMduty[i] = 0;
                 setNecessary = true;
             }
-        } else if (pinValue == 0f && _device->PWM.PWMduty[i] == 0) {
+        } else if (pinValue == 0.0f && _device->PWM.PWMduty[i] == 0) {
             continue;
         } else {
             uint32_t dutyCycle = (pinValue * _device->PWM.PWMperiod);
 
-            if (_device->PWM.PWMduty[i] - pinValue > 0f) {
+            if (_device->PWM.PWMduty[i] - pinValue > 0.0f) {
                 rtapi_print_msg(RTAPI_MSG_ERR, "PWM Pin %d, set from %d to %d\n", i + 1, _device->PWM.PWMduty[i], dutyCycle);
                 _device->PWM.PWMduty[i] = dutyCycle;
                 setNecessary = true;
@@ -493,7 +493,7 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
     }
 
     if (setNecessary) {  
-        ret = PK_PWMUpdate(_device);
+        int ret = PK_PWMUpdate(_device);
         rtapi_print_msg(RTAPI_MSG_ERR, "Update PWM:%d\n", ret);
     }
 }
