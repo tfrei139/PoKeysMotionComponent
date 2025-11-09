@@ -9,7 +9,7 @@ pin in bit io.output_pin.# [5] "Digital output pins";
 pin in bit io.solid_state_relay.# [2] "Solid state relays";
 pin in bit io.relay.# [2] "Relays";
 pin in bit io.open_collector.# [4] "Open collector digital outputs";
-pin in float io.pwm_pin.# [6] "PWM pins, valid values from 0.0 - 1.0";
+pin in float io.pwm_pin.# [6] "PWM pins, valid values from 0.0 - 100.0 percent duty cycle";
 
 pin out float axis.#.position_feedback [3] "Position in machine units";
 pin out bit axis.#.limit_positive [3] "Positive limit switches";
@@ -22,6 +22,7 @@ param rw unsigned device_serial = 0 "PoKeys Device Serial";
 param rw float axis.#.step_scale [3] "1 machine unit equals x pulses";
 param rw signed io.input_pin_number.# [5] "Digital input pin mapping, index 1 based";
 param rw signed io.output_pin_number.# [5] "Digital output pin mapping, index 1 based";
+param rw signed io.pwm_pin_number.# [5] "PWM channel pin mapping, index 1 based";
 param rw signed io.estop_pin_number = 52 "E-Stop pin mapping, must match with PE set up";
 
 option userspace yes;
@@ -31,7 +32,6 @@ license "GPL"; // indicates GPL v2 or later
 author "T.Frei";
 ;;
 #include <PoKeysLib.h>      // For PoKeys communication
-//#include <rtapi_math.h>     // For fabs()
 #include <time.h>           // For clock_gettime()
 #include <unistd.h>         // For struct useconds_t
 
@@ -235,6 +235,7 @@ void user_mainloop(void) {
 #undef io_relay
 #undef io_open_collector
 #undef io_pwm_pin
+#undef io_pwm_pin_number
 #undef io_estop_pin_number
 #undef buffer_in_motion
 #undef axis_position_feedback
@@ -246,7 +247,7 @@ void user_mainloop(void) {
 
 // ------------------------------------
 // Connects to the device. 
-// Returns false if no connection was possible.
+// Returns false if connection was unsuccessful, or the configuration is not matching.
 // ------------------------------------
 bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     if (componentInstance->device_serial == 0) { 
@@ -262,6 +263,8 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     
     // connection 0=USB, 1=ETH, 2=FastUSB
     rtapi_print_msg(RTAPI_MSG_ERR, "CONNECTED, connection type=%d\n", _device->connectionType);   
+
+    bool configurationOk = true;
 
     ReadPulseEngineStatus();
     
@@ -287,7 +290,8 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     // Check estop setup
     ret = PK_PEv2_AdditionalParametersGet(_device);
     if (_device->PEv2.EmergencyInputPin != componentInstance->io_estop_pin_number - 1) {
-        rtapi_print_msg(RTAPI_MSG_DBG, "E-Stop pin setup mismatch, PE=%d, Configured=%d\n", _device->PEv2.EmergencyInputPin + 1, componentInstance->io_estop_pin_number);
+        rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop pin setup mismatch, PE=%d, Configured=%d\n", _device->PEv2.EmergencyInputPin + 1, componentInstance->io_estop_pin_number);
+        configurationOk = false;
     }
     
     // Set up axis configuration
@@ -314,9 +318,10 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             uint8_t pinFunction = _device->Pins[pinNumber - 1].PinFunction;
         
             if (pinFunction == 2) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read ok\n", i, pinNumber);  
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read ok\n", i, pinNumber);
             } else {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read nok, actual: %d\n", i, pinNumber, pinFunction);  
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read nok, actual: %d\n", i, pinNumber, pinFunction);
+                configurationOk = false;
             }
         }
 
@@ -326,23 +331,37 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             uint8_t pinFunction = _device->Pins[pinNumber - 1].PinFunction;
         
             if (pinFunction == 4) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write ok\n", i, pinNumber);  
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write ok\n", i, pinNumber);
             } else {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write nok, actual: %d\n", i, pinNumber, pinFunction);  
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write nok, actual: %d\n", i, pinNumber, pinFunction);
+                configurationOk = false;
             }
         }
     }
 
     // Read PWM pin capabilities
     ret = PK_PWMConfigurationGet(_device);
-    //rtapi_print_msg(RTAPI_MSG_ERR, "Getting PWM info =%d\n", ret);
+    //rtapi_print_msg(RTAPI_MSG_DBG, "Getting PWM info =%d\n", ret);
     for (int i = 0; i < 6; i++)
     {
-        rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, mapped to pin %d, enabled=%d\n", i, _device->PWM.PWMpinIDs[i], _device->PWM.PWMenabledChannels[i]);
-        // TODO fill in a list of valid/enable pwm pins and iterate over that
+        int pinNumber = componentInstance->io_pwm_pin_number[i];
+
+        if (pinNumber > 0) {
+            if (_device->PWM.PWMpinIDs[i] != pinNumber) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, mapped to pin %d, but is actually %d\n", i, pinNumber, _device->PWM.PWMpinIDs[i]);
+                configurationOk = false;
+            }
+
+            if (_device->PWM.PWMenabledChannels[i] == false) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, mapped to pin %d, but is disabled\n", i, pinNumber);
+                configurationOk = false;
+            }
+        }
+        
+        // TODO fill in a list of valid/enabled pwm pins and iterate over that?
     }
 
-    return true;
+    return configurationOk;
 }
 
 // ------------------------------------
@@ -471,8 +490,8 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
     {
         float pinValue = *componentInstance->io_pwm_pin[i];
 
-        if (pinValue > 1.0f) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "PWM pin %d, exceeds maximum value of 1.0!\n", i + 1);
+        if (pinValue < 0.0f || pinValue > 100.0f) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "PWM pin %d, exceeds range of 0.0 - 100.0!\n", i + 1);
 
             if (_device->PWM.PWMduty[i] > 0.0f) {
                 // something wrong, let's stop here.
@@ -482,7 +501,7 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
         } else if (pinValue == 0.0f && _device->PWM.PWMduty[i] == 0) {
             continue;
         } else {
-            uint32_t dutyCycle = (pinValue * _device->PWM.PWMperiod);
+            uint32_t dutyCycle = ((pinValue / 100.0f) * _device->PWM.PWMperiod);
 
             if (_device->PWM.PWMduty[i] - pinValue > 0.0f) {
                 rtapi_print_msg(RTAPI_MSG_ERR, "PWM Pin %d, set from %d to %d\n", i + 1, _device->PWM.PWMduty[i], dutyCycle);
