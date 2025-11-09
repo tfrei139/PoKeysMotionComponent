@@ -77,7 +77,7 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance);
 void ProcessPositions(struct ComponentStruct* componentInstance);
 void ProcessRelays(struct ComponentStruct* componentInstance);
 bool CompareRelayState(bool state, int offset);
-void SetRelaysOff();
+void SetActiveOutputsOff();
 struct timespec* GetStartTime();
 void ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, enum State currentState, enum State nextState);
 const char* GetStateName(enum State state);
@@ -210,7 +210,7 @@ void user_mainloop(void) {
                     break;
                 case SHUTDOWN:
                     SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
-                    SetRelaysOff();
+                    SetActiveOutputsOff();
                     
                     run = false;
                     return;
@@ -421,7 +421,7 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
         *componentInstance->machine_estop = true;
         
         SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE stopped due to ESTOP!");
-        SetRelaysOff();        
+        SetActiveOutputsOff();        
     } else {
 		bool currentEstop = 0 + *componentInstance->machine_estop;
 		     
@@ -439,7 +439,7 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
             
 			*componentInstance->machine_estop = true;
             
-            SetRelaysOff();
+            SetActiveOutputsOff();
 		}
     }     
 }
@@ -484,7 +484,7 @@ void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
 // Process PWM pins.
 // ------------------------------------
 void ProcessPwmPins(struct ComponentStruct* componentInstance) {
-    bool setNecessary = false;    
+    bool setNecessary = false;
 
     for (int i = 0; i < 6; i++)
     {
@@ -670,14 +670,28 @@ inline bool CompareRelayState(bool state, int offset) {
 }
 
 // ------------------------------------
-// Set all relays off.
+// Set all relays and PWM outputs off.
 // ------------------------------------
-void SetRelaysOff() {
-    _device->PEv2.ExternalOCOutputs = 0;
-    int ret = PK_PEv2_ExternalOutputsSet(_device);
-    rtapi_print_msg(RTAPI_MSG_ERR, "Turn all relays off:%d\n", ret);
+void SetActiveOutputsOff() {
+    if (_device->PEv2.ExternalOCOutputs > 0) {
+        _device->PEv2.ExternalOCOutputs = 0;
+        int ret = PK_PEv2_ExternalOutputsSet(_device);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Turn all relays off:%d\n", ret);
+    }
     
-    // TODO turn off PWM?
+    bool setNecessary = false;
+    for (int i = 0; i < 6; i++)
+    {
+        if (_device->PWM.PWMduty[i] > 0) {
+            _device->PWM.PWMduty[i] = 0;
+            setNecessary = true;
+        }
+    }
+
+    if (setNecessary) {  
+        int ret = PK_PWMUpdate(_device);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Turn PWM off:%d\n", ret);
+    }
 }
 
 // ------------------------------------
