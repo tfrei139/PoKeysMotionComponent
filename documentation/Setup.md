@@ -58,11 +58,15 @@ Restart the computer (In theory you can run `udevadm control --reload-rules`, bu
 
 ## Compiling the components
 ```bash
-sh ~git/PoKeysMotionComponent/scripts/compile.sh
+./scripts/compile.sh
 ```
 
 ## Copying and adapting the configuration
 Copy the example configuration from `~/git/PoKeysMotionComponent/configuration` to `~/linuxcnc/configs`.
+or run the script 
+```bash
+./scripts/copy_example.sh
+```
 
 In the "hal" file:
 1. Adapt the serial number `setp PoKeysController.0.device-serial 0`
@@ -91,3 +95,13 @@ net spindle-enable <= spindle.0.on
 net spindle-enable => PoKeysController.0.io.solid-state-relay.0
 ```
 `solid-state-relay.0` stands for SSR1 on the PoKeys.
+
+### Setting up PWM pins
+For each PWM channel/pin you want to use, add the "io.pwm-pin-number.D" parameter.  
+PoKeys puts the 6 PWM pins into channels numbered 0-5. With the pin number I verify that the configurations matches the setup on the device.
+```
+setp PoKeysController.0.io.pwm-pin-number.5 17 
+[...]
+net pwm-value => PoKeysController.0.io.pwm-pin.5
+```
+The "io.pwm-pin.D" accepts a floating point value from 0% to 100% duty cycle.
