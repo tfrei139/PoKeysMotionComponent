@@ -10,7 +10,7 @@ pin in float axis.#.position_command [3] "Commanded position by the motion contr
 pin out float axis.#.last_position [3] "Internal tracking of last commanded position (DEBUG)";
 pin out float axis.#.pulses_leftover [3] "Internal tracking of partial pulses (DEBUG)";
 
-param rw float axis.#.step_scale [3] "1 unit equals x pulses";
+param rw float axis.#.step_scale [3] "1 machine unit equals x pulses";
 param r float axis.#.step_width [3] "1 pulse equals x units (DEBUG)";
 
 function _;
@@ -21,8 +21,8 @@ option extra_cleanup yes;
 license "GPL"; // indicates GPL v2 or later
 author "T.Frei";
 ;;
-#include <rtapi_math.h>
-#include <stdlib.h> // for "abs"
+#include <rtapi_math.h>     // for "fabs"
+#include <stdlib.h>         // for "abs"
 
 #define NumberOfAxis 3
 #define SharedMemoryKey 57       // Arbitrary number

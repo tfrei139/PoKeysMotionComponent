@@ -2,7 +2,7 @@
 LinuxCNC component to use a PoKeysCNC board for motion and simple IO
 
 ### State of the component
-**Experimental**. Tested with 5'000 line gcode file, ~20 minutes run time.
+**Experimental**. Tested with 5'000 line gcode file, ~20 minutes run time, with the given example configuration.
 
 ## Introduction
 This component aims to provide a simple integration of a PoKeysCNC controller into LinuxCNC.  
@@ -20,6 +20,7 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 - IO
     - All relays (example Spindle on/off)
     - Configurable digital input output pins
+    - PWM pins
 
 ### Backlog
 - Enable homing
@@ -34,7 +35,7 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 A walkthrough to set this component up is available here [Setup](documentation/Setup.md)
 
 ## Documentation
-Additional information about the source code can be found here [CodeNotes](documentation/CodeNotes.md).
+Additional information about the source code and design decisions can be found here [CodeNotes](documentation/CodeNotes.md).
 
 ## License
 This project is licensed under the GNU GENERAL PUBLIC LICENSE V2. See [LICENSE](LICENSE).

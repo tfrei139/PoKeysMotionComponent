@@ -1,27 +1,28 @@
 component PoKeysController;
 
-pin out bit machine_estop = false;
-pin in bit machine_is_on = false;
-pin in bit buffer_in_motion = false;
+pin out bit machine_estop = false "Machine is in E-Stop condition";
+pin in bit machine_is_on = false "Machine should be enabled";
+pin in bit buffer_in_motion = false "Motion is being streamed";
 
 pin out bit io.input_pin.# [5] "Digital input pins";
 pin in bit io.output_pin.# [5] "Digital output pins";
 pin in bit io.solid_state_relay.# [2] "Solid state relays";
 pin in bit io.relay.# [2] "Relays";
 pin in bit io.open_collector.# [4] "Open collector digital outputs";
+pin in float io.pwm_pin.# [6] "PWM pins, valid values from 0.0 - 100.0 percent duty cycle";
 
-pin out float axis.#.position_feedback [3];
-pin out bit axis.#.limit_positive [3];
-pin out bit axis.#.limit_negative [3];
-pin in bit axis.#.override_limit [3];
+pin out float axis.#.position_feedback [3] "Position in machine units";
+pin out bit axis.#.limit_positive [3] "Positive limit switches";
+pin out bit axis.#.limit_negative [3] "Negative limit switches";
+pin in bit axis.#.override_limit [3] "Limit switch override. Set per axis, but overrides globally on PoKeys";
 
 param rw signed internal_state = -1 "Current component state";
 param rw unsigned device_serial = 0 "PoKeys Device Serial";
 
-param rw float axis.#.step_scale [3];
+param rw float axis.#.step_scale [3] "1 machine unit equals x pulses";
 param rw signed io.input_pin_number.# [5] "Digital input pin mapping, index 1 based";
 param rw signed io.output_pin_number.# [5] "Digital output pin mapping, index 1 based";
-param rw signed io.estop_pin_number = 52 "E-Stop pin mapping, must match with PE set up";
+param rw signed io.pwm_pin_number.# [6] "PWM channel pin mapping, index 1 based";
 
 option userspace yes;
 option extra_link_args "-L/usr/lib -lPoKeys";
@@ -30,7 +31,6 @@ license "GPL"; // indicates GPL v2 or later
 author "T.Frei";
 ;;
 #include <PoKeysLib.h>      // For PoKeys communication
-#include <rtapi_math.h>     // For fabs()
 #include <time.h>           // For clock_gettime()
 #include <unistd.h>         // For struct useconds_t
 
@@ -38,6 +38,7 @@ author "T.Frei";
 #define InstanceVariable __comp_inst    // Internal variable of linuxCNC component
 
 #define NumberOfAxis 3
+#define EstopPinNumber 51         // 0-based pin 52  
 #define NumberOfDigitalPins 5     // Applies to both input and output pins. Could be raised as necessary
 #define CycleTimeMs 5.0f          // Target cycle time of uspace component
 #define SharedMemoryKey 57        // Arbitrary number
@@ -71,11 +72,12 @@ void SetPulseEngineStatus(enum ePK_PEState state, const char* log);
 void ProcessLimitOverride(struct ComponentStruct* componentInstance);
 void ProcessEStop(struct ComponentStruct* componentInstance);
 void ProcessDigitalPins(struct ComponentStruct* componentInstance);
+void ProcessPwmPins(struct ComponentStruct* componentInstance);
 void ProcessMoveCommand(struct ComponentStruct* componentInstance);
 void ProcessPositions(struct ComponentStruct* componentInstance);
 void ProcessRelays(struct ComponentStruct* componentInstance);
 bool CompareRelayState(bool state, int offset);
-void SetRelaysOff();
+void SetActiveOutputsOff();
 struct timespec* GetStartTime();
 void ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, enum State currentState, enum State nextState);
 const char* GetStateName(enum State state);
@@ -129,6 +131,7 @@ void user_mainloop(void) {
                     ProcessDigitalPins(InstanceVariable);
                     ProcessPositions(InstanceVariable);
                     ProcessRelays(InstanceVariable);
+                    ProcessPwmPins(InstanceVariable);
                     ProcessLimitOverride(InstanceVariable);
 
                     break;
@@ -152,7 +155,8 @@ void user_mainloop(void) {
                     
                     ProcessDigitalPins(InstanceVariable);
                     ProcessPositions(InstanceVariable);
-                    ProcessRelays(InstanceVariable);
+                    ProcessRelays(InstanceVariable);                    
+                    ProcessPwmPins(InstanceVariable);
                     ProcessLimitOverride(InstanceVariable);
                     
                     // Check if motion is commanded
@@ -189,6 +193,7 @@ void user_mainloop(void) {
                     ProcessDigitalPins(InstanceVariable);
                     ProcessPositions(InstanceVariable);
                     ProcessRelays(InstanceVariable);
+                    ProcessPwmPins(InstanceVariable);
                     
                     break;
                 case ESTOP:
@@ -205,7 +210,7 @@ void user_mainloop(void) {
                     break;
                 case SHUTDOWN:
                     SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
-                    SetRelaysOff();
+                    SetActiveOutputsOff();
                     
                     run = false;
                     return;
@@ -229,7 +234,8 @@ void user_mainloop(void) {
 #undef io_solid_state_relay
 #undef io_relay
 #undef io_open_collector
-#undef io_estop_pin_number
+#undef io_pwm_pin
+#undef io_pwm_pin_number
 #undef buffer_in_motion
 #undef axis_position_feedback
 #undef axis_limit_positive
@@ -240,7 +246,7 @@ void user_mainloop(void) {
 
 // ------------------------------------
 // Connects to the device. 
-// Returns false if no connection was possible.
+// Returns false if connection was unsuccessful, or the configuration is not matching.
 // ------------------------------------
 bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     if (componentInstance->device_serial == 0) { 
@@ -256,6 +262,8 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     
     // connection 0=USB, 1=ETH, 2=FastUSB
     rtapi_print_msg(RTAPI_MSG_ERR, "CONNECTED, connection type=%d\n", _device->connectionType);   
+
+    bool configurationOk = true;
 
     ReadPulseEngineStatus();
     
@@ -277,12 +285,6 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         // In theory we should sleep, but it'l highly unlikely you'll start a motion 1 second after opening LCNC.
         // TOOD or is the device communication down during this time?
     }
-
-    // Check estop setup
-    ret = PK_PEv2_AdditionalParametersGet(_device);
-    if (_device->PEv2.EmergencyInputPin != componentInstance->io_estop_pin_number - 1) {
-        rtapi_print_msg(RTAPI_MSG_DBG, "E-Stop pin setup mismatch, PE=%d, Configured=%d\n", _device->PEv2.EmergencyInputPin + 1, componentInstance->io_estop_pin_number);
-    }
     
     // Set up axis configuration
     for (int i = 0; i < NumberOfAxis; i++) {
@@ -301,7 +303,6 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     ret = PK_PinConfigurationGet(_device);
     rtapi_print_msg(RTAPI_MSG_DBG, "Getting pin info =%d\n", ret);
 
-    // Verify digital pin capabilities
     for (int i = 0; i < NumberOfDigitalPins; i++) {
         int pinNumber = componentInstance->io_input_pin_number[i];
 
@@ -309,9 +310,10 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             uint8_t pinFunction = _device->Pins[pinNumber - 1].PinFunction;
         
             if (pinFunction == 2) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read ok\n", i, pinNumber);  
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read ok\n", i, pinNumber);
             } else {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read nok, actual: %d\n", i, pinNumber, pinFunction);  
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read nok, actual: %d\n", i, pinNumber, pinFunction);
+                configurationOk = false;
             }
         }
 
@@ -321,19 +323,37 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             uint8_t pinFunction = _device->Pins[pinNumber - 1].PinFunction;
         
             if (pinFunction == 4) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write ok\n", i, pinNumber);  
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write ok\n", i, pinNumber);
             } else {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write nok, actual: %d\n", i, pinNumber, pinFunction);  
+                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write nok, actual: %d\n", i, pinNumber, pinFunction);
+                configurationOk = false;
             }
         }
     }
 
-    // Read and verify PWM pin capabilities
-    // TODO
-    //ret = PK_PWMConfigurationGet(_device);
-    //rtapi_print_msg(RTAPI_MSG_ERR, "Getting PWM info =%d\n", ret);
+    // Read PWM pin capabilities
+    ret = PK_PWMConfigurationGet(_device);
+    //rtapi_print_msg(RTAPI_MSG_DBG, "Getting PWM info =%d\n", ret);
+    for (int i = 0; i < 6; i++)
+    {
+        int pinNumber = componentInstance->io_pwm_pin_number[i];
 
-    return true;
+        if (pinNumber > 0) {
+            if (_device->PWM.PWMpinIDs[i] != pinNumber) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, mapped to pin %d, but is actually %d\n", i, pinNumber, _device->PWM.PWMpinIDs[i]);
+                configurationOk = false;
+            }
+
+            if (_device->PWM.PWMenabledChannels[i] == false) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, mapped to pin %d, but is disabled\n", i, pinNumber);
+                configurationOk = false;
+            }
+        }
+        
+        // TODO fill in a list of valid/enabled pwm pins and iterate over that?
+    }
+
+    return configurationOk;
 }
 
 // ------------------------------------
@@ -393,12 +413,11 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
         *componentInstance->machine_estop = true;
         
         SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE stopped due to ESTOP!");
-        SetRelaysOff();        
+        SetActiveOutputsOff();        
     } else {
 		bool currentEstop = 0 + *componentInstance->machine_estop;
-		     
-        int estopPinNumber = componentInstance->io_estop_pin_number - 1;
-        uint8_t eStopPin = _device->Pins[estopPinNumber].DigitalValueGet;
+
+        uint8_t eStopPin = _device->Pins[EstopPinNumber].DigitalValueGet;
 		rtapi_print_msg(RTAPI_MSG_DBG, "Getting E-Stop:%d\n", eStopPin);
 		
 		if (currentEstop == 1 && eStopPin == 0) {
@@ -411,7 +430,7 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
             
 			*componentInstance->machine_estop = true;
             
-            SetRelaysOff();
+            SetActiveOutputsOff();
 		}
     }     
 }
@@ -425,8 +444,6 @@ void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
 
         if (pinNumber > 0) {
             uint8_t pinState = *componentInstance->io_output_pin[i];
-
-            // 0-based pin numbering
             _device->Pins[pinNumber - 1].DigitalValueSet = pinState;
         }
     }
@@ -440,7 +457,6 @@ void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
         int pinNumber = componentInstance->io_input_pin_number[i];
 
         if (pinNumber > 0) {
-            // 0-based pin numbering
             uint8_t pinState = _device->Pins[pinNumber - 1].DigitalValueGet;
         
             if (pinState > 0) {
@@ -449,6 +465,43 @@ void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
                 *componentInstance->io_input_pin[i] = false;
             }
         }
+    }
+}
+
+// ------------------------------------
+// Process PWM pins.
+// ------------------------------------
+void ProcessPwmPins(struct ComponentStruct* componentInstance) {
+    bool setNecessary = false;
+
+    for (int i = 0; i < 6; i++)
+    {
+        float pinValue = *componentInstance->io_pwm_pin[i];
+
+        if (pinValue < 0.0f || pinValue > 100.0f) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "PWM pin %d, exceeds range of 0.0 - 100.0!\n", i + 1);
+
+            if (_device->PWM.PWMduty[i] > 0.0f) {
+                // something wrong, let's stop here.
+                _device->PWM.PWMduty[i] = 0;
+                setNecessary = true;
+            }
+        } else if (pinValue == 0.0f && _device->PWM.PWMduty[i] == 0) {
+            continue;
+        } else {
+            uint32_t dutyCycle = ((pinValue / 100.0f) * (float)_device->PWM.PWMperiod);
+
+            if (_device->PWM.PWMduty[i] - dutyCycle != 0) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "PWM Pin %d, set from %d to %d\n", i + 1, _device->PWM.PWMduty[i], dutyCycle);
+                _device->PWM.PWMduty[i] = dutyCycle;
+                setNecessary = true;
+            }
+        }
+    }
+
+    if (setNecessary) {  
+        int ret = PK_PWMUpdate(_device);
+        rtapi_print_msg(RTAPI_MSG_DBG, "Update PWM:%d\n", ret);
     }
 }
 
@@ -572,7 +625,7 @@ void ProcessRelays(struct ComponentStruct* componentInstance) {
     bool oc3on = 0 + *componentInstance->io_open_collector[2];
     bool oc4on = 0 + *componentInstance->io_open_collector[3];
     
-    bool setNecessary = false;    
+    bool setNecessary = false;
     setNecessary |= CompareRelayState(ssr1on, 7);
     setNecessary |= CompareRelayState(ssr2on, 0);
     setNecessary |= CompareRelayState(relay1on, 2);
@@ -605,12 +658,28 @@ inline bool CompareRelayState(bool state, int offset) {
 }
 
 // ------------------------------------
-// Set all relays off.
+// Set all relays and PWM outputs off.
 // ------------------------------------
-void SetRelaysOff() {
-    _device->PEv2.ExternalOCOutputs = 0;
-    int ret = PK_PEv2_ExternalOutputsSet(_device);
-    rtapi_print_msg(RTAPI_MSG_ERR, "Turn all relays off:%d\n", ret);
+void SetActiveOutputsOff() {
+    if (_device->PEv2.ExternalOCOutputs > 0) {
+        _device->PEv2.ExternalOCOutputs = 0;
+        int ret = PK_PEv2_ExternalOutputsSet(_device);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Turn all relays off:%d\n", ret);
+    }
+    
+    bool setNecessary = false;
+    for (int i = 0; i < 6; i++)
+    {
+        if (_device->PWM.PWMduty[i] > 0) {
+            _device->PWM.PWMduty[i] = 0;
+            setNecessary = true;
+        }
+    }
+
+    if (setNecessary) {  
+        int ret = PK_PWMUpdate(_device);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Turn PWM off:%d\n", ret);
+    }
 }
 
 // ------------------------------------
