@@ -444,8 +444,6 @@ void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
 
         if (pinNumber > 0) {
             uint8_t pinState = *componentInstance->io_output_pin[i];
-
-            // 0-based pin numbering
             _device->Pins[pinNumber - 1].DigitalValueSet = pinState;
         }
     }
@@ -459,7 +457,6 @@ void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
         int pinNumber = componentInstance->io_input_pin_number[i];
 
         if (pinNumber > 0) {
-            // 0-based pin numbering
             uint8_t pinState = _device->Pins[pinNumber - 1].DigitalValueGet;
         
             if (pinState > 0) {
@@ -504,7 +501,7 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
 
     if (setNecessary) {  
         int ret = PK_PWMUpdate(_device);
-        rtapi_print_msg(RTAPI_MSG_ERR, "Update PWM:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_DBG, "Update PWM:%d\n", ret);
     }
 }
 
