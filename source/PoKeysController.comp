@@ -18,6 +18,7 @@ pin in bit axis.#.override_limit [3] "Limit switch override. Set per axis, but o
 
 param rw signed internal_state = -1 "Current component state";
 param rw unsigned device_serial = 0 "PoKeys Device Serial";
+param rw signed log_level = 0 "LinuxCNC log level (will not reduce)";
 
 param rw float axis.#.step_scale [3] "1 machine unit equals x pulses";
 param rw signed io.input_pin_number.# [5] "Digital input pin mapping, index 1 based";
@@ -96,6 +97,11 @@ void user_mainloop(void) {
             
             switch (internal_state) {
                 case CREATED:
+                    int currentLevel = rtapi_get_msg_level();
+                    if (log_level > currentLevel) {
+                        rtapi_set_msg_level(log_level);
+                    }
+
                     // Wait until prince HAL awakes us.
                     usleep(1000);
                     overrideCycleTime = true;                    
@@ -261,7 +267,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     }
     
     // connection 0=USB, 1=ETH, 2=FastUSB
-    rtapi_print_msg(RTAPI_MSG_ERR, "CONNECTED, connection type=%d\n", _device->connectionType);   
+    rtapi_print_msg(RTAPI_MSG_INFO, "CONNECTED, connection type=%d\n", _device->connectionType);   
 
     bool configurationOk = true;
 
@@ -278,7 +284,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         _device->PEv2.PulseEngineEnabled = NumberOfAxis;
         _device->PEv2.PulseGeneratorType = 0 | (1<<7);
         ret = PK_PEv2_PulseEngineSetup(_device);
-        rtapi_print_msg(RTAPI_MSG_DBG, "PE Setup:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_WARN, "PE Setup:%d\n", ret);
         
         ret = PK_PEv2_PulseEngineReboot(_device);
         rtapi_print_msg(RTAPI_MSG_DBG, "PE Reboot:%d\n", ret);
@@ -295,7 +301,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             _device->PEv2.AxesConfig[i] &= ~(PK_AC_INTERNAL_PLANNER); // NOT internal => Buffer operated
             _device->PEv2.param1 = i; // redundant?
             ret = PK_PEv2_AxisConfigurationSet(_device);
-            rtapi_print_msg(RTAPI_MSG_DBG, "PE axis %d configured:%d\n", i, ret);
+            rtapi_print_msg(RTAPI_MSG_INFO, "PE axis %d configured:%d\n", i, ret);
         }        
     }
 
@@ -310,7 +316,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             uint8_t pinFunction = _device->Pins[pinNumber - 1].PinFunction;
         
             if (pinFunction == 2) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read ok\n", i, pinNumber);
+                rtapi_print_msg(RTAPI_MSG_INFO, "Pin mapping %d => %d digital read ok\n", i, pinNumber);
             } else {
                 rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read nok, actual: %d\n", i, pinNumber, pinFunction);
                 configurationOk = false;
@@ -323,7 +329,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             uint8_t pinFunction = _device->Pins[pinNumber - 1].PinFunction;
         
             if (pinFunction == 4) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write ok\n", i, pinNumber);
+                rtapi_print_msg(RTAPI_MSG_INFO, "Pin mapping %d => %d digital write ok\n", i, pinNumber);
             } else {
                 rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write nok, actual: %d\n", i, pinNumber, pinFunction);
                 configurationOk = false;
@@ -377,7 +383,7 @@ void SetPulseEngineStatus(enum ePK_PEState state, const char* log) {
     int ret = PK_PEv2_PulseEngineStateSet(_device);
     //PrintElapsedTime(requestStart, "Setting PE STATE");
     
-    rtapi_print_msg(RTAPI_MSG_ERR, "%s:%d\n", log, ret);
+    rtapi_print_msg(RTAPI_MSG_INFO, "%s:%d\n", log, ret);
 }
 
 // ------------------------------------
@@ -394,11 +400,11 @@ void ProcessLimitOverride(struct ComponentStruct* componentInstance) {
     if (limitOverride == true && _device->PEv2.LimitOverride == 0) {
         _device->PEv2.LimitOverrideSetup = 1;
         int ret = PK_PEv2_PulseEngineStateSet(_device);
-        rtapi_print_msg(RTAPI_MSG_ERR, "SET LIMIT OVERRIDE TRUE:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_WARN, "SET LIMIT OVERRIDE TRUE:%d\n", ret);
     } else if (limitOverride == false && _device->PEv2.LimitOverride == 1) {        
         _device->PEv2.LimitOverrideSetup = 0;
         int ret = PK_PEv2_PulseEngineStateSet(_device);
-        rtapi_print_msg(RTAPI_MSG_ERR, "SET LIMIT OVERRIDE FALSE:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_WARN, "SET LIMIT OVERRIDE FALSE:%d\n", ret);
     }
 }
 
@@ -421,7 +427,7 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
 		rtapi_print_msg(RTAPI_MSG_DBG, "Getting E-Stop:%d\n", eStopPin);
 		
 		if (currentEstop == 1 && eStopPin == 0) {
-			rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop is Reset (by pin)\n");
+			rtapi_print_msg(RTAPI_MSG_WARN, "E-Stop is Reset (by pin)\n");
             
 			*componentInstance->machine_estop = false;
             
@@ -492,7 +498,7 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
             uint32_t dutyCycle = ((pinValue / 100.0f) * (float)_device->PWM.PWMperiod);
 
             if (_device->PWM.PWMduty[i] - dutyCycle != 0) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "PWM Pin %d, set from %d to %d\n", i + 1, _device->PWM.PWMduty[i], dutyCycle);
+                rtapi_print_msg(RTAPI_MSG_DBG, "PWM Pin %d, set from %d to %d\n", i + 1, _device->PWM.PWMduty[i], dutyCycle);
                 _device->PWM.PWMduty[i] = dutyCycle;
                 setNecessary = true;
             }
@@ -519,7 +525,7 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
         if (!streamReadable) {
             // if the last cycle was slow (>5ms), we do not wait and almost "immediately" process the next motion state.
             // since the servo thread may not have updated yet, we delay here to get at least one value here.
-            rtapi_print_msg(RTAPI_MSG_ERR, "Potential Buffer underrun? EndOfMotion Packet missing? Try sleep\n");
+            rtapi_print_msg(RTAPI_MSG_WARN, "Potential Buffer underrun? EndOfMotion Packet missing? Try sleep\n");
             usleep(500); // half the time of the servo period (1ms).
             streamReadable = hal_stream_readable(&stream);
         }
@@ -637,7 +643,7 @@ void ProcessRelays(struct ComponentStruct* componentInstance) {
 
     if (setNecessary) {  
         ret = PK_PEv2_ExternalOutputsSet(_device);
-        rtapi_print_msg(RTAPI_MSG_ERR, "Change relays:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_INFO, "Change relays:%d\n", ret);
     }
 }
 
@@ -664,7 +670,7 @@ void SetActiveOutputsOff() {
     if (_device->PEv2.ExternalOCOutputs > 0) {
         _device->PEv2.ExternalOCOutputs = 0;
         int ret = PK_PEv2_ExternalOutputsSet(_device);
-        rtapi_print_msg(RTAPI_MSG_ERR, "Turn all relays off:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_WARN, "Turn all relays off:%d\n", ret);
     }
     
     bool setNecessary = false;
@@ -678,7 +684,7 @@ void SetActiveOutputsOff() {
 
     if (setNecessary) {  
         int ret = PK_PWMUpdate(_device);
-        rtapi_print_msg(RTAPI_MSG_ERR, "Turn PWM off:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_WARN, "Turn PWM off:%d\n", ret);
     }
 }
 
@@ -747,5 +753,5 @@ void PrintElapsedTime(struct timespec* startTime, const char* log) {
     float t_ms = ((float)(endTime.tv_sec - startTime->tv_sec) * 1.0e9 + (float)(endTime.tv_nsec - startTime->tv_nsec)) / 1.0e6;
     free(startTime);
     
-    rtapi_print_msg(RTAPI_MSG_ERR, "%s took %f ms\n", log, t_ms);
+    rtapi_print_msg(RTAPI_MSG_DBG, "%s took %f ms\n", log, t_ms);
 }

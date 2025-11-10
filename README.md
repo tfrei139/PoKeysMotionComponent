@@ -24,7 +24,6 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 
 ### Backlog
 - Enable homing
-- Redo logging (how are userspace components supposed to log?!)
 - Make number of axes configurable in HAL
 - Test/Extend probing
 - Technical: Benchmark component
