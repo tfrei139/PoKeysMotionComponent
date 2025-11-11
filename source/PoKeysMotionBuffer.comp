@@ -44,16 +44,16 @@ EXTRA_SETUP() {
     MotionStream = hal_malloc(sizeof(hal_stream_t));
     int ret = hal_stream_create(MotionStream, comp_id, SharedMemoryKey, BufferDepth, "SSS");
     int exitCode = 0;
-    
+
     if(ret < 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "Failed to create stream: %d\n", ret);
         hal_exit(comp_id);
-        
+
         exitCode = ret;
     } else {
         //rtapi_print_msg(RTAPI_MSG_DBG, "Created stream: %d\n", ret);
     }
-    
+
 #ifdef MeasureTime
     long long endTime = rtapi_get_time();
     long int deltaTime = (long int)(endTime - startTime) / 1000;
@@ -66,7 +66,7 @@ EXTRA_SETUP() {
 // ------------------------------------
 // Cleanup function
 // ------------------------------------
-EXTRA_CLEANUP() { 
+EXTRA_CLEANUP() {
 #ifdef MeasureTime
     long long startTime = rtapi_get_time();
 #endif
@@ -74,12 +74,12 @@ EXTRA_CLEANUP() {
 	//rtapi_print_msg(RTAPI_MSG_DBG, "Buffer cleanup stream\n");
     hal_stream_detach(MotionStream);
     free(MotionStream);
-    
+
 #ifdef MeasureTime
     long long endTime = rtapi_get_time();
     long int deltaTime = (long int)(endTime - startTime) / 1000;
     rtapi_print_msg(RTAPI_MSG_DBG, "BUFFER CLEANUP took: %dus\n", deltaTime);
-#endif   
+#endif
 }
 
 // ------------------------------------
@@ -89,9 +89,9 @@ FUNCTION(_) {
     if (!machine_is_on && IsInit) {
         IsInit = false;
         in_motion = false;
-        return;        
+        return;
     }
-    
+
     if (machine_is_on && !IsInit) {
         for (int i = 0; i < NumberOfAxis; i++) {
             axis_last_position(i) = axis_position_command(i);
@@ -108,30 +108,30 @@ FUNCTION(_) {
             long long startTime = rtapi_get_time();
 #endif
 			union hal_stream_data dataToSend[NumberOfAxis];
-    
+
             for (int i = 0; i < NumberOfAxis; i++) {
                 float differenceInPosition = axis_position_command(i) - axis_last_position(i);
-                
-                if (fabs(differenceInPosition) < axis_step_width(i)) {            
+
+                if (fabs(differenceInPosition) < axis_step_width(i)) {
                     dataToSend[i].s = 0;
                 } else {
 					axis_last_position(i) = axis_position_command(i);
-                
+
                     float pulsesDifference = differenceInPosition * axis_step_scale(i);
                     int32_t pulses = floor(pulsesDifference);
                     axis_pulses_leftover(i) += (pulsesDifference - pulses);
-                    
+
                     if (axis_pulses_leftover(i) >= 1.0f) {
                         pulses++;
                         axis_pulses_leftover(i) -= 1.0f;
                     }
                     else if (axis_pulses_leftover(i) <= -1.0f) {
                         pulses--;
-                        axis_pulses_leftover(i) += 1.0f;                    
+                        axis_pulses_leftover(i) += 1.0f;
                     }
-                    
+
                     int32_t motion = abs(pulses) & 127;
-                                
+
                     if (pulses < 0) {
                         motion |= (1<<7);
                     }
@@ -139,36 +139,36 @@ FUNCTION(_) {
                     dataToSend[i].s = motion;
                 }
             }
-            
+
             int writeRes = hal_stream_write(MotionStream, dataToSend);
-            if (writeRes != 0) {   
+            if (writeRes != 0) {
                 rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun: %d\n", writeRes);
             }
-            
+
             in_motion = true;
-            
+
 #ifdef MeasureTime
             long long endTime = rtapi_get_time();
             long int deltaTime = (long int)(endTime - startTime) / 1000;
-            
+
             if (deltaTime >= 50) {
-				rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER SEND took: %dus\n", deltaTime);
+				rtapi_print_msg(RTAPI_MSG_DBG, "BUFFER SEND took: %dus\n", deltaTime);
 			}
 #endif
-            
-            return;            
+
+            return;
         }
 	}
-    
+
     if (in_motion == true) {
         in_motion = false;
-        
+
         union hal_stream_data dataToSend[NumberOfAxis];
-        dataToSend[0].s = EndOfMotionPacket; 
+        dataToSend[0].s = EndOfMotionPacket;
         int writeRes = hal_stream_write(MotionStream, dataToSend);
 
-        if (writeRes != 0) {   
+        if (writeRes != 0) {
             rtapi_print_msg(RTAPI_MSG_ERR, "End of Motion BUFFER overrun: %d\n", writeRes);
         }
-    }    
+    }
 }

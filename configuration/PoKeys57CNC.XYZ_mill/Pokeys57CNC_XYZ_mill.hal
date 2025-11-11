@@ -6,6 +6,13 @@ loadrt [KINS]KINEMATICS
 loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[KINS]JOINTS num_spindles=[TRAJ]SPINDLES
 
 #*******************
+# Debugging
+#*******************
+
+loadusr -W LogLevel
+setp LogLevel.0.log-level 5
+
+#*******************
 # PoKeys components
 #*******************
 
@@ -16,7 +23,6 @@ setp PoKeysController.0.axis.1.step-scale 800.0
 setp PoKeysController.0.axis.2.step-scale 1600.0
 setp PoKeysController.0.io.input-pin-number.0 19 # Pin 19 is default for probing
 setp PoKeysController.0.io.pwm-pin-number.5 17 # Pin 17 on Channel 5 is 0-10V PWM output
-setp PoKeysController.0.log-level 5
 setp PoKeysController.0.internal-state 0
 
 loadrt PoKeysMotionBuffer
@@ -33,30 +39,24 @@ net buffer-in-motion <= PoKeysMotionBuffer.0.in-motion
 net buffer-in-motion => PoKeysController.0.buffer-in-motion
 
 # Indicators that motion should happen
-net motion-jog-is-active <= motion.jog-is-active 
+net motion-jog-is-active <= motion.jog-is-active
 net motion-jog-is-active => PoKeysMotionBuffer.0.motion-jog-is-active 
 net motion-in-position <= motion.in-position
 net motion-in-position => PoKeysMotionBuffer.0.motion-in-position
 
 #*******************
-# E-Stop
+# E-Stop latch component
 #*******************
 
 loadrt estop_latch
 
-#  ---estop signals---
-# https://forum.linuxcnc.org/24-hal-components/37906-an-e-stop-hal-and-an-overall-how-things-work-series
-# https://www.youtube.com/watch?v=hVkNtq4C1F8&t=1849s
-
-# https://forum.linuxcnc.org/39-pncconf/25862-configuring-estop-latch
-# https://www.forum.linuxcnc.org/47-hal-examples/28096-estop-latch
 net estop-loopout estop-latch.0.ok-out => iocontrol.0.emc-enable-in
 net estop-loopin iocontrol.0.user-enable-out => estop-latch.0.ok-in
 net estop-reset iocontrol.0.user-request-enable => estop-latch.0.reset
 net remote-estop estop-latch.0.fault-in <= PoKeysController.0.machine-estop
 
 #*******************
-# Assign functions
+# Assign RT functions
 #*******************
 
 addf motion-command-handler   servo-thread
@@ -125,7 +125,7 @@ net max-z          =>  joint.2.pos-lim-sw-in
 loadrt scale count=1
 addf scale.0 servo-thread
 # 100 % / 1'000 RPM max
-setp scale.0.gain 0.1 
+setp scale.0.gain 0.1
 
 net spindle-speed-scale <= spindle.0.speed-out-abs
 net spindle-speed-scale => scale.0.in
@@ -147,18 +147,18 @@ net probe-in     =>  motion.probe-input
 
 #  ---HALUI signals---
 
-net axis-select-x =>	halui.axis.x.select	
-net axis-select-x =>	halui.joint.0.select	
+net axis-select-x =>	halui.axis.x.select
+net axis-select-x =>	halui.joint.0.select
 
-net axis-select-y =>	halui.axis.y.select	
+net axis-select-y =>	halui.axis.y.select
 net axis-select-y =>	halui.joint.1.select
 
-net axis-select-z =>	halui.axis.z.select	
+net axis-select-z =>	halui.axis.z.select
 net axis-select-z =>	halui.joint.2.select
 
-net axis-select-a =>	halui.axis.a.select	
-net axis-select-b =>	halui.axis.b.select	
-net axis-select-c =>	halui.axis.c.select	
+net axis-select-a =>	halui.axis.a.select
+net axis-select-b =>	halui.axis.b.select
+net axis-select-c =>	halui.axis.c.select
 
 net axis-selected-x 	<=	halui.axis.x.is-selected
 net axis-selected-y 	<=	halui.axis.y.is-selected

@@ -18,7 +18,6 @@ pin in bit axis.#.override_limit [3] "Limit switch override. Set per axis, but o
 
 param rw signed internal_state = -1 "Current component state";
 param rw unsigned device_serial = 0 "PoKeys Device Serial";
-param rw signed log_level = 0 "LinuxCNC log level (will not reduce)";
 
 param rw float axis.#.step_scale [3] "1 machine unit equals x pulses";
 param rw signed io.input_pin_number.# [5] "Digital input pin mapping, index 1 based";
@@ -94,41 +93,41 @@ void user_mainloop(void) {
             bool overrideCycleTime = false;
             enum State originState = internal_state;
             struct timespec* cycleStart = GetStartTime();
-            
+
             switch (internal_state) {
                 case CREATED:
                     // Wait until prince HAL awakes us.
                     usleep(1000);
-                    overrideCycleTime = true;                    
+                    overrideCycleTime = true;
                     break;
-                    
+
                 case INIT:
                     if (!ConnectPokeysDevice(InstanceVariable)) {
                         run = false; // TODO can we inform lcnc somehow that it will shutdown?
                         return;
                     }
-        
-                    internal_state = IDLE;    
-                    overrideCycleTime = true;             
+
+                    internal_state = IDLE;
+                    overrideCycleTime = true;
                     break;
-                
-                case IDLE:     
+
+                case IDLE:
                     ReadPulseEngineStatus();
                     ProcessEStop(InstanceVariable);
-                    
-                    // Set Estop from PoKeys  
+
+                    // Set Estop from PoKeys
                     if (machine_estop == true) {
                         internal_state = ESTOP;
                         break;
                     }
-                    
-                    // Machine is enabled from LinuxCNC  
+
+                    // Machine is enabled from LinuxCNC
                     if (machine_is_on == true) {
                         SetPulseEngineStatus(PK_PEState_peRUNNING, "Set PE Running from IDLE");
                         internal_state = ENABLED;
                         break;
                     }
-                    
+
                     ProcessDigitalPins(InstanceVariable);
                     ProcessPositions(InstanceVariable);
                     ProcessRelays(InstanceVariable);
@@ -136,30 +135,30 @@ void user_mainloop(void) {
                     ProcessLimitOverride(InstanceVariable);
 
                     break;
-                    
-                case ENABLED:  
+
+                case ENABLED:
                     ReadPulseEngineStatus();
                     ProcessEStop(InstanceVariable);
-                    
-                    // Set Estop from PoKeys  
+
+                    // Set Estop from PoKeys
                     if (machine_estop == true) {
                         internal_state = ESTOP;
                         break;
                     }
-                    
-                    // Machine is disabled from LinuxCNC  
+
+                    // Machine is disabled from LinuxCNC
                     if (machine_is_on == false) {
                         SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
                         internal_state = IDLE;
                         break;
                     }
-                    
+
                     ProcessDigitalPins(InstanceVariable);
                     ProcessPositions(InstanceVariable);
-                    ProcessRelays(InstanceVariable);                    
+                    ProcessRelays(InstanceVariable);
                     ProcessPwmPins(InstanceVariable);
                     ProcessLimitOverride(InstanceVariable);
-                    
+
                     // Check if motion is commanded
                     if (buffer_in_motion == true) {
                         // switching states gives us at most "CycleTimeMs" of buffer.
@@ -172,17 +171,17 @@ void user_mainloop(void) {
                     }
 
                     break;
-                case MOVING:                                
+                case MOVING:
                     ProcessMoveCommand(InstanceVariable);
                     ProcessEStop(InstanceVariable);
-                    
+
                     // Set Estop from PoKeys 
                     if (machine_estop == true) {
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
                         internal_state = ESTOP;
                         break;
                     }
-                    
+
                     // Machine is disabled from LinuxCNC 
                     if (machine_is_on == false) {
                         SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
@@ -190,29 +189,29 @@ void user_mainloop(void) {
                         internal_state = IDLE;
                         break;
                     }
-                    
+
                     ProcessDigitalPins(InstanceVariable);
                     ProcessPositions(InstanceVariable);
                     ProcessRelays(InstanceVariable);
                     ProcessPwmPins(InstanceVariable);
-                    
+
                     break;
                 case ESTOP:
                     ReadPulseEngineStatus();
                     ProcessDigitalPins(InstanceVariable); // necessary to update E-Stop pin
                     ProcessEStop(InstanceVariable);
-                
-                    // Reset Estop from PoKeys                    
+
+                    // Reset Estop from PoKeys
                     if (machine_estop == false) {
                         internal_state = IDLE;
                         break;
                     }
-                    
+
                     break;
                 case SHUTDOWN:
                     SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
                     SetActiveOutputsOff();
-                    
+
                     run = false;
                     return;
             }
@@ -242,8 +241,7 @@ void user_mainloop(void) {
 #undef axis_limit_positive
 #undef axis_limit_negative
 #undef internal_state
-#undef log_level
-#undef device_serial                    
+#undef device_serial
 #undef axis_step_scale
 
 // ------------------------------------
@@ -251,34 +249,29 @@ void user_mainloop(void) {
 // Returns false if connection was unsuccessful, or the configuration is not matching.
 // ------------------------------------
 bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
-	int currentLevel = rtapi_get_msg_level();
-	rtapi_print_msg(RTAPI_MSG_ERR, "Logs=%d,param=%d\n", currentLevel, componentInstance->log_level);   
-	if (componentInstance->log_level > currentLevel) {
-		rtapi_set_msg_level(componentInstance->log_level);
-	}
-
-    if (componentInstance->device_serial == 0) { 
+    if (componentInstance->device_serial == 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "No 'device-serial' set!\n");
-        return false;    
+        return false;
     }
-    
+
     _device = PK_ConnectToDeviceWSerial(componentInstance->device_serial, 2000);
     if (_device == 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to Connect to device '%d'\n", componentInstance->device_serial);
         return false;
     }
-    
+
     // connection 0=USB, 1=ETH, 2=FastUSB
-    rtapi_print_msg(RTAPI_MSG_INFO, "CONNECTED, connection type=%d\n", _device->connectionType);   
+    // TODO log device type!
+    rtapi_print_msg(RTAPI_MSG_INFO, "CONNECTED, connection type=%d\n", _device->connectionType);
 
     bool configurationOk = true;
 
     ReadPulseEngineStatus();
-    
+
     if (_device->PEv2.PulseEngineState != PK_PEState_peSTOPPED) {
         SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE stopped on connect(!)");
     }
-    
+
     int ret;
     // Check basic PE setup.
     // 0=Use external pulse generator and 1<<7=IO (PoKeysCNCaddon)
@@ -287,24 +280,24 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         _device->PEv2.PulseGeneratorType = 0 | (1<<7);
         ret = PK_PEv2_PulseEngineSetup(_device);
         rtapi_print_msg(RTAPI_MSG_WARN, "PE Setup:%d\n", ret);
-        
+
         ret = PK_PEv2_PulseEngineReboot(_device);
         rtapi_print_msg(RTAPI_MSG_DBG, "PE Reboot:%d\n", ret);
         // In theory we should sleep, but it'l highly unlikely you'll start a motion 1 second after opening LCNC.
         // TOOD or is the device communication down during this time?
     }
-    
+
     // Set up axis configuration
     for (int i = 0; i < NumberOfAxis; i++) {
         _device->PEv2.param1 = i;
         ret = PK_PEv2_AxisConfigurationGet(_device);
-        
+
         if (_device->PEv2.AxesConfig[i] & (PK_AC_INTERNAL_PLANNER)) {
             _device->PEv2.AxesConfig[i] &= ~(PK_AC_INTERNAL_PLANNER); // NOT internal => Buffer operated
             _device->PEv2.param1 = i; // redundant?
             ret = PK_PEv2_AxisConfigurationSet(_device);
             rtapi_print_msg(RTAPI_MSG_INFO, "PE axis %d configured:%d\n", i, ret);
-        }        
+        }
     }
 
     // Read and verify digital pin capabilities with HAL configuration
@@ -316,7 +309,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
 
         if (pinNumber > 0) {
             uint8_t pinFunction = _device->Pins[pinNumber - 1].PinFunction;
-        
+
             if (pinFunction == 2) {
                 rtapi_print_msg(RTAPI_MSG_INFO, "Pin mapping %d => %d digital read ok\n", i, pinNumber);
             } else {
@@ -329,7 +322,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
 
         if (pinNumber > 0) {
             uint8_t pinFunction = _device->Pins[pinNumber - 1].PinFunction;
-        
+
             if (pinFunction == 4) {
                 rtapi_print_msg(RTAPI_MSG_INFO, "Pin mapping %d => %d digital write ok\n", i, pinNumber);
             } else {
@@ -357,7 +350,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
                 configurationOk = false;
             }
         }
-        
+
         // TODO fill in a list of valid/enabled pwm pins and iterate over that?
     }
 
@@ -380,11 +373,11 @@ void ReadPulseEngineStatus() {
 // ------------------------------------
 void SetPulseEngineStatus(enum ePK_PEState state, const char* log) {
     _device->PEv2.PulseEngineStateSetup = state;
-    
+
     //struct timespec* requestStart = GetStartTime();
     int ret = PK_PEv2_PulseEngineStateSet(_device);
     //PrintElapsedTime(requestStart, "Setting PE STATE");
-    
+
     rtapi_print_msg(RTAPI_MSG_INFO, "%s:%d\n", log, ret);
 }
 
@@ -394,16 +387,16 @@ void SetPulseEngineStatus(enum ePK_PEState state, const char* log) {
 // ------------------------------------
 void ProcessLimitOverride(struct ComponentStruct* componentInstance) {
     bool limitOverride = false;
-    
+
     for (int i = 0; i < NumberOfAxis; i++) {
         limitOverride |= *componentInstance->axis_override_limit[i];
     }
-    
+
     if (limitOverride == true && _device->PEv2.LimitOverride == 0) {
         _device->PEv2.LimitOverrideSetup = 1;
         int ret = PK_PEv2_PulseEngineStateSet(_device);
         rtapi_print_msg(RTAPI_MSG_WARN, "SET LIMIT OVERRIDE TRUE:%d\n", ret);
-    } else if (limitOverride == false && _device->PEv2.LimitOverride == 1) {        
+    } else if (limitOverride == false && _device->PEv2.LimitOverride == 1) {
         _device->PEv2.LimitOverrideSetup = 0;
         int ret = PK_PEv2_PulseEngineStateSet(_device);
         rtapi_print_msg(RTAPI_MSG_WARN, "SET LIMIT OVERRIDE FALSE:%d\n", ret);
@@ -417,9 +410,9 @@ void ProcessLimitOverride(struct ComponentStruct* componentInstance) {
 void ProcessEStop(struct ComponentStruct* componentInstance) {
     if (_device->PEv2.PulseEngineState == PK_PEState_peSTOP_EMERGENCY) {
         rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop due to PulseEngine\n");
-        
+
         *componentInstance->machine_estop = true;
-        
+
         SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE stopped due to ESTOP!");
         SetActiveOutputsOff();        
     } else {
@@ -427,20 +420,20 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
 
         uint8_t eStopPin = _device->Pins[EstopPinNumber].DigitalValueGet;
 		rtapi_print_msg(RTAPI_MSG_DBG, "Getting E-Stop:%d\n", eStopPin);
-		
+
 		if (currentEstop == 1 && eStopPin == 0) {
 			rtapi_print_msg(RTAPI_MSG_WARN, "E-Stop is Reset (by pin)\n");
-            
+
 			*componentInstance->machine_estop = false;
-            
+
 		} else if (currentEstop == 0 && eStopPin > 0) {
 			rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop due to pin!\n");
-            
+
 			*componentInstance->machine_estop = true;
-            
+
             SetActiveOutputsOff();
 		}
-    }     
+    }
 }
 
 // ------------------------------------
@@ -455,7 +448,7 @@ void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
             _device->Pins[pinNumber - 1].DigitalValueSet = pinState;
         }
     }
-    
+
     //struct timespec* requestIoStart = GetStartTime();
     int ret = PK_DigitalIOSetGet(_device);
     //PrintElapsedTime(requestIoStart, "Update all digital Pins");
@@ -466,7 +459,7 @@ void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
 
         if (pinNumber > 0) {
             uint8_t pinState = _device->Pins[pinNumber - 1].DigitalValueGet;
-        
+
             if (pinState > 0) {
                 *componentInstance->io_input_pin[i] = true;
             } else {
@@ -507,7 +500,7 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
         }
     }
 
-    if (setNecessary) {  
+    if (setNecessary) {
         int ret = PK_PWMUpdate(_device);
         rtapi_print_msg(RTAPI_MSG_DBG, "Update PWM:%d\n", ret);
     }
@@ -519,7 +512,7 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
 void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
     hal_stream_t stream;
     int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, "SSS");
-    
+
     if (ret >= 0) {
 
         bool streamReadable = hal_stream_readable(&stream);
@@ -535,64 +528,64 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
         if (streamReadable) {
             _device->PEv2.motionBufferEntriesAccepted = 0;
             _device->PEv2.newMotionBufferEntries = 0;
-            
+
             int motionEntries = 0;
-            
+
             //struct timespec* streamStart = GetStartTime();
             do
             {
                 union hal_stream_data dataToReceive[NumberOfAxis];
-                
+
                 ret = hal_stream_read(&stream, dataToReceive, NULL);
-                
+
                 if (ret != 0) {
                     rtapi_print_msg(RTAPI_MSG_ERR, "Error reading stream:%d\n", ret);
                     continue;
                 }
-                
+
                 if (dataToReceive[0].s == EndOfMotionPacket) {
                     rtapi_print_msg(RTAPI_MSG_DBG, "End of motion going to ENABLED state!\n");
                     componentInstance->internal_state = ENABLED;
                     break;
-                }                
+                }
 
                 for (int i = 0; i < NumberOfAxis; i++) {
                     uint8_t motion = dataToReceive[i].s;
                     //rtapi_print_msg(RTAPI_MSG_ERR, "%d,", motion);
-                    _device->PEv2.MotionBuffer[(motionEntries * NumberOfAxis) + i] = motion; 
+                    _device->PEv2.MotionBuffer[(motionEntries * NumberOfAxis) + i] = motion;
                 }
-                
+
                 //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
-                
+
                 motionEntries++;
-                
+
                 streamReadable = hal_stream_readable(&stream);
-                
+
                 // floor(56 bytes / number of axes enabled) = floor(56 / 3) = 18 max allowable packet size
                 if (streamReadable == false || motionEntries == 18) {
                     _device->PEv2.newMotionBufferEntries = motionEntries;
-                    
+
                     //struct timespec* requestStart = GetStartTime();
                     ret = PK_PEv2_BufferFill(_device);
                     //PrintElapsedTime(requestStart, "BufferFill");
-            
+
                     if (_device->PEv2.motionBufferEntriesAccepted != motionEntries) {
                         // TODO handle if not all buffer entries are accepted
                         rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes NOT ALL BUFFER ENTRIES ACCEPTED (%d, accepted %d)%d\n", motionEntries, _device->PEv2.motionBufferEntriesAccepted, ret);
                     }
-                    
+
                     motionEntries = 0;
                     //rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes (%d, accepted %d), Move commanded:%d\n", motionEntries, _device->PEv2.motionBufferEntriesAccepted, ret);
                 }
             }
             while (streamReadable);
-                
+
             //PrintElapsedTime(streamStart, "StreamRead");
         } else {
             rtapi_print_msg(RTAPI_MSG_ERR, "Buffer underrun? EndOfMotion Packet missing? Going to ENABLED state!\n");
             componentInstance->internal_state = ENABLED;
         }
-        
+
         hal_stream_detach(&stream);
     } else {
         rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error=%d\n", ret);
@@ -605,13 +598,13 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 void ProcessPositions(struct ComponentStruct* componentInstance) {
     for (int i = 0; i < NumberOfAxis; i++) {
         *componentInstance->axis_position_feedback[i] = ((float)_device->PEv2.CurrentPosition[i]) / ((float)componentInstance->axis_step_scale[i]);
-        
+
         //rtapi_print_msg(RTAPI_MSG_ERR, "%d: %fmm, ", i, *componentInstance->axis_position_feedback[i]);
-        
+
         *componentInstance->axis_limit_positive[i] = (_device->PEv2.LimitStatusP >> i) & 0x01;
         *componentInstance->axis_limit_negative[i] = (_device->PEv2.LimitStatusN >> i) & 0x01;
     }
-    
+
     //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
 }
 
@@ -623,7 +616,7 @@ void ProcessRelays(struct ComponentStruct* componentInstance) {
     int ret = PK_PEv2_ExternalOutputsGet(_device);
     //PrintElapsedTime(requestStart, "GetExternalOutputs");
     //rtapi_print_msg(RTAPI_MSG_DBG, "Getting Relay status:%d, %d\n", ret, _device->PEv2.ExternalOCOutputs);
-    
+
     bool ssr1on = 0 + *componentInstance->io_solid_state_relay[0];
     bool ssr2on = 0 + *componentInstance->io_solid_state_relay[1];
     bool relay1on = 0 + *componentInstance->io_relay[0];
@@ -632,7 +625,7 @@ void ProcessRelays(struct ComponentStruct* componentInstance) {
     bool oc2on = 0 + *componentInstance->io_open_collector[1];
     bool oc3on = 0 + *componentInstance->io_open_collector[2];
     bool oc4on = 0 + *componentInstance->io_open_collector[3];
-    
+
     bool setNecessary = false;
     setNecessary |= CompareRelayState(ssr1on, 7);
     setNecessary |= CompareRelayState(ssr2on, 0);
@@ -643,7 +636,7 @@ void ProcessRelays(struct ComponentStruct* componentInstance) {
     setNecessary |= CompareRelayState(oc3on, 5);
     setNecessary |= CompareRelayState(oc4on, 6);
 
-    if (setNecessary) {  
+    if (setNecessary) {
         ret = PK_PEv2_ExternalOutputsSet(_device);
         rtapi_print_msg(RTAPI_MSG_INFO, "Change relays:%d\n", ret);
     }
@@ -654,7 +647,7 @@ void ProcessRelays(struct ComponentStruct* componentInstance) {
 // On Pokeys57CNC the outputs are all accessed using ExternalOCOutputs! 0=SSR2, 7=SSR1, etc. See protocol definition.
 // ------------------------------------
 inline bool CompareRelayState(bool state, int offset) {
-    if (state == true && ((_device->PEv2.ExternalOCOutputs >> offset) & 0x01) == 0) {  
+    if (state == true && ((_device->PEv2.ExternalOCOutputs >> offset) & 0x01) == 0) {
         _device->PEv2.ExternalOCOutputs |= (1 << offset);
         return true;
     } else if (state == false && ((_device->PEv2.ExternalOCOutputs >> offset) & 0x01) == 1) {
@@ -674,7 +667,7 @@ void SetActiveOutputsOff() {
         int ret = PK_PEv2_ExternalOutputsSet(_device);
         rtapi_print_msg(RTAPI_MSG_WARN, "Turn all relays off:%d\n", ret);
     }
-    
+
     bool setNecessary = false;
     for (int i = 0; i < 6; i++)
     {
@@ -697,7 +690,7 @@ struct timespec* GetStartTime() {
     struct timespec* timeStamp;
     timeStamp = malloc(sizeof(struct timespec));
     clock_gettime(CLOCK_REALTIME, timeStamp);
-    
+
     return timeStamp;
 }
 
@@ -709,9 +702,9 @@ void ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum 
     clock_gettime(CLOCK_REALTIME, &cycleEnd);
     float t_ms = ((float)(cycleEnd.tv_sec - cycleStart->tv_sec) * 1.0e9 + (float)(cycleEnd.tv_nsec - cycleStart->tv_nsec)) / 1.0e6;
     free(cycleStart);
-    
+
     rtapi_print_msg(RTAPI_MSG_DBG, "Time elapsed %f ms\n", t_ms);
-    
+
     if (!overrideCycleTime) {
         if (t_ms <= CycleTimeMs) {
             useconds_t sleepTimeUs = (CycleTimeMs - t_ms) * 1000;
@@ -719,14 +712,14 @@ void ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum 
         } else {
             const char* currentStateName = GetStateName(currentState);
             const char* nextStateName = GetStateName(nextState);
-            
+
             if (t_ms <= CycleTimeMs + 3.0) {
                 rtapi_print_msg(RTAPI_MSG_WARN, "Cycle greater than %fms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
             } else {
                 rtapi_print_msg(RTAPI_MSG_ERR, "Cycle greater than %f!ms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
             }
         }
-    }   
+    }
 }
 
 // ------------------------------------
@@ -754,6 +747,6 @@ void PrintElapsedTime(struct timespec* startTime, const char* log) {
     clock_gettime(CLOCK_REALTIME, &endTime);
     float t_ms = ((float)(endTime.tv_sec - startTime->tv_sec) * 1.0e9 + (float)(endTime.tv_nsec - startTime->tv_nsec)) / 1.0e6;
     free(startTime);
-    
+
     rtapi_print_msg(RTAPI_MSG_DBG, "%s took %f ms\n", log, t_ms);
 }
