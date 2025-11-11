@@ -97,11 +97,6 @@ void user_mainloop(void) {
             
             switch (internal_state) {
                 case CREATED:
-                    int currentLevel = rtapi_get_msg_level();
-                    if (log_level > currentLevel) {
-                        rtapi_set_msg_level(log_level);
-                    }
-
                     // Wait until prince HAL awakes us.
                     usleep(1000);
                     overrideCycleTime = true;                    
@@ -247,6 +242,7 @@ void user_mainloop(void) {
 #undef axis_limit_positive
 #undef axis_limit_negative
 #undef internal_state
+#undef log_level
 #undef device_serial                    
 #undef axis_step_scale
 
@@ -255,6 +251,12 @@ void user_mainloop(void) {
 // Returns false if connection was unsuccessful, or the configuration is not matching.
 // ------------------------------------
 bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
+	int currentLevel = rtapi_get_msg_level();
+	rtapi_print_msg(RTAPI_MSG_ERR, "Logs=%d,param=%d\n", currentLevel, componentInstance->log_level);   
+	if (componentInstance->log_level > currentLevel) {
+		rtapi_set_msg_level(componentInstance->log_level);
+	}
+
     if (componentInstance->device_serial == 0) { 
         rtapi_print_msg(RTAPI_MSG_ERR, "No 'device-serial' set!\n");
         return false;    

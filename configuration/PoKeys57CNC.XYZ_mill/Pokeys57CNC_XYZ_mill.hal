@@ -16,8 +16,8 @@ setp PoKeysController.0.axis.1.step-scale 800.0
 setp PoKeysController.0.axis.2.step-scale 1600.0
 setp PoKeysController.0.io.input-pin-number.0 19 # Pin 19 is default for probing
 setp PoKeysController.0.io.pwm-pin-number.5 17 # Pin 17 on Channel 5 is 0-10V PWM output
-setp PoKeysController.0.internal-state 0
 setp PoKeysController.0.log-level 5
+setp PoKeysController.0.internal-state 0
 
 loadrt PoKeysMotionBuffer
 setp PoKeysMotionBuffer.0.axis.0.step-scale 800.0
