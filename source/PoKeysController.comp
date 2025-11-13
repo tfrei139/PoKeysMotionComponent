@@ -245,7 +245,7 @@ void user_mainloop(void) {
 #undef axis_step_scale
 
 // ------------------------------------
-// Connects to the device. 
+// Connects to the device.
 // Returns false if connection was unsuccessful, or the configuration is not matching.
 // ------------------------------------
 bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
@@ -260,9 +260,21 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         return false;
     }
 
-    // connection 0=USB, 1=ETH, 2=FastUSB
-    // TODO log device type!
-    rtapi_print_msg(RTAPI_MSG_INFO, "CONNECTED, connection type=%d\n", _device->connectionType);
+    switch (_device->DeviceData.DeviceTypeID)
+    {
+        case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNC:
+        case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNCpro4x25:
+            rtapi_print_msg(RTAPI_MSG_INFO, "CONNECTED.\n");
+            break;
+        default:
+            rtapi_print_msg(RTAPI_MSG_WARN, "CONNECTED. Unsupported device type: %d\n", _device->DeviceData.DeviceTypeID);
+            break;
+    }
+
+    if (_device->connectionType == 0) {
+        // connection 0=USB, 1=ETH, 2=FastUSB
+        rtapi_print_msg(RTAPI_MSG_WARN, "Connection type is standard USB mode. Enable FastUSB!\n", _device->connectionType);
+    }
 
     bool configurationOk = true;
 
