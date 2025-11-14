@@ -152,7 +152,7 @@ FUNCTION(_) {
             long int deltaTime = (long int)(endTime - startTime) / 1000;
 
             if (deltaTime >= 50) {
-				rtapi_print_msg(RTAPI_MSG_DBG, "BUFFER SEND took: %dus\n", deltaTime);
+				rtapi_print_msg(RTAPI_MSG_WARN, "BUFFER SEND took: %dus\n", deltaTime);
 			}
 #endif
 
