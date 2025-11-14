@@ -10,12 +10,12 @@ loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD servo_period_nsec=[EM
 #*******************
 
 loadusr -W PoKeysController
-setp PoKeysController.0.device-serial 0 # Set your device serial here
+# setp PoKeysController.0.log-level 4 # 0..5 = none, error, warning, info, debug, all
+setp PoKeysController.0.device-serial 40760
 setp PoKeysController.0.axis.0.step-scale 800.0
 setp PoKeysController.0.axis.1.step-scale 800.0
 setp PoKeysController.0.axis.2.step-scale 1600.0
 setp PoKeysController.0.io.input-pin-number.0 19 # Pin 19 is default for probing
-setp PoKeysController.0.io.pwm-pin-number.5 17 # Pin 17 on Channel 5 is 0-10V PWM output
 setp PoKeysController.0.internal-state 0
 
 loadrt PoKeysMotionBuffer
@@ -114,16 +114,6 @@ net max-z          =>  joint.2.pos-lim-sw-in
 #*******************
 # SPINDLE
 #*******************
-
-loadrt scale count=1
-addf scale.0 servo-thread
-# 100 % / 1'000 RPM max
-setp scale.0.gain 0.1
-
-net spindle-speed-scale <= spindle.0.speed-out-abs
-net spindle-speed-scale => scale.0.in
-net spindle-speed-pwm <= scale.0.out
-net spindle-speed-pwm => PoKeysController.0.io.pwm-pin.5
 
 net spindle-enable <= spindle.0.on
 net spindle-enable => PoKeysController.0.io.solid-state-relay.0

@@ -1,8 +1,10 @@
 ### Pokeys57CNC_XYZ_mill	
 
+**Configuration specific for original machine!**
+
 This configuration drives a 3-axis mill using a Pokeys57CNC.  
 Currently configured to support
  * 3 Axis
- * Spindle on/off and speed control (with 0-10V VFD)
+ * Spindle on/off
  * Probe IO
  * E-Stop

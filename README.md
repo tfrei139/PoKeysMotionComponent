@@ -29,7 +29,7 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 - Technical: Benchmark component
 - Technical: convert to `C` component
 - Allow reading encoders for jogging
-- Provide example configurations
+- Provide more example configurations
 
 ## Setup
 A walkthrough to set this component up is available here [Setup](documentation/Setup.md)
