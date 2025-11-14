@@ -12,6 +12,7 @@ pin out float axis.#.pulses_leftover [3] "Internal tracking of partial pulses (D
 
 param rw float axis.#.step_scale [3] "1 machine unit equals x pulses";
 param r float axis.#.step_width [3] "1 pulse equals x units (DEBUG)";
+param r signed log_level = 5 "log level (DEBUG)";
 
 function _;
 option userspace no;
@@ -37,6 +38,10 @@ bool IsInit = false;
 // Setup function
 // ------------------------------------
 EXTRA_SETUP() {
+    if (log_level > -1) {
+        rtapi_set_msg_level(log_level);
+    }
+
 #ifdef MeasureTime
     long long startTime = rtapi_get_time();
 #endif
@@ -89,6 +94,7 @@ FUNCTION(_) {
     if (!machine_is_on && IsInit) {
         IsInit = false;
         in_motion = false;
+        rtapi_print_msg(RTAPI_MSG_DBG, "Uninitialize\n");
         return;
     }
 
@@ -99,6 +105,7 @@ FUNCTION(_) {
             axis_step_width(i) = 1 / fabs(axis_step_scale(i));
         }
         IsInit = true;
+        rtapi_print_msg(RTAPI_MSG_DBG, "Initialized\n");
         return;
     }
 
