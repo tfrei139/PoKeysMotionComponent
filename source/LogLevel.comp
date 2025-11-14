@@ -1,15 +1,22 @@
 component LogLevel "Helper component to set the log level.";
-param rw signed log_level = 0 "LinuxCNC rtapi log level";
+pin out signed current_log_level = 0 "LinuxCNC rtapi log level";
+param rw signed log_level = -1 "LinuxCNC rtapi log level";
 option userspace yes;
 license "GPL"; // indicates GPL v2 or later
 ;;
-// ------------------------------------
-// Main Loop
-// ------------------------------------
+#include <unistd.h>
+
 void user_mainloop(void) {
-    int currentLevel = rtapi_get_msg_level();
-	// rtapi_print_msg(RTAPI_MSG_ERR, "Log level current=%d, to be set=%d\n", currentLevel, log_level);
-	if (log_level != currentLevel) {
-		rtapi_set_msg_level(log_level);
+rtapi_set_msg_level(5);
+    FOR_ALL_INSTS() {
+		while (log_level < 0) {
+			usleep(100);
+		}
+		
+		current_log_level = rtapi_get_msg_level();
+		if (log_level != current_log_level) {
+			rtapi_print_msg(RTAPI_MSG_ERR, "Log level current=%d, to be set=%d\n", current_log_level, log_level);
+			rtapi_set_msg_level(log_level);
+		}
 	}
 }

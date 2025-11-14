@@ -249,6 +249,8 @@ void user_mainloop(void) {
 // Returns false if connection was unsuccessful, or the configuration is not matching.
 // ------------------------------------
 bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
+    rtapi_set_msg_level(5); // TODO Debug Param
+    
     if (componentInstance->device_serial == 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "No 'device-serial' set!\n");
         return false;
@@ -262,8 +264,10 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
 
     switch (_device->DeviceData.DeviceTypeID)
     {
-        case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNC:
-        case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNCpro4x25:
+        //case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNC:
+        //case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNCpro4x25:
+        case 32:
+        case 33:
             rtapi_print_msg(RTAPI_MSG_INFO, "CONNECTED.\n");
             break;
         default:
