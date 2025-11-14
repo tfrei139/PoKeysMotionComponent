@@ -17,6 +17,7 @@ setp LogLevel.0.log-level 5
 #*******************
 
 loadusr -W PoKeysController
+setp PoKeysController.0.log-level 5 # 5 = debug
 setp PoKeysController.0.device-serial 40760
 setp PoKeysController.0.axis.0.step-scale 800.0
 setp PoKeysController.0.axis.1.step-scale 800.0

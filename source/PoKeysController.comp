@@ -18,6 +18,7 @@ pin in bit axis.#.override_limit [3] "Limit switch override. Set per axis, but o
 
 param rw signed internal_state = -1 "Current component state";
 param rw unsigned device_serial = 0 "PoKeys Device Serial";
+param rw signed log_level = -1 "log level (DEBUG)";
 
 param rw float axis.#.step_scale [3] "1 machine unit equals x pulses";
 param rw signed io.input_pin_number.# [5] "Digital input pin mapping, index 1 based";
@@ -242,6 +243,7 @@ void user_mainloop(void) {
 #undef axis_limit_negative
 #undef internal_state
 #undef device_serial
+#undef log_level
 #undef axis_step_scale
 
 // ------------------------------------
@@ -249,8 +251,10 @@ void user_mainloop(void) {
 // Returns false if connection was unsuccessful, or the configuration is not matching.
 // ------------------------------------
 bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
-    rtapi_set_msg_level(5); // TODO Debug Param
-    
+    if (componentInstance->log_level > -1) {
+        rtapi_set_msg_level(componentInstance->log_level);
+    }
+
     if (componentInstance->device_serial == 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "No 'device-serial' set!\n");
         return false;
@@ -262,7 +266,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         return false;
     }
 
-    switch (_device->DeviceData.DeviceTypeID)
+    switch (_device->DeviceData.DeviceType)
     {
         //case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNC:
         //case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNCpro4x25:
@@ -271,7 +275,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             rtapi_print_msg(RTAPI_MSG_INFO, "CONNECTED.\n");
             break;
         default:
-            rtapi_print_msg(RTAPI_MSG_WARN, "CONNECTED. Unsupported device type: %d\n", _device->DeviceData.DeviceTypeID);
+            rtapi_print_msg(RTAPI_MSG_WARN, "CONNECTED. Unsupported device type: %d\n", _device->DeviceData.DeviceType);
             break;
     }
 
