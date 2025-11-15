@@ -1,6 +1,0 @@
-2025-11-15 18:04:37,447 - Gmoccapy.QTVCP.QT_ISTAT - WARNING - INI Parsing Error, No DEFAULT_SPINDLE_0_SPEED Entry in DISPLAY, Using: 200
-2025-11-15 18:04:37,447 - Gmoccapy.QTVCP.QT_ISTAT - WARNING - INI Parsing Error, No MIN_SPINDLE_0_SPEED Entry in DISPLAY, Using: 100
-2025-11-15 18:04:37,447 - Gmoccapy.QTVCP.QT_ISTAT - WARNING - INI Parsing Error, No MAX_SPINDLE_0_SPEED Entry in DISPLAY, Using: 2500
-2025-11-15 18:04:37,447 - Gmoccapy.QTVCP.QT_ISTAT - WARNING - INI Parsing Error, No MAX_SPINDLE_0_OVERRIDE Entry in DISPLAY, Using: 1
-2025-11-15 18:04:37,447 - Gmoccapy.QTVCP.QT_ISTAT - WARNING - INI Parsing Error, No MIN_SPINDLE_0_OVERRIDE Entry in DISPLAY, Using: 0.5
-2025-11-15 18:04:39,438 - Gmoccapy - WARNING - No virtual keyboard installed, we checked for <onboard>. Try 'sudo apt-get install onboard'.
