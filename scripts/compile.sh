@@ -4,3 +4,4 @@ scriptDir=$(dirname "$0")
 
 sudo halcompile --install $scriptDir/../source/PoKeysController.comp
 sudo halcompile --install $scriptDir/../source/PoKeysMotionBuffer.comp
+sudo halcompile --install $scriptDir/../source/PoKeysHoming.comp
