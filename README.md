@@ -1,5 +1,5 @@
 # PoKeysMotionComponent
-LinuxCNC component to use a PoKeysCNC board for motion and simple IO
+LinuxCNC component to use a PoKeys57CNC board for motion and simple IO
 
 ### State of the component
 **Experimental**. Tested with 5'000 line gcode file, ~20 minutes run time, with the given example configuration.
@@ -26,6 +26,7 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 - Enable homing
 - Make number of axes configurable in HAL
 - Test/Extend probing
+- Soft limits
 - Technical: Benchmark component
 - Technical: convert to `C` component
 - Allow reading encoders for jogging
