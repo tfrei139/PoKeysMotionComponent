@@ -1,0 +1,4887 @@
+LINUXCNC - 2.9.4
+Machine configuration directory is '/home/keller/linuxcnc/configs/PoKeys57CNC.XYZ_mill'
+Machine configuration file is 'Pokeys57CNC_XYZ_mill.ini'
+Starting LinuxCNC...
+linuxcnc TPMOD=tpmod HOMEMOD=homemod EMCMOT=motmod
+iopl() failed: Operation not permitted
+cannot gain I/O privileges - forgot 'sudo make setuid' or using secure boot? -parallel port access is not allowed
+Note: Using POSIX realtime
+Found file(REL): ./Pokeys57CNC_XYZ_mill.hal
+CONNECTED.
+Getting status:0, state=0, limitOverride=0
+Getting pin info =0
+Pin mapping 0 => 19 digital read ok
+Time elapsed 18.724804 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.712338 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.727107 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.811058 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.862327 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775970 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.807579 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.727254 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.873161 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768027 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.794617 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.858387 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.803218 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.730861 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.770508 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.944395 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.740720 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.865799 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.874851 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.831434 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.747965 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.806752 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.836810 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.764807 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.785154 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.788734 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.779627 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.986670 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.785470 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.786295 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.779231 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.841524 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.778939 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.816284 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.767687 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775625 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.996729 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.811069 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.812239 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.723607 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.746717 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.744814 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.725352 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716294 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.745454 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709667 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.715625 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.722135 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.901850 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.731321 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748695 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768184 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.871417 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.778028 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.745015 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.739799 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743630 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.732876 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.760111 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.937486 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748828 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.751481 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.808195 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.837372 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.749181 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.807102 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.865438 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.778045 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775966 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.802809 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.898368 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.813362 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.941775 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.730776 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.759591 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743044 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.790465 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.713601 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716550 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.693817 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.724754 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773345 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.697751 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.711661 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.724944 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709603 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.862263 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.685140 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.808315 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.758776 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709535 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.680133 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.904709 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.366136 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.364559 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 5.453239 ms
+Cycle greater than 5.000000ms elapsed 5.453239 ms, from IDLE to IDLE
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.932521 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.844400 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.755326 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.849734 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.876997 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.732421 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756723 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.888617 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.939893 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.997798 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.821812 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.038161 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.816953 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.806871 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.359747 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.956240 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.745701 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.885634 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.789874 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.793408 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.883394 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.435865 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.809739 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.785160 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.781494 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.781245 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.786949 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768246 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.795385 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.871731 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775377 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.798377 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.778541 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.846296 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.844243 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.851170 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.771417 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.772861 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.846221 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.227728 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.783152 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.783425 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.820528 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.708544 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.833294 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.937059 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.542322 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.825000 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.322396 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.802634 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.725359 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.040510 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 4.586786 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.511085 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.153032 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.757377 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.858311 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.132800 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.360680 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.778281 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.774466 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.698185 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.805894 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.857885 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.757150 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.770244 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.861474 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.847417 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.615016 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.794535 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.799851 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.723559 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.745618 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.745788 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.816665 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.251875 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.973993 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.767594 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.708273 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.740994 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.764030 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775951 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.229916 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.758536 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768906 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.818459 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.583661 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.760013 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.714089 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743940 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.754488 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709100 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.414615 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.727884 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.752258 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.766828 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.774305 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716302 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.691501 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.422414 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756741 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.680915 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.706725 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.699976 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.687325 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696142 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.672668 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.672672 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.690804 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.706787 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.701957 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.758889 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.846628 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.732515 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.740377 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.721840 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.723666 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 5.811634 ms
+Cycle greater than 5.000000ms elapsed 5.811634 ms, from IDLE to IDLE
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.769360 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696173 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.694518 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775385 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.782291 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.742346 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.702362 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.714565 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.698332 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.689641 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.736347 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.872134 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.769053 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.692593 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.692834 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.043200 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.694003 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.718839 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.747180 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.706597 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.687097 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.704757 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.693965 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.745845 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.682511 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.691613 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703229 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.682732 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.747870 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.690334 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.809520 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.765610 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.679268 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.679835 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.686245 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.790011 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.785172 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.720196 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.723418 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.678128 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.683874 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.791853 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.833429 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.960693 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.717724 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.757004 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.683221 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.847070 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.769761 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.788231 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.713802 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729349 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.677631 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.763711 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.685163 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.741101 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.780653 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733858 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.681419 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703840 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.674120 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.725142 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.836840 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756521 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.749653 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.698163 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.714646 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.793719 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.685139 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.818757 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.702723 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.704226 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.699248 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.791856 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.712565 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.727818 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.741165 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.687883 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.689619 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.704514 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768673 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.766579 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.692632 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.688304 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.699821 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.714372 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.765625 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.698378 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.701715 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716805 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.717373 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.752434 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.811813 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.724074 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.778438 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.724146 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703154 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.708513 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.719506 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768421 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.691612 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703033 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.721528 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.818007 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.741085 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.817077 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.694576 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.755347 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.683099 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.681848 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.691469 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.707742 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.759193 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.759816 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.766125 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.769041 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.689908 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.818590 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773726 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.693940 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.684154 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.730232 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.681099 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.683012 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.783243 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.886321 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.707054 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.697007 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.746363 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.798687 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.792401 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.851445 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.722627 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.981398 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.717132 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743293 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.747941 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.822974 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.746899 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.783534 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703024 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761767 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773471 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.737344 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.735469 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.699560 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.712658 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.757049 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.840807 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.777478 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.757053 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.686369 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.824324 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.704996 ms
+[Gmoccapy.QTVCP.QT_ISTAT][[33mWARNING[0m]  INI Parsing Error, No DEFAULT_SPINDLE_0_SPEED Entry in DISPLAY, Using: 200 (qt_istat.py:532)
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+[Gmoccapy.QTVCP.QT_ISTAT][[33mWARNING[0m]  INI Parsing Error, No MIN_SPINDLE_0_SPEED Entry in DISPLAY, Using: 100 (qt_istat.py:532)
+[Gmoccapy.QTVCP.QT_ISTAT][[33mWARNING[0m]  INI Parsing Error, No MAX_SPINDLE_0_SPEED Entry in DISPLAY, Using: 2500 (qt_istat.py:532)
+[Gmoccapy.QTVCP.QT_ISTAT][[33mWARNING[0m]  INI Parsing Error, No MAX_SPINDLE_0_OVERRIDE Entry in DISPLAY, Using: 1 (qt_istat.py:532)
+[Gmoccapy.QTVCP.QT_ISTAT][[33mWARNING[0m]  INI Parsing Error, No MIN_SPINDLE_0_OVERRIDE Entry in DISPLAY, Using: 0.5 (qt_istat.py:532)
+Time elapsed 8.640803 ms
+Cycle greater than 5.000000!ms elapsed 8.640803 ms, from IDLE to IDLE
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696875 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.780812 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.882072 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.687419 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.724920 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773669 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.846410 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.710337 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.724201 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.710655 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748866 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.693736 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.722278 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.890302 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.740336 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716412 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.714817 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.751051 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.706317 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.754788 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.695030 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.686622 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.735954 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748954 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.766685 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716149 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.690767 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729313 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.812351 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.750044 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.739018 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.774998 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.747520 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.723446 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.860925 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.853098 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.762505 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.064968 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.760370 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.830851 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.759914 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768432 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.710783 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.941602 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733039 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.665341 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.717500 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.727660 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.745336 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.671182 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.677319 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.720551 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.275307 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.717474 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.713750 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696182 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709312 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.850807 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.762732 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.693830 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.711580 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.730135 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.697270 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.732789 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709249 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.783621 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.746465 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.722379 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.803697 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.732348 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761401 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 10.241602 ms
+Cycle greater than 5.000000!ms elapsed 10.241602 ms, from IDLE to IDLE
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.706041 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 4.317378 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 4.336356 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.281170 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.864830 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.223683 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.861198 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728343 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.803107 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.759092 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753467 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.710391 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753254 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.746791 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.796943 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.829289 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.723640 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.823111 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.710447 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.786727 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.763551 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.788401 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.805728 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.891403 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.806807 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.713997 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.793673 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.725957 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.811364 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.726704 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.698422 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.766134 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703498 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728049 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775244 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.715545 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729840 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.877649 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.776940 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.881766 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.754777 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.780510 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.714683 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.272782 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.815709 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.794258 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.780786 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.764020 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.712272 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.744998 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.891937 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.723813 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733809 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.744755 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.704064 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.776672 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.827954 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.771090 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.783142 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.737987 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743021 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.687200 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.723525 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.771261 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768988 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.835867 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.717199 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.697067 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.766487 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.839066 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.765273 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.926357 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.897698 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.808826 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.770125 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.816528 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.815135 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.837768 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.770965 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.918660 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.838062 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.814941 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.770805 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 3.523328 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 6.006688 ms
+Cycle greater than 5.000000ms elapsed 6.006688 ms, from IDLE to IDLE
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.492110 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.762737 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.767378 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.831125 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.861453 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.723391 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.843426 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756672 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761417 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.795680 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729637 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.762400 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.785417 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.829492 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.738933 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.785224 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.807223 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743542 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.757807 ms
+
+(gmoccapy:2162): Gtk-CRITICAL **: 18:05:17.106: gtk_entry_set_text: assertion 'text != NULL' failed
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.790019 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.820532 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.863825 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.055203 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.730731 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.847057 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775274 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.695801 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.705675 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.855754 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.776443 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.707428 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.717438 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.689840 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.695130 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.711786 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.693651 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.037456 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.734150 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.687610 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.708066 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716789 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.686485 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733713 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.667259 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768100 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.693547 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.687506 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.737478 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.884109 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.055084 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728685 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.783953 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.801144 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.745577 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761817 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.739910 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.707229 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.707031 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.752817 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.690470 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.697271 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.739234 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.711359 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.684760 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.701304 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.732286 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.747839 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.673734 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.693261 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.810203 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.777290 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761376 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.684001 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743567 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.676763 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.678205 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.744319 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.682897 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.744840 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.670702 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.687296 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.705074 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.699608 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.675565 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.688542 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.721609 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.735934 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703409 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.812372 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.672641 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.676025 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.692980 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.710495 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.727865 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.679241 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.683932 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.700000 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.754422 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.792604 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.741137 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696312 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.682842 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.702347 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.786153 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.708913 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.725642 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.742530 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.692522 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.697262 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703210 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.843890 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.908895 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761805 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.144996 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.797394 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.793880 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.806632 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.747273 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.854049 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.698464 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703732 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.725445 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.904500 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.755227 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743775 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753651 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729924 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.784294 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.707838 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.808826 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.710497 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.444847 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.737514 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.951932 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773594 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.786957 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709412 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761322 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.828988 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761749 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.752584 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.789641 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.992131 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.693402 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.810279 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.714685 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.799901 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.827400 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.799612 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.717014 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.699640 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.372524 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.973527 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.933588 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.816250 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.722392 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.795347 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.009818 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709047 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.947303 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.683939 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.698181 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.752994 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.744065 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.720208 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.702222 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.717906 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.673165 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.674756 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.675089 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.846350 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756428 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.901968 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729963 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.677572 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.955750 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.680885 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.692600 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729102 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748936 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.765911 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.684820 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.689892 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.732150 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.681211 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.700833 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.718170 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.687016 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.693657 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.695465 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.700817 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756076 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.681408 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696088 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.779253 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.731480 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.762790 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.720120 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.718503 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775247 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773043 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.781393 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768864 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.819131 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709531 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.778815 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.718533 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.719246 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.751519 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.842730 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.760335 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.839466 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.805726 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.726976 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.739035 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.755078 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.700878 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.848107 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.947277 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.766869 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.691313 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.694170 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.679890 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.705160 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.686550 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696056 ms
+[Gmoccapy][[33mWARNING[0m]  No virtual keyboard installed, we checked for <onboard>. Try 'sudo apt-get install onboard'. (gmoccapy:2111)
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.051879 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.720706 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 7.837401 ms
+Cycle greater than 5.000000ms elapsed 7.837401 ms, from IDLE to IDLE
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 138.088531 ms
+Cycle greater than 5.000000!ms elapsed 138.088531 ms, from IDLE to IDLE
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.767031 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.791551 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.246071 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.172207 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.789267 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.296257 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.265457 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768266 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.115471 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.798193 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.944774 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.182738 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.770417 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.771121 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.194352 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.820326 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.933066 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 3.443129 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.007448 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.169993 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.990160 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.779420 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.841581 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.016223 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.880709 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.835404 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.371426 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.787119 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.909152 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.179219 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.003015 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.356769 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.795439 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.734531 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753470 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775528 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.700242 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.683502 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.734483 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.717209 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768279 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.874013 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.704534 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.810030 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.849280 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.759513 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.870605 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.862283 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.755682 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.771733 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.701103 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.705605 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768212 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.448183 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.706229 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703342 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743456 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.231447 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.766320 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.687701 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.710533 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.722013 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.891643 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.719107 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733214 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.719326 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773048 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.785603 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.708416 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716965 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729671 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.717592 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729572 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.778230 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.835093 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716963 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.752038 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.881688 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.706937 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.799759 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.710911 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.726675 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.375083 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.832492 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775991 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748732 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.682937 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.450090 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748688 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.826532 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.823777 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.777714 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.501541 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743399 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.782977 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.795650 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703603 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.809318 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733769 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.153037 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703922 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729179 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.777100 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.770459 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.747865 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696154 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709428 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728243 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.735725 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709539 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.687783 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.718872 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.741808 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753594 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.676463 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.675908 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.688248 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.704807 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756412 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773263 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.700173 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.719818 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.776224 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756406 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.682725 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.790731 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.784391 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.715987 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.726233 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.772210 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.686318 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.741755 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.754392 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.676105 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.316782 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.722487 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.939285 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.735532 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.824641 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696941 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.672044 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 7.121202 ms
+Cycle greater than 5.000000ms elapsed 7.121202 ms, from IDLE to IDLE
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.864414 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.804696 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.987068 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.905408 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.808705 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.809736 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.724199 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.833599 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.720509 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.771697 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.695574 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.711953 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.730580 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.684832 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.692220 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696774 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.690857 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.800470 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.232809 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.718209 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.691445 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.813278 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.739867 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.786309 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.707615 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.799950 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.678929 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.858514 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.904458 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.763504 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.681875 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.749602 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.673675 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.681814 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.700450 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.772005 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.788602 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.713895 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.695104 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.676511 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743049 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.225732 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.777686 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.698326 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.689813 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.742441 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.721428 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.803023 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.317364 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.740508 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.737191 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.708837 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768881 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729895 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.742698 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.838125 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.912662 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.766891 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.089641 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.697562 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 3.205162 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.712946 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.697030 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.737500 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.780558 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.763395 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.760376 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.785679 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.875511 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.057240 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768914 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.787916 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775480 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.697322 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.732546 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.732622 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.745926 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.802558 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.724617 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.940371 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756339 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.896940 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.767474 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.856016 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.711729 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.795166 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.741285 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.863782 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709421 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.784142 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.742314 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.900277 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.799922 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.837415 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748851 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.857656 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.848700 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.877885 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.798575 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.057551 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.898487 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.779912 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748824 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.702492 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716527 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.771781 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.783477 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.803436 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.747258 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.719005 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.726592 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.785246 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.711435 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.755260 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.738432 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773155 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.812417 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.744851 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.738008 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.765211 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.806325 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729881 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.677381 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.697353 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.776241 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.698077 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.811149 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728606 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.690530 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.878381 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.747380 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.810130 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.704835 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728422 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.828796 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.813109 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.720195 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.746705 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.960538 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.810358 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733728 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.747028 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.829362 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.688229 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.687890 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.723148 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.791820 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.707043 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.707645 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.736135 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.670312 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.711289 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.767179 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756778 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761036 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.713865 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756347 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.833352 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.843222 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.863560 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.705868 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.806473 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728355 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.684100 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733848 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.747807 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.762408 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.685792 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.689358 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728200 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.797101 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.734282 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.747401 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.681116 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696665 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.680954 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.672676 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.727614 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.745396 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.751511 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.734187 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.746548 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.706929 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.798622 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.797866 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.704150 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733295 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.714994 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.796923 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.793535 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.776471 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.792464 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.723564 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.767070 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.869249 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.732068 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.732861 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716595 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.884497 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.847815 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.798122 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.793261 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.715145 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729625 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.746114 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.865315 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.718356 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.805503 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.739783 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.752510 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775201 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.782725 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.867678 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761341 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775402 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.701661 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.719801 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.669481 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.498560 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.833824 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.809936 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753144 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.691933 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.720937 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.706883 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.789914 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.712780 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728888 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.744585 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.734960 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.672821 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.706546 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.795080 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.777972 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.810580 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756737 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.737297 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.819764 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.151031 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.741757 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.762462 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.740043 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.693515 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.805736 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728419 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.760457 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.772283 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.692444 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.811068 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.734483 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.682184 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.740472 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753313 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.829821 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.754535 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.690960 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.766612 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.869227 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.758633 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.766230 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696144 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.715239 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733270 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.691561 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.739675 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.755539 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.771536 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.695824 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.882676 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.738642 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729710 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.764541 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.777144 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.693704 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.674228 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.663466 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.706444 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.759438 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.853853 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.845584 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.757811 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.689968 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728828 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.811042 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.799707 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.705143 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.734161 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.692761 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.705769 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.762439 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.802248 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.771995 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748019 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.731231 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.717449 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.675359 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.684754 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.468443 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.782118 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.697835 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.707956 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.789917 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.712184 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728646 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743673 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.734879 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.685463 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.707318 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.810421 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.740455 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.765058 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.684098 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.715032 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.771181 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.824382 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.737049 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.314634 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.738138 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.699230 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.738135 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.734829 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.751535 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.770720 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.701494 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.705256 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.732614 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.786605 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.781514 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.754191 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.721728 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.712498 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.762970 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.136120 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.720677 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733506 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.702482 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.688140 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.803786 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.714196 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.763821 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.779016 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748831 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.718547 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.707665 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756776 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748510 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.770719 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.794568 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.698947 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.730779 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.744945 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.702411 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.760504 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.767663 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.793889 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.760576 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.209362 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.727999 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.809730 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.752574 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.779046 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.689873 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716572 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.736027 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.680787 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.737304 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753156 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773166 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.787456 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.926473 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.759053 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.830645 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.786144 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.711020 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.698069 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.784866 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.700129 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.878482 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.749385 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.811061 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733661 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.715610 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.764998 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.858145 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.784144 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.805395 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.711083 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773631 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.719457 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753342 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.795902 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.718627 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.732242 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.745837 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.672865 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.676936 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.725394 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.923326 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.796055 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709782 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733053 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748386 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703867 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753480 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753588 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.814953 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.710812 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.757485 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743366 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768372 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.794087 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.698777 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.760038 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.772324 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.825397 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.548453 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.870229 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.868346 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.715015 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.704686 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.741690 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729950 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.754978 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.783432 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.698193 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.730429 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.748843 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.697262 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.730975 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.745480 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.738525 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703966 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.844083 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.757051 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775144 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.783706 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.709655 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.708274 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.764971 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.685946 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.734268 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.749587 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.766793 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.691548 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.677393 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.715625 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.806609 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728870 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753790 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.695871 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.700222 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.678150 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.681147 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.706843 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.723947 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.742473 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.825487 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773873 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.697096 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.788279 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.809472 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.686770 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.805848 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729875 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.049117 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.905489 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.728607 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.712121 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.932283 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753557 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.776986 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.726129 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.682594 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.675837 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.673149 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716478 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.274933 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.715489 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.837338 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.890584 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743768 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729575 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.766101 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775409 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.700956 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.731376 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.727359 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.701751 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756151 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.760847 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.850456 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.712955 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.931674 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.759493 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.844341 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.750852 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.779759 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729630 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.810555 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.738517 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.691550 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.736582 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.753817 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.770292 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.757764 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.691663 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.739101 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.724022 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761293 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.774102 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.695309 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.714533 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.731318 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.684402 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.736453 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.750203 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.780599 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.771140 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696916 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.968528 ms
+task: main loop took 0.134760 seconds
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.762556 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.783407 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.808044 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.701941 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.712028 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756564 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.782861 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 4.197806 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.941124 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.712444 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.127433 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.733884 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.812185 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.586405 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.758131 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.856692 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.711534 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.746006 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.799331 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.737983 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.711078 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.889810 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.682625 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.680569 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.689111 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.797076 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.726027 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.737640 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.686502 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.792042 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.757224 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.795330 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.797180 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.791914 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.720315 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.864971 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.868750 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.770839 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.763221 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.724201 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.784907 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.776714 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761323 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.754803 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.718036 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.742715 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.920262 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.907209 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.971668 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.791042 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.770497 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.780969 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.774283 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.778545 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.794145 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775794 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775076 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.828918 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.827671 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.772394 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.791625 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773802 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.784725 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.776085 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.115176 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.769876 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.777660 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.846814 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.815208 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.773171 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.871972 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 4.048111 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.769098 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.907604 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.846457 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.811304 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.871846 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.754781 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.758928 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756711 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.796457 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.796892 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.794307 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.776082 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.794994 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761184 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.777517 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.807191 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761398 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761183 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.770414 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.782783 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.768261 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.791198 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.237166 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.852650 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.772114 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.787064 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.818181 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Shutting down and cleaning up LinuxCNC...
+Time elapsed 6.309849 ms
+Cycle greater than 5.000000ms elapsed 6.309849 ms, from IDLE to IDLE
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.057557 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 5.206154 ms
+Cycle greater than 5.000000ms elapsed 5.206154 ms, from IDLE to IDLE
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.703640 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 4.105825 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696232 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.860461 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.683873 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.705629 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.715666 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.682155 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.729025 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.738140 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.831648 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.756451 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.677345 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.715686 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.696974 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.796010 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.247398 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.743281 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.674197 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.735368 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.765134 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.704861 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.707072 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.184717 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.713311 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.825528 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.328828 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.746095 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.767979 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.716151 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.785078 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.924312 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761153 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.797523 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.813456 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.775307 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.892234 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.780985 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.858367 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.715446 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.502498 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.791949 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.772812 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.983265 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.845850 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.828056 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.110399 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.904327 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.846785 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.809206 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.771160 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.778529 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.952844 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.859456 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.862811 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.874072 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.678037 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.039786 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.810549 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.856918 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.475441 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761095 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.919608 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.967999 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.781394 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.445975 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.761440 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.231032 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 3.382854 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.789835 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.921701 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 2.499179 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 1.709312 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.763465 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.788216 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.752299 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.762123 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.798201 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.764046 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.740774 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.882909 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.803918 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.781685 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.922080 ms
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.782392 ms
+Running HAL shutdown script
+Getting status:0, state=0, limitOverride=0
+Getting E-Stop:0
+Time elapsed 0.782776 ms
+Set PE Stopped from SHUTDOWN:0
+HAL: removing component 35
+HAL: releasing RTAPI resources
+HAL: component 35 removed, name = 'PoKeysController'
+task: 836 cycles, min=0.000030, max=0.134760, avg=0.010249, 1 latency excursions (> 10x expected cycle time of 0.010000s)
+free(): invalid pointer
+<commandline>:0: exit value: 255
+<commandline>:0: rmmod failed, returned -1
+Waited 3 seconds for master.  giving up.
+iopl() failed: Operation not permitted
+cannot gain I/O privileges - forgot 'sudo make setuid' or using secure boot? -parallel port access is not allowed
+Note: Using POSIX realtime
+motmod: not loaded
+<commandline>:0: exit value: 255
+<commandline>:0: rmmod failed, returned -1
+iopl() failed: Operation not permitted
+cannot gain I/O privileges - forgot 'sudo make setuid' or using secure boot? -parallel port access is not allowed
+Note: Using POSIX realtime
+trivkins: not loaded
+<commandline>:0: exit value: 255
+<commandline>:0: rmmod failed, returned -1
+iopl() failed: Operation not permitted
+cannot gain I/O privileges - forgot 'sudo make setuid' or using secure boot? -parallel port access is not allowed
+Note: Using POSIX realtime
+homemod: not loaded
+<commandline>:0: exit value: 255
+<commandline>:0: rmmod failed, returned -1
+iopl() failed: Operation not permitted
+cannot gain I/O privileges - forgot 'sudo make setuid' or using secure boot? -parallel port access is not allowed
+Note: Using POSIX realtime
+tpmod: not loaded
+<commandline>:0: exit value: 255
+<commandline>:0: rmmod failed, returned -1
+<commandline>:0: unloadrt failed
+iopl() failed: Operation not permitted
+cannot gain I/O privileges - forgot 'sudo make setuid' or using secure boot? -parallel port access is not allowed
+Note: Using POSIX realtime
