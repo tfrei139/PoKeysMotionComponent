@@ -10,7 +10,8 @@ loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD servo_period_nsec=[EM
 #*******************
 
 loadusr -W PoKeysController
-setp PoKeysController.0.device-serial 0 # Set your device serial here
+# setp PoKeysController.0.log-level 4 # 0..5 = none, error, warning, info, debug, all
+setp PoKeysController.0.device-serial 40760
 setp PoKeysController.0.axis.0.step-scale 800.0
 setp PoKeysController.0.axis.1.step-scale 800.0
 setp PoKeysController.0.axis.2.step-scale 1600.0
