@@ -35,7 +35,7 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 A walkthrough to set this component up is available here [Setup](documentation/Setup.md)
 
 ## Documentation
-Additional information about the source code and design decisions can be found here [CodeNotes](documentation/CodeNotes.md).
+Additional information about the design decisions and behaviour can be found here [Design document](documentation/DesignDocument.md).
 
 ## License
 This project is licensed under the GNU GENERAL PUBLIC LICENSE V2. See [LICENSE](LICENSE).

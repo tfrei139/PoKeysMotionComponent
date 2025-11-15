@@ -1,4 +1,4 @@
-# Code notes
+# Design document
 
 ## Design decision: Split of real time and user component
 Initally I tried using only one userspace component using the internal motion planner of the PoKeysCNC. However the refresh speed of the meant that multiple miliseconds passed between each updated. And the internal motion planner would not know if the next instruction would be followed by a stop or a longer distance.  

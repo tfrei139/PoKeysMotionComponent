@@ -23,3 +23,11 @@ https://forum.linuxcnc.org/24-hal-components/37906-an-e-stop-hal-and-an-overall-
 https://forum.linuxcnc.org/39-pncconf/25862-configuring-estop-latch  
 https://forum.linuxcnc.org/47-hal-examples/28096-estop-latch  
 https://www.youtube.com/watch?v=hVkNtq4C1F8&t=1849s  
+
+## Component logging
+Using `rtapi_set_msg_level()` will only set the level for the current component. Tried with two differnt userspace components.  
+Maybe rt components behave differently.
+
+When the rt component logs an error it will also show up in gmoccapy. The gmoccapy logs themselves will not include messages from other components. No idea where to get the rt debug logs.  
+TODO What is LinuxCNCs component logging concept?  
+[Semi-relevant forum entry](https://forum.linuxcnc.org/38-general-linuxcnc-questions/35916-where-are-the-f-ng-rtapi-print-msg-rtapi-msg-info-messages)
