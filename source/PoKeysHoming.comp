@@ -24,7 +24,7 @@ typedef struct {
 } joint_hal_data_t;
 
 typedef struct {
-    uint sequence = -1;
+    uint sequence;
 } joint_param_data_t;
 
 typedef struct {
@@ -87,7 +87,7 @@ bool get_allhomed() {
 }
 
 bool get_homed(int jno) {
-    return _joint_home_data->joint[jno]->homed;
+    return _joint_home_data->joint[jno].homed;
 }
 
 bool get_home_is_idle(int jno) {
