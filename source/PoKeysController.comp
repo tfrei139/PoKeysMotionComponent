@@ -3,6 +3,7 @@ component PoKeysController;
 pin out bit machine_estop = false "Machine is in E-Stop condition";
 pin in bit machine_is_on = false "Machine should be enabled";
 pin in bit buffer_in_motion = false "Motion is being streamed";
+pin io bit homing_cmd = false "TODO";
 
 pin out bit io.input_pin.# [5] "Digital input pins";
 pin in bit io.output_pin.# [5] "Digital output pins";
@@ -15,6 +16,9 @@ pin out float axis.#.position_feedback [3] "Position in machine units";
 pin out bit axis.#.limit_positive [3] "Positive limit switches";
 pin out bit axis.#.limit_negative [3] "Negative limit switches";
 pin in bit axis.#.override_limit [3] "Limit switch override. Set per axis, but overrides globally on PoKeys";
+
+pin in signed axis.#.home_order [3] "TODO";
+pin out bit axis.#.homed [3] "TODO";
 
 param rw signed internal_state = -1 "Current component state";
 param rw unsigned device_serial = 0 "PoKeys Device Serial";
@@ -39,7 +43,7 @@ author "T.Frei";
 #define InstanceVariable __comp_inst    // Internal variable of linuxCNC component
 
 #define NumberOfAxis 3
-#define EstopPinNumber 51         // 0-based pin 52  
+#define EstopPinNumber 51         // 0-based pin 52
 #define NumberOfDigitalPins 5     // Applies to both input and output pins. Could be raised as necessary
 #define CycleTimeMs 5.0f          // Target cycle time of uspace component
 #define SharedMemoryKey 57        // Arbitrary number
@@ -49,13 +53,14 @@ author "T.Frei";
 // States of the component
 // ------------------------------------
 enum State {
-    CREATED = -1,           // Component created, but not yet parametrized 
+    SHUTDOWN = -2,          // Exit component (Set externally only)
+    CREATED = -1,           // Component created, but not yet parametrized
     INIT = 0,               // Start connection (Set externally only)
     IDLE = 1,               // Connected and PE stopped state
     ENABLED = 2,            // Connected and PE running state (not moving)
-    MOVING = 3,             // Connected and PE running state (moving)
-    ESTOP = 4,              // ESTOP toggled
-    SHUTDOWN = 5,           // Exit component (Set externally only)
+    HOMING = 3,             // TODO
+    MOVING = 4,             // Connected and PE running state (moving)
+    ESTOP = 5,              // ESTOP toggled
 };
 
 // ------------------------------------
@@ -111,6 +116,13 @@ void user_mainloop(void) {
                     internal_state = IDLE;
                     overrideCycleTime = true;
                     break;
+
+                case SHUTDOWN:
+                    SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
+                    SetActiveOutputsOff();
+
+                    run = false;
+                    return;
 
                 case IDLE:
                     ReadPulseEngineStatus();
@@ -171,19 +183,65 @@ void user_mainloop(void) {
                         break;
                     }
 
+                    if (homing_cmd == true) {
+
+                        bool foundAxes = false;
+                        _device->PEv2.HomingStartMaskSetup = 0;
+
+                        // TODO verify that there is no sequence number >8 / number of axis?
+                        for (int i = 0; i < 8; i++) {
+                            for (int j = 0; j < NumberOfAxis; j++) {
+                                if (axis_homed(j) == false && axis_home_order(j) == i) {
+                                    _device->PEv2.HomingStartMaskSetup |= (1<<j); // Home axis 3/Z only (bit 2)
+                                    foundAxes = true;
+                                }
+                            }
+
+                            if (foundAxes == true) {
+                                break;
+                            }
+                        }
+
+                        if (foundAxes == true) {
+                            PK_PEv2_HomingStart(_device);
+                            internal_state = HOMING;
+                        } else {
+                            rtapi_print_msg(RTAPI_MSG_WARN, "No axis to home!\n");
+                            homing_cmd = false;
+                        }
+                    }
+
                     break;
+
+                case HOMING:
+                    ReadPulseEngineStatus();
+
+                    switch (_device->PEv2.PulseEngineState)
+                    {
+                        //case PK_PEState_peHOME:
+                        case 20:
+                            PK_PEv2_HomingFinish(_device);
+                            homing_cmd = false;
+                            internal_state = ENABLED;
+                            break;
+                    }
+
+                    // TODO timeout/max tries?
+
+                    break;
+
                 case MOVING:
                     ProcessMoveCommand(InstanceVariable);
                     ProcessEStop(InstanceVariable);
 
-                    // Set Estop from PoKeys 
+                    // Set Estop from PoKeys
                     if (machine_estop == true) {
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
                         internal_state = ESTOP;
                         break;
                     }
 
-                    // Machine is disabled from LinuxCNC 
+                    // Machine is disabled from LinuxCNC
                     if (machine_is_on == false) {
                         SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
@@ -209,12 +267,6 @@ void user_mainloop(void) {
                     }
 
                     break;
-                case SHUTDOWN:
-                    SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
-                    SetActiveOutputsOff();
-
-                    run = false;
-                    return;
             }
 
             ProcessCycleTime(cycleStart, overrideCycleTime, originState, internal_state);
@@ -238,9 +290,12 @@ void user_mainloop(void) {
 #undef io_pwm_pin
 #undef io_pwm_pin_number
 #undef buffer_in_motion
+#undef homing_cmd
 #undef axis_position_feedback
 #undef axis_limit_positive
 #undef axis_limit_negative
+#undef axis_home_order
+#undef axis_homed
 #undef internal_state
 #undef device_serial
 #undef log_level
@@ -434,7 +489,7 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
         *componentInstance->machine_estop = true;
 
         SetPulseEngineStatus(PK_PEState_peSTOPPED, "Set PE stopped due to ESTOP!");
-        SetActiveOutputsOff();        
+        SetActiveOutputsOff();
     } else {
 		bool currentEstop = 0 + *componentInstance->machine_estop;
 
@@ -623,6 +678,12 @@ void ProcessPositions(struct ComponentStruct* componentInstance) {
 
         *componentInstance->axis_limit_positive[i] = (_device->PEv2.LimitStatusP >> i) & 0x01;
         *componentInstance->axis_limit_negative[i] = (_device->PEv2.LimitStatusN >> i) & 0x01;
+
+        // 10 = PK_PEAxisState_axHOME
+        if (_device->PEv2.AxesState[i] == 10) {
+            // TODO Can PoKeys unhome an axis on error?
+            *componentInstance->axis_homed[i] = true;
+        }
     }
 
     //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
@@ -746,17 +807,17 @@ void ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum 
 // Helper method to get the state enum name.
 // ------------------------------------
 inline const char* GetStateName(enum State state) {
-   switch (state) 
-   {
-      case CREATED: return "CREATED";
-      case INIT: return "INIT";
-      case IDLE: return "IDLE";
-      case ENABLED: return "ENABLED";
-      case MOVING: return "MOVING";
-      case ESTOP: return "ESTOP";
-      case SHUTDOWN: return "SHUTDOWN";
-      default: return "UNDEFINED";
-   }
+    switch (state) {
+        case SHUTDOWN: return "SHUTDOWN";
+        case CREATED: return "CREATED";
+        case INIT: return "INIT";
+        case IDLE: return "IDLE";
+        case ENABLED: return "ENABLED";
+        case HOMING: return "HOMING";
+        case MOVING: return "MOVING";
+        case ESTOP: return "ESTOP";
+        default: return "UNDEFINED";
+    }
 }
 
 // ------------------------------------

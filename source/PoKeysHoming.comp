@@ -11,39 +11,44 @@ author "T.Frei";
 #include <motion.h>
 #include <homing.h>
 
-static emcmot_joint_t  *joints;
+static emcmot_joint_t* _emc_joint_data;
 
 // data for per-joint homing-specific hal pins:
 typedef struct {
-    hal_bit_t *home_sw;      // home switch input
-    hal_bit_t *homing;       // joint is homing
-    hal_bit_t *homed;        // joint was homed
-    hal_bit_t *index_enable; // motmod sets: request reset on index
+    hal_bit_t* home_sw;      // home switch input
+    hal_bit_t* homing;       // joint is homing
+    hal_bit_t* homed;        // joint was homed
+    hal_bit_t* index_enable; // motmod sets: request reset on index
                              //        encoder clears: index arrived
-    hal_s32_t *home_state;   // homing state machine state
-} one_joint_home_data_t;
+    hal_s32_t* home_state;   // homing state machine state
+} joint_hal_data_t;
 
 typedef struct {
-    one_joint_home_data_t jhd[EMCMOT_MAX_JOINTS];
+    uint sequence = -1;
+} joint_param_data_t;
+
+typedef struct {
+    joint_hal_data_t joint[8]; // max 8 axis in PoKeys
+    joint_param_data_t parameter[8];
 } all_joints_home_data_t;
 
-static all_joints_home_data_t *joint_home_data = 0;
+static all_joints_home_data_t* _joint_home_data = 0;
 
 static int makepins(int id, int njoints) {
     // home_pins needed to work with configs expecting them:
     int jno;
     int retval;
-    one_joint_home_data_t *addr;
+    joint_hal_data_t *addr;
 
-    joint_home_data = hal_malloc(sizeof(all_joints_home_data_t));
-    if (joint_home_data == 0) {
+    _joint_home_data = hal_malloc(sizeof(all_joints_home_data_t));
+    if (_joint_home_data == 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "HOMING: all_joints_home_data_t malloc failed\n");
         return -1;
     }
 
     retval = 0;
     for (jno = 0; jno < njoints; jno++) {
-        addr = &(joint_home_data->jhd[jno]);
+        addr = &(_joint_home_data->joint[jno]);
 
         retval += hal_pin_bit_newf(HAL_IN, &(addr->home_sw), id, "joint.%d.home-sw-in", jno);
         retval += hal_pin_bit_newf(HAL_OUT, &(addr->homing), id, "joint.%d.homing", jno);
@@ -69,8 +74,8 @@ int homing_init(int id,
                 emcmot_joint_t* pjoints) {
     (void)servo_period;
     (void)n_extrajoints;
-    joints = pjoints;
-    return makepins(id,n_joints);
+    _emc_joint_data = pjoints;
+    return makepins(id, n_joints);
 }
 
 bool do_homing(void) {
@@ -82,8 +87,7 @@ bool get_allhomed() {
 }
 
 bool get_homed(int jno) {
-    (void)jno;
-    return true;
+    return _joint_home_data->joint[jno]->homed;
 }
 
 bool get_home_is_idle(int jno) {
@@ -101,9 +105,8 @@ bool get_home_needs_unlock_first(int jno) {
     return false;
 }
 
-int  get_home_sequence(int jno) {
-    (void)jno;
-    return 0;
+int get_home_sequence(int jno) {
+    return _joint_home_data->parameter[jno].sequence;
 }
 
 bool get_homing(int jno) {
@@ -163,8 +166,10 @@ void set_joint_homing_params(int    jno,
     (void)home_search_vel;
     (void)home_latch_vel;
     (void)home_flags;
-    (void)home_sequence;
     (void)volatile_home;
+
+    _joint_home_data->parameter[jno].sequence = home_sequence;
+
     return;
 }
 
