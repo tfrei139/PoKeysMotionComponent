@@ -79,6 +79,8 @@ void ProcessLimitOverride(struct ComponentStruct* componentInstance);
 void ProcessEStop(struct ComponentStruct* componentInstance);
 void ProcessDigitalPins(struct ComponentStruct* componentInstance);
 void ProcessPwmPins(struct ComponentStruct* componentInstance);
+bool StartHoming(struct ComponentStruct* componentInstance);
+bool ProcessHomingProgress(struct ComponentStruct* componentInstance);
 void ProcessMoveCommand(struct ComponentStruct* componentInstance);
 void ProcessPositions(struct ComponentStruct* componentInstance);
 void ProcessRelays(struct ComponentStruct* componentInstance);
@@ -183,50 +185,20 @@ void user_mainloop(void) {
                         break;
                     }
 
-                    if (homing_cmd == true) {
-
-                        bool foundAxes = false;
-                        _device->PEv2.HomingStartMaskSetup = 0;
-
-                        // TODO verify that there is no sequence number >8 / number of axis?
-                        for (int i = 0; i < 8; i++) {
-                            for (int j = 0; j < NumberOfAxis; j++) {
-                                if (axis_homed(j) == false && axis_home_order(j) == i) {
-                                    _device->PEv2.HomingStartMaskSetup |= (1<<j); // Home axis 3/Z only (bit 2)
-                                    foundAxes = true;
-                                }
-                            }
-
-                            if (foundAxes == true) {
-                                break;
-                            }
-                        }
-
-                        if (foundAxes == true) {
-                            PK_PEv2_HomingStart(_device);
-                            internal_state = HOMING;
-                        } else {
-                            rtapi_print_msg(RTAPI_MSG_WARN, "No axis to home!\n");
-                            homing_cmd = false;
-                        }
+                    if (homing_cmd == true && StartHoming(InstanceVariable)) {
+                        internal_state = HOMING;
+                        break;
                     }
 
                     break;
 
                 case HOMING:
                     ReadPulseEngineStatus();
+                    ProcessEStop(InstanceVariable);
 
-                    switch (_device->PEv2.PulseEngineState)
-                    {
-                        //case PK_PEState_peHOME:
-                        case 20:
-                            PK_PEv2_HomingFinish(_device);
-                            homing_cmd = false;
-                            internal_state = ENABLED;
-                            break;
+                    if(ProcessHomingProgress(InstanceVariable) == true) {
+                        internal_state = ENABLED;
                     }
-
-                    // TODO timeout/max tries?
 
                     break;
 
@@ -582,6 +554,64 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
 }
 
 // ------------------------------------
+// TODO
+// Returns true, if the homing could be started.
+// ------------------------------------
+bool StartHoming(struct ComponentStruct* componentInstance) {
+    bool foundAxes = false;
+    _device->PEv2.HomingStartMaskSetup = 0;
+
+    // TODO verify that there is no sequence number >8 / number of axis?
+    for (int sequence = 0; sequence < 8; sequence++) {
+        for (int i = 0; i < NumberOfAxis; i++) {
+            if (componentInstance->axis_homed[i] == false && componentInstance->axis_home_order[i] == sequence) {
+                _device->PEv2.HomingStartMaskSetup |= (1<<i);
+                foundAxes = true;
+            }
+        }
+
+        if (foundAxes == true) {
+            break;
+        }
+    }
+
+    if (foundAxes == true) {
+        PK_PEv2_HomingStart(_device);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Starting Homing!\n");
+        return true;
+    }
+
+    rtapi_print_msg(RTAPI_MSG_WARN, "No axis to home!\n");
+    componentInstance->homing_cmd = false;
+    return false;
+}
+
+// ------------------------------------
+// TODO
+// Returns true, if homing is finished
+// ------------------------------------
+bool ProcessHomingProgress(struct ComponentStruct* componentInstance) {
+    // 20 = PK_PEState_peHOME
+    if (_device->PEv2.PulseEngineState == 20) {
+
+        for (int i = 0; i < NumberOfAxis; i++) {
+            if (((_device->PEv2.HomingStartMaskSetup >> i) & 0x01) == 1) {
+                componentInstance->axis_homed[i] = true;
+            }
+        }
+
+        if (StartHoming(componentInstance) == false) {
+            // TODO set device->PEv2.PulseEngineStateSetup?
+            PK_PEv2_HomingFinish(_device);
+            return true;
+        }
+    }
+
+    // TODO timeout/max tries?
+    return false;
+}
+
+// ------------------------------------
 // Process streamed move command and implicitly update PE status information
 // ------------------------------------
 void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
@@ -707,6 +737,7 @@ void ProcessRelays(struct ComponentStruct* componentInstance) {
     bool oc3on = 0 + *componentInstance->io_open_collector[2];
     bool oc4on = 0 + *componentInstance->io_open_collector[3];
 
+    // TODO PoKeys57CNCpro4x25 has relay 1 and 2 swapped; SSR are named differently
     bool setNecessary = false;
     setNecessary |= CompareRelayState(ssr1on, 7);
     setNecessary |= CompareRelayState(ssr2on, 0);
