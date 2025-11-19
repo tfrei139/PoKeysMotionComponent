@@ -11,20 +11,18 @@ author "T.Frei";
 #include <motion.h>
 #include <homing.h>
 
-static emcmot_joint_t* _emc_joint_data;
-
 // data for per-joint homing-specific hal pins:
 typedef struct {
     hal_bit_t* home_sw;      // home switch input
     hal_bit_t* homing;       // joint is homing
     hal_bit_t* homed;        // joint was homed
-    hal_bit_t* index_enable; // motmod sets: request reset on index
-                             //        encoder clears: index arrived
+    hal_bit_t* index_enable; // motmod sets: request reset on index. encoder clears: index arrived
     hal_s32_t* home_state;   // homing state machine state
 } joint_hal_data_t;
 
 typedef struct {
     uint sequence;
+    double offset;
 } joint_param_data_t;
 
 typedef struct {
@@ -32,6 +30,7 @@ typedef struct {
     joint_param_data_t parameter[8];
 } all_joints_home_data_t;
 
+static emcmot_joint_t* _joint_emc_data;
 static all_joints_home_data_t* _joint_home_data = 0;
 
 static int makepins(int id, int njoints) {
@@ -67,6 +66,9 @@ void homeMotFunctions(void(*pSetRotaryUnlock)(int,int), int (*pGetRotaryIsUnlock
     return;
 }
 
+// ------------------------------------
+// one-time initialization (return 0 if ok):
+// ------------------------------------
 int homing_init(int id,
                 double servo_period,
                 int n_joints,
@@ -74,15 +76,41 @@ int homing_init(int id,
                 emcmot_joint_t* pjoints) {
     (void)servo_period;
     (void)n_extrajoints;
-    _emc_joint_data = pjoints;
+    _joint_emc_data = pjoints;
     return makepins(id, n_joints);
 }
 
+// ------------------------------------
+// 'do_homing()' looks at the home_state field of each joint struct
+//  to decide what, if anything, needs to be done related to homing
+//  the joint.  Homing is implemented as a state machine, the exact
+//  sequence of states depends on the machine configuration.  It
+//  can be as simple as immediately setting the current position to
+//  zero, or a it can be a multi-step process (find switch, set
+//  approximate zero, back off switch, find index, set final zero,
+//  rapid to home position), or anywhere in between.
+//  return 1 if allhomed
+// ------------------------------------
 bool do_homing(void) {
     return true;
 }
 
+// ------------------------------------
+// return true if all active joints are homed
+// ------------------------------------
 bool get_allhomed() {
+    emcmot_joint_t joint;
+
+    for (int i = 0; i < 8; i++) {
+        if ((_joint_emc_data[i]->flag & EMCMOT_JOINT_ACTIVE_BIT) == false) {
+            continue;
+        }
+
+        if (*(_joint_home_data->joint[i].homed) == false) {
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -133,9 +161,15 @@ void read_homing_in_pins(int njoints) {
     return;
 }
 
+// EMCMOT_JOINT_HOME message
+// Negative joint_num specifies homeall
 void do_home_joint(int jno) {
-    (void)jno;
-    return;
+    /*if (jno == -1) {
+        H[0].homed = 0; // ensure at least one unhomed
+        do_home_all();
+    } else {
+        do_home_one_joint(jno); // apply rules if home_sequence negative
+    }*/
 }
 
 void set_unhomed(int jno, motion_state_t motstate) {
@@ -149,18 +183,15 @@ void do_cancel_homing(int jno) {
     return;
 }
 
-void set_joint_homing_params(int    jno,
+void set_joint_homing_params(int jno,
                              double offset,
                              double home,
                              double home_final_vel,
                              double home_search_vel,
                              double home_latch_vel,
-                             int    home_flags,
-                             int    home_sequence,
-                             bool   volatile_home
-                             ) {
-    (void)jno;
-    (void)offset;
+                             int home_flags,
+                             int home_sequence,
+                             bool volatile_home) {
     (void)home;
     (void)home_final_vel;
     (void)home_search_vel;
@@ -169,19 +200,17 @@ void set_joint_homing_params(int    jno,
     (void)volatile_home;
 
     _joint_home_data->parameter[jno].sequence = home_sequence;
-
-    return;
+    _joint_home_data->parameter[jno].offset = offset;
 }
 
 void update_joint_homing_params(int jno,
-                                 double offset,
-                                 double home,
-                                 int home_sequence) {
-    (void)jno;
-    (void)offset;
+                                double offset,
+                                double home,
+                                int home_sequence) {
     (void)home;
-    (void)home_sequence;
-    return;
+
+    _joint_home_data->parameter[jno].sequence = home_sequence;
+    _joint_home_data->parameter[jno].offset = offset;
 }
 
 void write_homing_out_pins(int njoints) {
