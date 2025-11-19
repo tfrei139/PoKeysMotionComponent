@@ -62,6 +62,9 @@ addf estop-latch.0            servo-thread
 # Axis X
 #*******************
 
+net x-homing <= joint.0.homing
+net x-homing => PoKeysController.0.axis.0.override-limit
+
 net x-override-limit <= halui.joint.0.override-limits
 net x-override-limit => PoKeysController.0.axis.0.override-limit
 
@@ -80,6 +83,9 @@ net max-x          =>  joint.0.pos-lim-sw-in
 # Axis Y
 #*******************
 
+net y-homing <= joint.1.homing
+net y-homing => PoKeysController.0.axis.1.override-limit
+
 net y-override-limit <= halui.joint.1.override-limits
 net y-override-limit => PoKeysController.0.axis.1.override-limit
 
@@ -97,6 +103,9 @@ net max-y          =>  joint.1.pos-lim-sw-in
 #*******************
 # Axis Z
 #*******************
+
+net z-homing <= joint.2.homing
+net z-homing => PoKeysController.0.axis.2.override-limit
 
 net z-override-limit <= halui.joint.2.override-limits
 net z-override-limit => PoKeysController.0.axis.2.override-limit
@@ -132,6 +141,7 @@ net spindle-enable => PoKeysController.0.io.solid-state-relay.0
 #*******************
 # Probe
 #*******************
+
 net probe-in     <=  PoKeysController.0.io.input-pin.0
 net probe-in     =>  motion.probe-input
 
