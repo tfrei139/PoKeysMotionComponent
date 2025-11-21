@@ -702,7 +702,7 @@ void SetActiveOutputsOff() {
         }
     }
 
-    if (setNecessary) {  
+    if (setNecessary) {
         int ret = PK_PWMUpdate(_device);
         rtapi_print_msg(RTAPI_MSG_WARN, "Turn PWM off:%d\n", ret);
     }
@@ -751,17 +751,16 @@ void ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum 
 // Helper method to get the state enum name.
 // ------------------------------------
 inline const char* GetStateName(enum State state) {
-   switch (state)
-   {
-      case CREATED: return "CREATED";
-      case INIT: return "INIT";
-      case IDLE: return "IDLE";
-      case ENABLED: return "ENABLED";
-      case MOVING: return "MOVING";
-      case ESTOP: return "ESTOP";
-      case SHUTDOWN: return "SHUTDOWN";
-      default: return "UNDEFINED";
-   }
+    switch (state) {
+        case CREATED: return "CREATED";
+        case INIT: return "INIT";
+        case IDLE: return "IDLE";
+        case ENABLED: return "ENABLED";
+        case MOVING: return "MOVING";
+        case ESTOP: return "ESTOP";
+        case SHUTDOWN: return "SHUTDOWN";
+        default: return "UNDEFINED";
+    }
 }
 
 // ------------------------------------
