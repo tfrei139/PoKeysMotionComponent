@@ -78,6 +78,8 @@ net min-x          <=  PoKeysController.0.axis.0.limit-negative
 net min-x          =>  joint.0.neg-lim-sw-in
 net max-x          <=  PoKeysController.0.axis.0.limit-positive
 net max-x          =>  joint.0.pos-lim-sw-in
+net home-x         <=  PoKeysController.0.axis.0.home
+net home-x         =>  joint.0.home-sw-in
 
 #*******************
 # Axis Y
@@ -99,6 +101,8 @@ net min-y          <=  PoKeysController.0.axis.1.limit-negative
 net min-y          =>  joint.1.neg-lim-sw-in
 net max-y          <=  PoKeysController.0.axis.1.limit-positive
 net max-y          =>  joint.1.pos-lim-sw-in
+net home-y         <=  PoKeysController.0.axis.1.home
+net home-y         =>  joint.1.home-sw-in
 
 #*******************
 # Axis Z
@@ -120,6 +124,8 @@ net min-z          <=  PoKeysController.0.axis.2.limit-negative
 net max-z          =>  joint.2.pos-lim-sw-in
 net max-z          <=  PoKeysController.0.axis.2.limit-positive
 net max-z          =>  joint.2.pos-lim-sw-in
+net home-z         <=  PoKeysController.0.axis.2.home
+net home-z         =>  joint.2.home-sw-in
 
 #*******************
 # SPINDLE

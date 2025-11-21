@@ -25,7 +25,7 @@ https://forum.linuxcnc.org/47-hal-examples/28096-estop-latch
 https://www.youtube.com/watch?v=hVkNtq4C1F8&t=1849s  
 
 ## Component logging
-Using `rtapi_set_msg_level()` will only set the level for the current component. Tried with two differnt userspace components.  
+Using `rtapi_set_msg_level()` will only set the level for the current component. Tried with two different userspace components.  
 Maybe rt components behave differently.
 
 When the rt component logs an error it will also show up in gmoccapy. The gmoccapy logs themselves will not include messages from other components. No idea where to get the rt debug logs.  
