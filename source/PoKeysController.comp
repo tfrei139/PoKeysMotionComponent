@@ -2,7 +2,6 @@ component PoKeysController;
 
 pin out bit machine_estop = false "Machine is in E-Stop condition";
 pin in bit machine_is_on = false "Machine should be enabled";
-pin in bit buffer_in_motion = false "Motion is being streamed";
 
 pin out bit io.input_pin.# [5] "Digital input pins";
 pin in bit io.output_pin.# [5] "Digital output pins";
@@ -11,11 +10,13 @@ pin in bit io.relay.# [2] "Relays";
 pin in bit io.open_collector.# [4] "Open collector digital outputs";
 pin in float io.pwm_pin.# [6] "PWM pins, valid values from 0.0 - 100.0 percent duty cycle";
 
+pin in bit motion.started = false "Motion is being streamed";
+pin in bit motion.override_limit.# [6] "Limit switch override. Any pin set overrides globally on PoKeys";
+
 pin out float axis.#.position_feedback [3] "Position in machine units";
 pin out bit axis.#.limit_positive [3] "Positive limit switches";
 pin out bit axis.#.limit_negative [3] "Negative limit switches";
 pin out bit axis.#.home [3] "Home switches";
-pin in bit axis.#.override_limit [3] "Limit switch override. Set per axis, but overrides globally on PoKeys";
 
 param rw signed internal_state = -1 "Current component state";
 param rw unsigned device_serial = 0 "PoKeys Device Serial";
@@ -40,6 +41,7 @@ author "T.Frei";
 #define InstanceVariable __comp_inst    // Internal variable of linuxCNC component
 
 #define NumberOfAxis 3
+#define NumberOfOverridePins 6    // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
 #define EstopPinNumber 51         // 0-based pin 52
 #define NumberOfDigitalPins 5     // Applies to both input and output pins. Could be raised as necessary
 #define CycleTimeMs 5.0f          // Target cycle time of uspace component
@@ -238,7 +240,8 @@ void user_mainloop(void) {
 #undef io_open_collector
 #undef io_pwm_pin
 #undef io_pwm_pin_number
-#undef buffer_in_motion
+#undef motion_started
+#undef motion_override_limit
 #undef axis_position_feedback
 #undef axis_limit_positive
 #undef axis_limit_negative
@@ -404,14 +407,14 @@ void SetPulseEngineStatus(enum ePK_PEState state, const char* log) {
 }
 
 // ------------------------------------
-// If any axis has the limit switch overridden, we forward that to the PE.
-// Note: LCNC will reset the override as soon as the (jogging-)motion has finished.
+// If any pin is enabled, the limit switches will be overridden, we forward that to the PE.
+// Note: LCNC will reset the axis override as soon as the (jogging-)motion has finished.
 // ------------------------------------
 void ProcessLimitOverride(struct ComponentStruct* componentInstance) {
     bool limitOverride = false;
 
-    for (int i = 0; i < NumberOfAxis; i++) {
-        limitOverride |= *componentInstance->axis_override_limit[i];
+    for (int i = 0; i < NumberOfOverridePins; i++) {
+        limitOverride |= *componentInstance->motion_override_limit[i];
     }
 
     if (limitOverride == true && _device->PEv2.LimitOverride == 0) {
@@ -620,12 +623,11 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 void ProcessPositions(struct ComponentStruct* componentInstance) {
     for (int i = 0; i < NumberOfAxis; i++) {
         *componentInstance->axis_position_feedback[i] = ((float)_device->PEv2.CurrentPosition[i]) / ((float)componentInstance->axis_step_scale[i]);
-
-        //rtapi_print_msg(RTAPI_MSG_ERR, "%d: %fmm, ", i, *componentInstance->axis_position_feedback[i]);
-
         *componentInstance->axis_limit_positive[i] = (_device->PEv2.LimitStatusP >> i) & 0x01;
         *componentInstance->axis_limit_negative[i] = (_device->PEv2.LimitStatusN >> i) & 0x01;
         *componentInstance->axis_home[i] = (_device->PEv2.HomeStatus >> i) & 0x01;
+
+        //rtapi_print_msg(RTAPI_MSG_ERR, "Axis %d: %fmm, P%d, N%d, H%d", i, *componentInstance->axis_position_feedback[i], *componentInstance->axis_limit_positive[i], *componentInstance->axis_limit_negative[i], *componentInstance->axis_home[i]);
     }
 
     //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
