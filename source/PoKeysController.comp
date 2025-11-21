@@ -14,6 +14,7 @@ pin in float io.pwm_pin.# [6] "PWM pins, valid values from 0.0 - 100.0 percent d
 pin out float axis.#.position_feedback [3] "Position in machine units";
 pin out bit axis.#.limit_positive [3] "Positive limit switches";
 pin out bit axis.#.limit_negative [3] "Negative limit switches";
+pin out bit axis.#.home [3] "Home switches";
 pin in bit axis.#.override_limit [3] "Limit switch override. Set per axis, but overrides globally on PoKeys";
 
 param rw signed internal_state = -1 "Current component state";
@@ -241,6 +242,7 @@ void user_mainloop(void) {
 #undef axis_position_feedback
 #undef axis_limit_positive
 #undef axis_limit_negative
+#undef axis_home
 #undef internal_state
 #undef device_serial
 #undef log_level
@@ -623,6 +625,7 @@ void ProcessPositions(struct ComponentStruct* componentInstance) {
 
         *componentInstance->axis_limit_positive[i] = (_device->PEv2.LimitStatusP >> i) & 0x01;
         *componentInstance->axis_limit_negative[i] = (_device->PEv2.LimitStatusN >> i) & 0x01;
+        *componentInstance->axis_home[i] = (_device->PEv2.HomeStatus >> i) & 0x01;
     }
 
     //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
@@ -631,7 +634,7 @@ void ProcessPositions(struct ComponentStruct* componentInstance) {
 // ------------------------------------
 // Process relays on/off
 // ------------------------------------
-void ProcessRelays(struct ComponentStruct* componentInstance) {    
+void ProcessRelays(struct ComponentStruct* componentInstance) {
     //struct timespec* requestStart = GetStartTime();
     int ret = PK_PEv2_ExternalOutputsGet(_device);
     //PrintElapsedTime(requestStart, "GetExternalOutputs");
@@ -746,7 +749,7 @@ void ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum 
 // Helper method to get the state enum name.
 // ------------------------------------
 inline const char* GetStateName(enum State state) {
-   switch (state) 
+   switch (state)
    {
       case CREATED: return "CREATED";
       case INIT: return "INIT";
