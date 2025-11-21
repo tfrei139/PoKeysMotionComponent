@@ -164,7 +164,7 @@ void user_mainloop(void) {
                     ProcessLimitOverride(InstanceVariable);
 
                     // Check if motion is commanded
-                    if (buffer_in_motion == true) {
+                    if (motion_started == true) {
                         // switching states gives us at most "CycleTimeMs" of buffer.
                         // sleep specific time to give the buffer extra time (20ms) to fill up.
                         usleep(20000);
