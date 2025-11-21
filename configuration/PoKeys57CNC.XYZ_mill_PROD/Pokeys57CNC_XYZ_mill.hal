@@ -29,11 +29,11 @@ net machine-is-on => PoKeysController.0.machine-is-on
 
 # buffer detects motion
 net buffer-in-motion <= PoKeysMotionBuffer.0.in-motion
-net buffer-in-motion => PoKeysController.0.buffer-in-motion
+net buffer-in-motion => PoKeysController.0.motion.started
 
 # Indicators that motion should happen
 net motion-jog-is-active <= motion.jog-is-active
-net motion-jog-is-active => PoKeysMotionBuffer.0.motion-jog-is-active 
+net motion-jog-is-active => PoKeysMotionBuffer.0.motion-jog-is-active
 net motion-in-position <= motion.in-position
 net motion-in-position => PoKeysMotionBuffer.0.motion-in-position
 
@@ -61,8 +61,11 @@ addf estop-latch.0            servo-thread
 # Axis X
 #*******************
 
+net x-homing <= joint.0.homing
+net x-homing => PoKeysController.0.motion.override-limit.0
+
 net x-override-limit <= halui.joint.0.override-limits
-net x-override-limit => PoKeysController.0.axis.0.override-limit
+net x-override-limit => PoKeysController.0.motion.override-limit.1
 
 net x-pos-cmd      <= joint.0.motor-pos-cmd
 net x-pos-cmd      => PoKeysMotionBuffer.0.axis.0.position-command
@@ -74,13 +77,18 @@ net min-x          <=  PoKeysController.0.axis.0.limit-negative
 net min-x          =>  joint.0.neg-lim-sw-in
 net max-x          <=  PoKeysController.0.axis.0.limit-positive
 net max-x          =>  joint.0.pos-lim-sw-in
+net home-x         <=  PoKeysController.0.axis.0.home
+net home-x         =>  joint.0.home-sw-in
 
 #*******************
 # Axis Y
 #*******************
 
+net y-homing <= joint.1.homing
+net y-homing => PoKeysController.0.motion.override-limit.2
+
 net y-override-limit <= halui.joint.1.override-limits
-net y-override-limit => PoKeysController.0.axis.1.override-limit
+net y-override-limit => PoKeysController.0.motion.override-limit.3
 
 net y-pos-cmd      <= joint.1.motor-pos-cmd
 net y-pos-cmd      => PoKeysMotionBuffer.0.axis.1.position-command
@@ -92,13 +100,18 @@ net min-y          <=  PoKeysController.0.axis.1.limit-negative
 net min-y          =>  joint.1.neg-lim-sw-in
 net max-y          <=  PoKeysController.0.axis.1.limit-positive
 net max-y          =>  joint.1.pos-lim-sw-in
+net home-y         <=  PoKeysController.0.axis.1.home
+net home-y         =>  joint.1.home-sw-in
 
 #*******************
 # Axis Z
 #*******************
 
+net z-homing <= joint.2.homing
+net z-homing => PoKeysController.0.motion.override-limit.4
+
 net z-override-limit <= halui.joint.2.override-limits
-net z-override-limit => PoKeysController.0.axis.2.override-limit
+net z-override-limit => PoKeysController.0.motion.override-limit.5
 
 net z-pos-cmd      <= joint.2.motor-pos-cmd
 net z-pos-cmd      => PoKeysMotionBuffer.0.axis.2.position-command
@@ -110,6 +123,8 @@ net min-z          <=  PoKeysController.0.axis.2.limit-negative
 net max-z          =>  joint.2.pos-lim-sw-in
 net max-z          <=  PoKeysController.0.axis.2.limit-positive
 net max-z          =>  joint.2.pos-lim-sw-in
+net home-z         <=  PoKeysController.0.axis.2.home
+net home-z         =>  joint.2.home-sw-in
 
 #*******************
 # SPINDLE
@@ -121,6 +136,7 @@ net spindle-enable => PoKeysController.0.io.solid-state-relay.0
 #*******************
 # Probe
 #*******************
+
 net probe-in     <=  PoKeysController.0.io.input-pin.0
 net probe-in     =>  motion.probe-input
 
