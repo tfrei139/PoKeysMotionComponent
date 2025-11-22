@@ -31,3 +31,9 @@ Maybe rt components behave differently.
 When the rt component logs an error it will also show up in gmoccapy. The gmoccapy logs themselves will not include messages from other components. No idea where to get the rt debug logs.  
 TODO What is LinuxCNCs component logging concept?  
 [Semi-relevant forum entry](https://forum.linuxcnc.org/38-general-linuxcnc-questions/35916-where-are-the-f-ng-rtapi-print-msg-rtapi-msg-info-messages)
+
+## Original test system specs
+ASUS all-in-one V161, BIOS V308, Intel Celeron N4000 1.1 GHz up to 2.6 GHz, 2 cores.
+PoKeys57CNC, V1.3, Firmware V4.4.19
+LinuxCNC 2.9.4 PREEMPT-RT
+Latency Test, Max Jitter: Servo Thread 53'936ns, Base Thread 79'713ns
