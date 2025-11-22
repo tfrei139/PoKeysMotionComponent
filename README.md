@@ -31,7 +31,6 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 - Test/Extend probing
 - Test Soft limits
 - Technical: Benchmark component
-- Technical: convert to `C` component
 - Allow reading encoders for jogging
 - Provide more example configurations
 
