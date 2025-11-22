@@ -6,3 +6,4 @@ Currently configured to support
  * Spindle on/off and speed control (with 0-10V VFD)
  * Probe IO
  * E-Stop
+ * Homing

@@ -8,6 +8,9 @@ LinuxCNC component to use a PoKeys57CNC board for motion and simple IO
 This component aims to provide a simple integration of a PoKeysCNC controller into LinuxCNC.  
 Simple means that it does not try provide all possible functions and features of the PoKeysCNC, but focus on the motion control and necessary IO for a simple CNC machine.
 
+PoKeysCNC offers high level functions on its own, such as homing, probing or jogging. However trying to match and adapt those functions to LinuxCNCs design is a fruitless effort.  
+LinuxCNC *is* the controller and will provide the logic for all functions. PoKeysCNC is reduced to IO and motor controller.  
+
 The component is split into two parts: the real time motion buffer component and the user space controller component.
 The communication with the PoKeys either through ethernet or USB will never be close to fast enough for a real time component.  
 The motion buffer will grab the commanded positions, compute the necessary pulses, and stream it to a buffer.
@@ -17,16 +20,16 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 - 3 Axis (motor) motion control
 - E-Stop
 - Limit switches and override
+- Homing
 - IO
     - All relays (example Spindle on/off)
     - Configurable digital input output pins
     - PWM pins
 
 ### Backlog
-- Enable homing
 - Make number of axes configurable in HAL
 - Test/Extend probing
-- Soft limits
+- Test Soft limits
 - Technical: Benchmark component
 - Technical: convert to `C` component
 - Allow reading encoders for jogging
