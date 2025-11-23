@@ -549,7 +549,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         ret = PK_PEv2_PulseEngineReboot(device);
         rtapi_print_msg(RTAPI_MSG_DBG, "PE Reboot:%d\n", ret);
         // In theory we should sleep, but it'l highly unlikely you'll start a motion 1 second after opening LCNC.
-        // TOOD or is the device communication down during this time?
+        // TODO or is the device communication down during this time?
     }
 
     // Set up axis configuration
