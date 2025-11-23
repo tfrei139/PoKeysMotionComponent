@@ -391,7 +391,7 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance);
 void ProcessMoveCommand(struct ComponentStruct* componentInstance);
 void ProcessPositions(struct ComponentStruct* componentInstance);
 void ProcessRelays(struct ComponentStruct* componentInstance);
-bool CompareRelayState(bool state, int offset);
+bool CompareRelayState(sPoKeysDevice* device, bool state, int offset);
 void SetActiveOutputsOff(struct ComponentStruct* componentInstance);
 struct timespec* GetStartTime();
 void ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, enum State currentState, enum State nextState);
@@ -607,7 +607,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     ReadPulseEngineStatus(componentInstance);
 
     if (device->PEv2.PulseEngineState != PK_PEState_peSTOPPED) {
-        SetPulseEngineStatus(InstanceVariable, PK_PEState_peSTOPPED, "Set PE stopped on connect(!)");
+        SetPulseEngineStatus(componentInstance, PK_PEState_peSTOPPED, "Set PE stopped on connect(!)");
     }
 
     int ret;

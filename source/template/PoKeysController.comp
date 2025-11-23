@@ -1,3 +1,5 @@
+// This file serves only as reference to precompile the boiler plate code of the C-component
+
 component PoKeysController;
 
 pin out bit machine_estop = false "Machine is in E-Stop condition";
@@ -33,7 +35,7 @@ license "GPL"; // indicates GPL v2 or later
 author "T.Frei";
 ;;
 // ------------------------------------
-// Empty skeleton Loop
+// Empty template Loop
 // ------------------------------------
 void user_mainloop(void) {
     FOR_ALL_INSTS() {
