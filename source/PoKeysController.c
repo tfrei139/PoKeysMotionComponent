@@ -298,64 +298,10 @@ int main(int argc_, char **argv_) {
     return 0;
 }
 
-#undef FUNCTION
-#define FUNCTION(name) static void name(struct __comp_state *__comp_inst, long period)
-#undef EXTRA_SETUP
-#define EXTRA_SETUP() static int extra_setup(struct __comp_state *__comp_inst, char *prefix, long extra_arg)
-#undef EXTRA_CLEANUP
-#define EXTRA_CLEANUP() static void extra_cleanup(void)
-#undef fperiod
-#define fperiod (period * 1e-9)
-#undef machine_estop
-#define machine_estop (*__comp_inst->machine_estop)
-#undef machine_is_on
-#define machine_is_on (0+*__comp_inst->machine_is_on)
-#undef io_input_pin
-#define io_input_pin(i) (*(__comp_inst->io_input_pin[i]))
-#undef io_output_pin
-#define io_output_pin(i) (0+*(__comp_inst->io_output_pin[i]))
-#undef io_solid_state_relay
-#define io_solid_state_relay(i) (0+*(__comp_inst->io_solid_state_relay[i]))
-#undef io_relay
-#define io_relay(i) (0+*(__comp_inst->io_relay[i]))
-#undef io_open_collector
-#define io_open_collector(i) (0+*(__comp_inst->io_open_collector[i]))
-#undef io_pwm_pin
-#define io_pwm_pin(i) (0+*(__comp_inst->io_pwm_pin[i]))
-#undef motion_started
-#define motion_started (0+*__comp_inst->motion_started)
-#undef motion_override_limit
-#define motion_override_limit(i) (0+*(__comp_inst->motion_override_limit[i]))
-#undef axis_position_feedback
-#define axis_position_feedback(i) (*(__comp_inst->axis_position_feedback[i]))
-#undef axis_limit_positive
-#define axis_limit_positive(i) (*(__comp_inst->axis_limit_positive[i]))
-#undef axis_limit_negative
-#define axis_limit_negative(i) (*(__comp_inst->axis_limit_negative[i]))
-#undef axis_home
-#define axis_home(i) (*(__comp_inst->axis_home[i]))
-#undef internal_state
-#define internal_state (__comp_inst->internal_state)
-#undef device_serial
-#define device_serial (__comp_inst->device_serial)
-#undef log_level
-#define log_level (__comp_inst->log_level)
-#undef axis_step_scale
-#define axis_step_scale(i) (__comp_inst->axis_step_scale[i])
-#undef io_input_pin_number
-#define io_input_pin_number(i) (__comp_inst->io_input_pin_number[i])
-#undef io_output_pin_number
-#define io_output_pin_number(i) (__comp_inst->io_output_pin_number[i])
-#undef io_pwm_pin_number
-#define io_pwm_pin_number(i) (__comp_inst->io_pwm_pin_number[i])
-#undef FOR_ALL_INSTS
-#define FOR_ALL_INSTS() struct __comp_state *__comp_inst; for(__comp_inst = __comp_first_inst; __comp_inst; __comp_inst = __comp_inst->_next)
-
 // ------------------------------------
 // Component code starts here
 // ------------------------------------
-#define ComponentStruct __comp_state    // Internal struct of linuxCNC component
-#define InstanceVariable __comp_inst    // Internal variable of linuxCNC component
+#define ComponentStruct __comp_state    // Internal struct of component
 
 #define NumberOfAxis 3
 #define NumberOfOverridePins 6    // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
@@ -388,7 +334,7 @@ void ProcessLimitOverride(struct ComponentStruct* componentInstance);
 void ProcessEStop(struct ComponentStruct* componentInstance);
 void ProcessDigitalPins(struct ComponentStruct* componentInstance);
 void ProcessPwmPins(struct ComponentStruct* componentInstance);
-void ProcessMoveCommand(struct ComponentStruct* componentInstance);
+bool ProcessMoveCommand(struct ComponentStruct* componentInstance);
 void ProcessPositions(struct ComponentStruct* componentInstance);
 void ProcessRelays(struct ComponentStruct* componentInstance);
 bool CompareRelayState(sPoKeysDevice* device, bool state, int offset);
@@ -404,12 +350,15 @@ void PrintElapsedTime(struct timespec* startTime, const char* log);
 void user_mainloop(void) {
     bool run = true;
     while(run) {
-        FOR_ALL_INSTS() {
+        struct ComponentStruct* currentInstance;
+        for(currentInstance = __comp_first_inst; currentInstance; currentInstance = currentInstance->_next) {
             bool overrideCycleTime = false;
-            enum State originState = internal_state;
             struct timespec* cycleStart = GetStartTime();
 
-            switch (internal_state) {
+            enum State originState = currentInstance->internal_state;
+            enum State nextState = currentInstance->internal_state;
+
+            switch (originState) {
                 case CREATED:
                     // Wait until prince HAL awakes us.
                     usleep(1000);
@@ -417,150 +366,128 @@ void user_mainloop(void) {
                     break;
 
                 case INIT:
-                    if (!ConnectPokeysDevice(InstanceVariable)) {
+                    if (!ConnectPokeysDevice(currentInstance)) {
                         run = false; // TODO can we inform lcnc somehow that it will shutdown?
                         return;
                     }
 
-                    internal_state = IDLE;
+                    nextState = IDLE;
                     overrideCycleTime = true;
                     break;
 
                 case IDLE:
-                    ReadPulseEngineStatus(InstanceVariable);
-                    ProcessEStop(InstanceVariable);
+                    ReadPulseEngineStatus(currentInstance);
+                    ProcessEStop(currentInstance);
 
                     // Set Estop from PoKeys
-                    if (machine_estop == true) {
-                        internal_state = ESTOP;
+                    if (*currentInstance->machine_estop == true) {
+                        nextState = ESTOP;
                         break;
                     }
 
                     // Machine is enabled from LinuxCNC
-                    if (machine_is_on == true) {
-                        SetPulseEngineStatus(InstanceVariable, PK_PEState_peRUNNING, "Set PE Running from IDLE");
-                        internal_state = ENABLED;
+                    if (0 + *currentInstance->machine_is_on == true) {
+                        SetPulseEngineStatus(currentInstance, PK_PEState_peRUNNING, "Set PE Running from IDLE");
+                        nextState = ENABLED;
                         break;
                     }
 
-                    ProcessDigitalPins(InstanceVariable);
-                    ProcessPositions(InstanceVariable);
-                    ProcessRelays(InstanceVariable);
-                    ProcessPwmPins(InstanceVariable);
-                    ProcessLimitOverride(InstanceVariable);
+                    ProcessDigitalPins(currentInstance);
+                    ProcessPositions(currentInstance);
+                    ProcessRelays(currentInstance);
+                    ProcessPwmPins(currentInstance);
+                    ProcessLimitOverride(currentInstance);
 
                     break;
 
                 case ENABLED:
-                    ReadPulseEngineStatus(InstanceVariable);
-                    ProcessEStop(InstanceVariable);
+                    ReadPulseEngineStatus(currentInstance);
+                    ProcessEStop(currentInstance);
 
                     // Set Estop from PoKeys
-                    if (machine_estop == true) {
-                        internal_state = ESTOP;
+                    if (*currentInstance->machine_estop == true) {
+                        nextState = ESTOP;
                         break;
                     }
 
                     // Machine is disabled from LinuxCNC
-                    if (machine_is_on == false) {
-                        SetPulseEngineStatus(InstanceVariable, PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
-                        internal_state = IDLE;
+                    if (0 + *currentInstance->machine_is_on == false) {
+                        SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
+                        nextState = IDLE;
                         break;
                     }
 
-                    ProcessDigitalPins(InstanceVariable);
-                    ProcessPositions(InstanceVariable);
-                    ProcessRelays(InstanceVariable);
-                    ProcessPwmPins(InstanceVariable);
-                    ProcessLimitOverride(InstanceVariable);
+                    ProcessDigitalPins(currentInstance);
+                    ProcessPositions(currentInstance);
+                    ProcessRelays(currentInstance);
+                    ProcessPwmPins(currentInstance);
+                    ProcessLimitOverride(currentInstance);
 
                     // Check if motion is commanded
-                    if (motion_started == true) {
+                    if (0 + *currentInstance->motion_started == true) {
                         // switching states gives us at most "CycleTimeMs" of buffer.
                         // sleep specific time to give the buffer extra time (20ms) to fill up.
                         usleep(20000);
                         overrideCycleTime = true;
                         rtapi_print_msg(RTAPI_MSG_DBG, "Going to motion\n");
-                        internal_state = MOVING;
+                        nextState = MOVING;
                         break;
                     }
 
                     break;
                 case MOVING:
-                    ProcessMoveCommand(InstanceVariable);
-                    ProcessEStop(InstanceVariable);
+                    if (!ProcessMoveCommand(currentInstance)) {
+                        nextState = ENABLED;
+                    }
 
-                    // Set Estop from PoKeys 
-                    if (machine_estop == true) {
+                    ProcessEStop(currentInstance);
+
+                    // Set Estop from PoKeys
+                    if (*currentInstance->machine_estop == true) {
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
-                        internal_state = ESTOP;
+                        nextState = ESTOP;
                         break;
                     }
 
-                    // Machine is disabled from LinuxCNC 
-                    if (machine_is_on == false) {
-                        SetPulseEngineStatus(InstanceVariable, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
+                    // Machine is disabled from LinuxCNC
+                    if (0 + *currentInstance->machine_is_on == false) {
+                        SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
-                        internal_state = IDLE;
+                        nextState = IDLE;
                         break;
                     }
 
-                    ProcessDigitalPins(InstanceVariable);
-                    ProcessPositions(InstanceVariable);
-                    ProcessRelays(InstanceVariable);
-                    ProcessPwmPins(InstanceVariable);
+                    ProcessDigitalPins(currentInstance);
+                    ProcessPositions(currentInstance);
+                    ProcessRelays(currentInstance);
+                    ProcessPwmPins(currentInstance);
 
                     break;
                 case ESTOP:
-                    ReadPulseEngineStatus(InstanceVariable);
-                    ProcessDigitalPins(InstanceVariable); // necessary to update E-Stop pin
-                    ProcessEStop(InstanceVariable);
+                    ReadPulseEngineStatus(currentInstance);
+                    ProcessDigitalPins(currentInstance); // necessary to update E-Stop pin
+                    ProcessEStop(currentInstance);
 
                     // Reset Estop from PoKeys
-                    if (machine_estop == false) {
-                        internal_state = IDLE;
+                    if (*currentInstance->machine_estop == false) {
+                        nextState = IDLE;
                         break;
                     }
 
                     break;
                 case SHUTDOWN:
-                    SetPulseEngineStatus(InstanceVariable, PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
-                    SetActiveOutputsOff(InstanceVariable);
+                    SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
+                    SetActiveOutputsOff(currentInstance);
 
                     run = false;
                     return;
             }
 
-            ProcessCycleTime(cycleStart, overrideCycleTime, originState, internal_state);
+            ProcessCycleTime(cycleStart, overrideCycleTime, originState, nextState);
+            currentInstance->internal_state = nextState;
         }
     }
 }
-
-// ------------------------------------
-// Undefine the component members, otherwise passing the comp_state and using it will break.
-// Alternative: write a C component implementation
-// ------------------------------------
-#undef machine_estop
-#undef machine_is_on
-#undef io_input_pin
-#undef io_input_pin_number
-#undef io_output_pin
-#undef io_output_pin_number
-#undef io_solid_state_relay
-#undef io_relay
-#undef io_open_collector
-#undef io_pwm_pin
-#undef io_pwm_pin_number
-#undef motion_started
-#undef motion_override_limit
-#undef axis_position_feedback
-#undef axis_limit_positive
-#undef axis_limit_negative
-#undef axis_home
-#undef internal_state
-#undef device_serial
-#undef log_level
-#undef axis_step_scale
 
 // ------------------------------------
 // Connects to the device.
@@ -847,9 +774,11 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
 }
 
 // ------------------------------------
-// Process streamed move command and implicitly update PE status information
+// Process streamed move command and implicitly update PE status information.
+// Returns false when movement stops.
 // ------------------------------------
-void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
+bool ProcessMoveCommand(struct ComponentStruct* componentInstance) {
+    bool continueMove = true;
     hal_stream_t stream;
     int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, "SSS");
 
@@ -880,12 +809,13 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
                 if (ret != 0) {
                     rtapi_print_msg(RTAPI_MSG_ERR, "Error reading stream:%d\n", ret);
-                    continue;
+                    continueMove = false;
+                    break;
                 }
 
                 if (dataToReceive[0].s == EndOfMotionPacket) {
-                    rtapi_print_msg(RTAPI_MSG_DBG, "End of motion going to ENABLED state!\n");
-                    componentInstance->internal_state = ENABLED;
+                    rtapi_print_msg(RTAPI_MSG_DBG, "End of motion\n");
+                    continueMove = false;
                     break;
                 }
 
@@ -922,14 +852,17 @@ void ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
             //PrintElapsedTime(streamStart, "StreamRead");
         } else {
-            rtapi_print_msg(RTAPI_MSG_ERR, "Buffer underrun? EndOfMotion Packet missing? Going to ENABLED state!\n");
-            componentInstance->internal_state = ENABLED;
+            rtapi_print_msg(RTAPI_MSG_ERR, "Buffer underrun? EndOfMotion Packet missing?\n");
+            continueMove = false;
         }
 
         hal_stream_detach(&stream);
     } else {
         rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error=%d\n", ret);
+        continueMove = false;
     }
+
+    return continueMove;
 }
 
 // ------------------------------------
