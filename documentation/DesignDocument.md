@@ -8,7 +8,7 @@ I used the same approach for buffering the motion. As consequence we will always
 
 ## Design decision: Instance vs singleton
 There is no technical limitation that you could use multiple PoKeysCNC devices. I do not find any use case for it, but why not allow it.  
-The component is mostly written to support multiple instances. However currently it would not work.
+The component is written to support multiple instances. However currently it is untested.
 
 ## Design decision: Motion only streamed if necessary
 As the component was developed, creating distinct states of being enabled and in motion made more sense to me.

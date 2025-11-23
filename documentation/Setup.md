@@ -12,7 +12,7 @@ The walkthrough is written with the assumption to use Git, with a folder name "g
 ### Setting up Git repository
 ```bash
 sudo apt install git-all
-mkdir ~/git 
+mkdir ~/git
 cd ~/git
 git clone https://github.com/tfrei139/PoKeysMotionComponent.git
 ```
@@ -27,15 +27,15 @@ git clone https://github.com/PoLabsEE/PoKeysLib
 
 ### Getting the dependencies
 ```bash
-sudo apt install build-essential libusb-1.0-0 libusb-1.0-0-dev 
+sudo apt install build-essential libusb-1.0-0 libusb-1.0-0-dev
 ```
 
-### Enabling FastUSB support 
+### Enabling FastUSB support
 > *TODO* find out why this step is necessary. The make file contains "-DPOKEYSLIB_USE_LIBUSB"?
 
 Add the following snippet to each file: `PoKeysLib.h`, `PoKeysLibCore.c`, `PoKeysLibFastUSB.c`
 ```C
-#ifndef POKEYSLIB_USE_LIBUSB	
+#ifndef POKEYSLIB_USE_LIBUSB
     #define POKEYSLIB_USE_LIBUSB
 #endif
 ```
@@ -63,7 +63,7 @@ Restart the computer (In theory you can run `udevadm control --reload-rules`, bu
 
 ## Copying and adapting the configuration
 Copy the example configuration from `~/git/PoKeysMotionComponent/configuration` to `~/linuxcnc/configs`.
-or run the script 
+or run the script
 ```bash
 ./scripts/copy_example.sh
 ```
@@ -80,7 +80,7 @@ In the "ini" file:
 In the hal file, you can define up to five digital input or output pins each.
 And the use of the SSR1/2, Relay1/2 and OC1..4 outputs
 
-Example of digital in, example "probe" 
+Example of digital in, example "probe"
 ```
 setp PoKeysController.0.io.input-pin-number.0 19
 net probe-in     <=  PoKeysController.0.io.input-pin.0
@@ -100,7 +100,7 @@ net spindle-enable => PoKeysController.0.io.solid-state-relay.0
 For each PWM channel/pin you want to use, add the "io.pwm-pin-number.D" parameter.  
 PoKeys puts the 6 PWM pins into channels numbered 0-5. With the pin number I verify that the configurations matches the setup on the device.
 ```
-setp PoKeysController.0.io.pwm-pin-number.5 17 
+setp PoKeysController.0.io.pwm-pin-number.5 17
 [...]
 net pwm-value => PoKeysController.0.io.pwm-pin.5
 ```
