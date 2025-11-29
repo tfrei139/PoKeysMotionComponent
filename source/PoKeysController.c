@@ -356,8 +356,6 @@ void user_mainloop(void) {
             struct timespec* cycleStart = GetStartTime();
 
             enum State originState = currentInstance->internal_state;
-            enum State nextState = currentInstance->internal_state;
-
             switch (originState) {
                 case CREATED:
                     // Wait until prince HAL awakes us.
@@ -371,7 +369,7 @@ void user_mainloop(void) {
                         return;
                     }
 
-                    nextState = IDLE;
+                    currentInstance->internal_state = IDLE;
                     overrideCycleTime = true;
                     break;
 
@@ -381,14 +379,14 @@ void user_mainloop(void) {
 
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
-                        nextState = ESTOP;
+                        currentInstance->internal_state = ESTOP;
                         break;
                     }
 
                     // Machine is enabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == true) {
                         SetPulseEngineStatus(currentInstance, PK_PEState_peRUNNING, "Set PE Running from IDLE");
-                        nextState = ENABLED;
+                        currentInstance->internal_state = ENABLED;
                         break;
                     }
 
@@ -406,14 +404,14 @@ void user_mainloop(void) {
 
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
-                        nextState = ESTOP;
+                        currentInstance->internal_state = ESTOP;
                         break;
                     }
 
                     // Machine is disabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == false) {
                         SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
-                        nextState = IDLE;
+                        currentInstance->internal_state = IDLE;
                         break;
                     }
 
@@ -430,14 +428,14 @@ void user_mainloop(void) {
                         usleep(20000);
                         overrideCycleTime = true;
                         rtapi_print_msg(RTAPI_MSG_DBG, "Going to motion\n");
-                        nextState = MOVING;
+                        currentInstance->internal_state = MOVING;
                         break;
                     }
 
                     break;
                 case MOVING:
                     if (!ProcessMoveCommand(currentInstance)) {
-                        nextState = ENABLED;
+                        currentInstance->internal_state = ENABLED;
                     }
 
                     ProcessEStop(currentInstance);
@@ -445,7 +443,7 @@ void user_mainloop(void) {
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
-                        nextState = ESTOP;
+                        currentInstance->internal_state = ESTOP;
                         break;
                     }
 
@@ -453,7 +451,7 @@ void user_mainloop(void) {
                     if (0 + *currentInstance->machine_is_on == false) {
                         SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
-                        nextState = IDLE;
+                        currentInstance->internal_state = IDLE;
                         break;
                     }
 
@@ -470,7 +468,7 @@ void user_mainloop(void) {
 
                     // Reset Estop from PoKeys
                     if (*currentInstance->machine_estop == false) {
-                        nextState = IDLE;
+                        currentInstance->internal_state = IDLE;
                         break;
                     }
 
@@ -483,8 +481,7 @@ void user_mainloop(void) {
                     return;
             }
 
-            ProcessCycleTime(cycleStart, overrideCycleTime, originState, nextState);
-            currentInstance->internal_state = nextState;
+            ProcessCycleTime(cycleStart, overrideCycleTime, originState, currentInstance->internal_state);
         }
     }
 }
