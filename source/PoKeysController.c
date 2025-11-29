@@ -12,6 +12,7 @@
 #include <PoKeysLib.h>      // For PoKeys communication
 #include <time.h>           // For clock_gettime()
 #include <unistd.h>         // For struct useconds_t
+#include <inifile.h>	    // reading ini
 
 static int comp_id;
 
@@ -87,53 +88,49 @@ typedef struct {
     uint8_t numberOfAxes;
 } component_configuration;
 
-static component_configuration* ReadConfiguration(char *instanceName, long instanceNumber);
+static component_configuration* ReadConfiguration(const char *instanceName);
 
-component_configuration* ReadConfiguration(char *instanceName, long instanceNumber) {
+component_configuration* ReadConfiguration(const char *instanceName) {
     const char* ini_path = getenv("INI_FILE_NAME");
-
     FILE* ini_file_ptr = fopen(ini_path, "r");
 
     if (ini_file_ptr == NULL) {
         rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to read INI '%s'\n", ini_path);
-        return nullptr;
+        return NULL;
     }
-
+    
     /* make sure file is closed on exec() */
     //int fd = fileno(ini_file_ptr); // TODO check actual effect
     //fcntl(fd, F_SETFD, FD_CLOEXEC);
 
-    const char* section = sprintf("%s_%d", instanceName, instanceNumber);
-
     const char* levelTag = "LOG_LEVEL";
     int logLevel = 0;
-    int iniRead = iniFindInt(ini_file_ptr, levelTag, section, &logLevel);
+    int iniRead = iniFindInt(ini_file_ptr, levelTag, instanceName, &logLevel);
+    
     if (iniRead == 0 && logLevel > -1) {
         rtapi_set_msg_level(logLevel);
     }
 
     const char* serialTag = "DEVICE_SERIAL";
     int deviceSerial = 0;
-    iniRead = iniFindInt(ini_file_ptr, serialTag, section, &deviceSerial);
+    iniRead = iniFindInt(ini_file_ptr, serialTag, instanceName, &deviceSerial);
 
-    if (iniRead != 0 || deviceSerial == 0)
-    {
+    if (iniRead != 0 || deviceSerial == 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "No device serial in INI set! '%d'\n", iniRead);
         fclose(ini_file_ptr);
-        return nullptr;
+        return NULL;
     }
 
     rtapi_print_msg(RTAPI_MSG_DBG, "Device serial '%d'\n", deviceSerial);
 
     const char* axisTag = "NUMBER_AXES";
     int numberOfAxes = 0;
-    iniRead = iniFindInt(ini_file_ptr, axisTag, section, &numberOfAxes);
+    iniRead = iniFindInt(ini_file_ptr, axisTag, instanceName, &numberOfAxes);
 
-    if (iniRead != 0 || numberOfAxes == 0)
-    {
+    if (iniRead != 0 || numberOfAxes == 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "Number of axes not set in INI! '%d'\n", iniRead);
         fclose(ini_file_ptr);
-        return nullptr;
+        return NULL;
     }
 
     rtapi_print_msg(RTAPI_MSG_DBG, "Number of axes '%d'\n", numberOfAxes);
@@ -269,7 +266,7 @@ int rtapi_app_main(void) {
         for(i=0; i<count; i++) {
             char buf[HAL_NAME_LEN + 1];
             rtapi_snprintf(buf, sizeof(buf), "PoKeysController.%d", i);
-            component_configuration* = ReadConfiguration(buf, i)
+            component_configuration* config = ReadConfiguration(buf);
             r = export(buf, i);
             if(r != 0) break;
        }
@@ -281,7 +278,7 @@ int rtapi_app_main(void) {
                 r = -EINVAL;
                 break;
             }
-            component_configuration* = ReadConfiguration(names[i], i)
+            component_configuration* config = ReadConfiguration(names[i]);
             r = export(names[i], i);
             if(r != 0) break;
        }
