@@ -6,12 +6,12 @@ pin in bit motion_jog_is_active = false "When the motion planner is jogging, in 
 
 pin out bit in_motion = false "Indicates that the stream is open";
 
-pin in float axis.#.position_command [3] "Commanded position by the motion controller";
-pin out float axis.#.last_position [3] "Internal tracking of last commanded position (DEBUG)";
-pin out float axis.#.pulses_leftover [3] "Internal tracking of partial pulses (DEBUG)";
+pin in float axis.#.position_command [8 : personality] "Commanded position by the motion controller";
+pin out float axis.#.last_position [8 : personality] "Internal tracking of last commanded position (DEBUG)";
+pin out float axis.#.pulses_leftover [8 : personality] "Internal tracking of partial pulses (DEBUG)";
 
-param rw float axis.#.step_scale [3] "1 machine unit equals x pulses";
-param r float axis.#.step_width [3] "1 pulse equals x units (DEBUG)";
+param rw float axis.#.step_scale [8 : personality] "1 machine unit equals x pulses";
+param r float axis.#.step_width [8 : personality] "1 pulse equals x units (DEBUG)";
 
 function _;
 option userspace no;
@@ -24,7 +24,6 @@ author "T.Frei";
 #include <rtapi_math.h>     // for "fabs"
 #include <stdlib.h>         // for "abs"
 
-#define NumberOfAxis 3
 #define SharedMemoryKey 57       // Arbitrary number
 #define BufferDepth 128          // Buffer on PoKeys side would be 128
 #define EndOfMotionPacket 0x0101 // Arbitrary number > uint8
@@ -42,7 +41,13 @@ EXTRA_SETUP() {
 #endif
 
     MotionStream = hal_malloc(sizeof(hal_stream_t));
-    int ret = hal_stream_create(MotionStream, comp_id, SharedMemoryKey, BufferDepth, "SSS");
+    char* streamType = char[personality];
+
+    for (int i=0; i < personality; i++) {
+        streamType[i] = 'S';
+    }
+
+    int ret = hal_stream_create(MotionStream, comp_id, SharedMemoryKey, BufferDepth, streamType);
     int exitCode = 0;
 
     if(ret < 0) {
@@ -93,7 +98,7 @@ FUNCTION(_) {
     }
 
     if (machine_is_on && !IsInit) {
-        for (int i = 0; i < NumberOfAxis; i++) {
+        for (int i = 0; i < personality; i++) {
             axis_last_position(i) = axis_position_command(i);
             axis_pulses_leftover(i) = 0.0f;
             axis_step_width(i) = 1 / fabs(axis_step_scale(i));
@@ -103,13 +108,13 @@ FUNCTION(_) {
     }
 
 	if (motion_in_position == false || motion_jog_is_active == true) {
-		for (int i = 0; i < NumberOfAxis; i++) {
+		for (int i = 0; i < personality; i++) {
 #ifdef MeasureTime
             long long startTime = rtapi_get_time();
 #endif
-			union hal_stream_data dataToSend[NumberOfAxis];
+			union hal_stream_data dataToSend[personality];
 
-            for (int i = 0; i < NumberOfAxis; i++) {
+            for (int i = 0; i < personality; i++) {
                 float differenceInPosition = axis_position_command(i) - axis_last_position(i);
 
                 if (fabs(differenceInPosition) < axis_step_width(i)) {
@@ -163,7 +168,7 @@ FUNCTION(_) {
     if (in_motion == true) {
         in_motion = false;
 
-        union hal_stream_data dataToSend[NumberOfAxis];
+        union hal_stream_data dataToSend[personality];
         dataToSend[0].s = EndOfMotionPacket;
         int writeRes = hal_stream_write(MotionStream, dataToSend);
 

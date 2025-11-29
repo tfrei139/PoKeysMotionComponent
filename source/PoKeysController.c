@@ -28,13 +28,12 @@ MODULE_INFO(linuxcnc, "pin:io.open_collector.#:bit:4:in:Open collector digital o
 MODULE_INFO(linuxcnc, "pin:io.pwm_pin.#:float:6:in:PWM pins, valid values from 0.0 - 100.0 percent duty cycle:None:None");
 MODULE_INFO(linuxcnc, "pin:motion.started:bit:0:in:Motion is being streamed:false:None");
 MODULE_INFO(linuxcnc, "pin:motion.override_limit.#:bit:6:in:Limit switch override. Any pin set overrides globally on PoKeys:None:None");
-MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:3:out:Position in machine units:None:None");
-MODULE_INFO(linuxcnc, "pin:axis.#.limit_positive:bit:3:out:Positive limit switches:None:None");
-MODULE_INFO(linuxcnc, "pin:axis.#.limit_negative:bit:3:out:Negative limit switches:None:None");
-MODULE_INFO(linuxcnc, "pin:axis.#.home:bit:3:out:Home switches:None:None");
+MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:8:out:Position in machine units:None:None");
+MODULE_INFO(linuxcnc, "pin:axis.#.limit_positive:bit:8:out:Positive limit switches:None:None");
+MODULE_INFO(linuxcnc, "pin:axis.#.limit_negative:bit:8:out:Negative limit switches:None:None");
+MODULE_INFO(linuxcnc, "pin:axis.#.home:bit:8:out:Home switches:None:None");
 MODULE_INFO(linuxcnc, "param:internal_state:s32:0:rw:Current component state:-1:None");
-MODULE_INFO(linuxcnc, "param:device_serial:u32:0:rw:PoKeys Device Serial:0:None");
-MODULE_INFO(linuxcnc, "param:axis.#.step_scale:float:3:rw:1 machine unit equals x pulses:None:None");
+MODULE_INFO(linuxcnc, "param:axis.#.step_scale:float:8:rw:1 machine unit equals x pulses:None:None");
 MODULE_INFO(linuxcnc, "param:io.input_pin_number.#:s32:5:rw:Digital input pin mapping, index 1 based:None:None");
 MODULE_INFO(linuxcnc, "param:io.output_pin_number.#:s32:5:rw:Digital output pin mapping, index 1 based:None:None");
 MODULE_INFO(linuxcnc, "param:io.pwm_pin_number.#:s32:6:rw:PWM channel pin mapping, index 1 based:None:None");
@@ -43,6 +42,12 @@ MODULE_INFO(linuxcnc, "author:T.Frei");
 MODULE_LICENSE("GPL");
 #endif // MODULE_INFO
 
+// Component extra configuration
+typedef struct {
+    uint32_t deviceSerial;
+    uint8_t numberOfAxes;
+    char[8] streamType;
+} component_configuration;
 
 struct __comp_state {
     struct __comp_state* _next;
@@ -61,12 +66,12 @@ struct __comp_state {
     hal_bit_t* axis_limit_negative[3];
     hal_bit_t* axis_home[3];
     hal_s32_t internal_state;
-    hal_u32_t device_serial;
     hal_float_t axis_step_scale[3];
     hal_s32_t io_input_pin_number[5];
     hal_s32_t io_output_pin_number[5];
     hal_s32_t io_pwm_pin_number[6];
     sPoKeysDevice* device;
+    component_configuration* configuration;
 };
 
 #include <stdlib.h>
@@ -83,73 +88,24 @@ static int __comp_get_data_size(void);
 #define false (0)
 
 // Component configuration
-typedef struct {
-    uint32_t deviceSerial;
-    uint8_t numberOfAxes;
-} component_configuration;
-
 static component_configuration* ReadConfiguration(const char *instanceName);
-
-component_configuration* ReadConfiguration(const char *instanceName) {
-    const char* ini_path = getenv("INI_FILE_NAME");
-    FILE* ini_file_ptr = fopen(ini_path, "r");
-
-    if (ini_file_ptr == NULL) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to read INI '%s'\n", ini_path);
-        return NULL;
-    }
-    
-    /* make sure file is closed on exec() */
-    //int fd = fileno(ini_file_ptr); // TODO check actual effect
-    //fcntl(fd, F_SETFD, FD_CLOEXEC);
-
-    const char* levelTag = "LOG_LEVEL";
-    int logLevel = 0;
-    int iniRead = iniFindInt(ini_file_ptr, levelTag, instanceName, &logLevel);
-    
-    if (iniRead == 0 && logLevel > -1) {
-        rtapi_set_msg_level(logLevel);
-    }
-
-    const char* serialTag = "DEVICE_SERIAL";
-    int deviceSerial = 0;
-    iniRead = iniFindInt(ini_file_ptr, serialTag, instanceName, &deviceSerial);
-
-    if (iniRead != 0 || deviceSerial == 0) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "No device serial in INI set! '%d'\n", iniRead);
-        fclose(ini_file_ptr);
-        return NULL;
-    }
-
-    rtapi_print_msg(RTAPI_MSG_DBG, "Device serial '%d'\n", deviceSerial);
-
-    const char* axisTag = "NUMBER_AXES";
-    int numberOfAxes = 0;
-    iniRead = iniFindInt(ini_file_ptr, axisTag, instanceName, &numberOfAxes);
-
-    if (iniRead != 0 || numberOfAxes == 0) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "Number of axes not set in INI! '%d'\n", iniRead);
-        fclose(ini_file_ptr);
-        return NULL;
-    }
-
-    rtapi_print_msg(RTAPI_MSG_DBG, "Number of axes '%d'\n", numberOfAxes);
-
-    fclose(ini_file_ptr);
-    component_configuration* configuration = malloc(sizeof(component_configuration));
-    configuration->deviceSerial = deviceSerial;
-    configuration->numberOfAxes = numberOfAxes;
-
-    return configuration;
-}
-// End of component configuration
 
 static int export(char *prefix, long extra_arg) {
     int r = 0;
     int j = 0;
+
+    component_configuration* config = ReadConfiguration(prefix);
+
+    if (config == null) {
+        return -57;
+    }
+
     int sz = sizeof(struct __comp_state) + __comp_get_data_size();
     struct __comp_state *inst = hal_malloc(sz);
     memset(inst, 0, sz);
+
+    inst->configuration = config;
+
     r = hal_pin_bit_newf(HAL_OUT, &(inst->machine_estop), comp_id,
         "%s.machine-estop", prefix);
     if(r != 0) return r;
@@ -197,22 +153,22 @@ static int export(char *prefix, long extra_arg) {
             "%s.motion.override-limit.%01d", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (3); j++) {
+    for(j=0; j < (config->numberOfAxes); j++) {
         r = hal_pin_float_newf(HAL_OUT, &(inst->axis_position_feedback[j]), comp_id,
             "%s.axis.%01d.position-feedback", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (3); j++) {
+    for(j=0; j < (config->numberOfAxes); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->axis_limit_positive[j]), comp_id,
             "%s.axis.%01d.limit-positive", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (3); j++) {
+    for(j=0; j < (config->numberOfAxes); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->axis_limit_negative[j]), comp_id,
             "%s.axis.%01d.limit-negative", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (3); j++) {
+    for(j=0; j < (config->numberOfAxes); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->axis_home[j]), comp_id,
             "%s.axis.%01d.home", prefix, j);
         if(r != 0) return r;
@@ -221,11 +177,7 @@ static int export(char *prefix, long extra_arg) {
         "%s.internal-state", prefix);
     inst->internal_state = -1;
     if(r != 0) return r;
-    r = hal_param_u32_newf(HAL_RW, &(inst->device_serial), comp_id,
-        "%s.device-serial", prefix);
-    inst->device_serial = 0;
-    if(r != 0) return r;
-    for(j=0; j < (3); j++) {
+    for(j=0; j < (config->numberOfAxes); j++) {
         r = hal_param_float_newf(HAL_RW, &(inst->axis_step_scale[j]), comp_id,
             "%s.axis.%01d.step-scale", prefix, j);
         if(r != 0) return r;
@@ -266,7 +218,6 @@ int rtapi_app_main(void) {
         for(i=0; i<count; i++) {
             char buf[HAL_NAME_LEN + 1];
             rtapi_snprintf(buf, sizeof(buf), "PoKeysController.%d", i);
-            component_configuration* config = ReadConfiguration(buf);
             r = export(buf, i);
             if(r != 0) break;
        }
@@ -278,7 +229,6 @@ int rtapi_app_main(void) {
                 r = -EINVAL;
                 break;
             }
-            component_configuration* config = ReadConfiguration(names[i]);
             r = export(names[i], i);
             if(r != 0) break;
        }
@@ -362,7 +312,6 @@ int main(int argc_, char **argv_) {
 // ------------------------------------
 #define ComponentStruct __comp_state    // Internal struct of component
 
-#define NumberOfAxis 3
 #define NumberOfOverridePins 6    // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
 #define EstopPinNumber 51         // 0-based pin 52
 #define NumberOfDigitalPins 5     // Applies to both input and output pins. Could be raised as necessary
@@ -550,9 +499,9 @@ void user_mainloop(void) {
 // Returns false if connection was unsuccessful, or the configuration is not matching.
 // ------------------------------------
 bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
-    sPoKeysDevice* device = PK_ConnectToDeviceWSerial(componentInstance->device_serial, 2000);
+    sPoKeysDevice* device = PK_ConnectToDeviceWSerial(componentInstance->configuration->deviceSerial, 2000);
     if (device == 0) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to Connect to device '%d'\n", componentInstance->device_serial);
+        rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to Connect to device '%d'\n", componentInstance->configuration->deviceSerial);
         return false;
     }
 
@@ -586,9 +535,10 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
 
     int ret;
     // Check basic PE setup.
+    uint8_t numberOfAxes = componentInstance->configuration->numberOfAxes;
     // 0=Use external pulse generator and 1<<7=IO (PoKeysCNCaddon)
-    if (device->PEv2.PulseEngineEnabled != NumberOfAxis || !(device->PEv2.PulseGeneratorType & (0 | (1<<7)))) {
-        device->PEv2.PulseEngineEnabled = NumberOfAxis;
+    if (device->PEv2.PulseEngineEnabled != numberOfAxes || !(device->PEv2.PulseGeneratorType & (0 | (1<<7)))) {
+        device->PEv2.PulseEngineEnabled = numberOfAxes;
         device->PEv2.PulseGeneratorType = 0 | (1<<7);
         ret = PK_PEv2_PulseEngineSetup(device);
         rtapi_print_msg(RTAPI_MSG_WARN, "PE Setup:%d\n", ret);
@@ -600,7 +550,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     }
 
     // Set up axis configuration
-    for (int i = 0; i < NumberOfAxis; i++) {
+    for (int i = 0; i < numberOfAxes; i++) {
         device->PEv2.param1 = i;
         ret = PK_PEv2_AxisConfigurationGet(device);
 
@@ -827,7 +777,7 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
 bool ProcessMoveCommand(struct ComponentStruct* componentInstance) {
     bool continueMove = true;
     hal_stream_t stream;
-    int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, "SSS");
+    int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamType);
 
     if (ret >= 0) {
         bool streamReadable = hal_stream_readable(&stream);
@@ -846,11 +796,12 @@ bool ProcessMoveCommand(struct ComponentStruct* componentInstance) {
             device->PEv2.newMotionBufferEntries = 0;
 
             int motionEntries = 0;
+            uint8_t numberOfAxes = componentInstance->configuration->numberOfAxes;
 
             //struct timespec* streamStart = GetStartTime();
             do
             {
-                union hal_stream_data dataToReceive[NumberOfAxis];
+                union hal_stream_data dataToReceive[numberOfAxes];
 
                 ret = hal_stream_read(&stream, dataToReceive, NULL);
 
@@ -866,10 +817,10 @@ bool ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                     break;
                 }
 
-                for (int i = 0; i < NumberOfAxis; i++) {
+                for (int i = 0; i < numberOfAxes; i++) {
                     uint8_t motion = dataToReceive[i].s;
                     //rtapi_print_msg(RTAPI_MSG_ERR, "%d,", motion);
-                    device->PEv2.MotionBuffer[(motionEntries * NumberOfAxis) + i] = motion;
+                    device->PEv2.MotionBuffer[(motionEntries * numberOfAxes) + i] = motion;
                 }
 
                 //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
@@ -918,7 +869,7 @@ bool ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 void ProcessPositions(struct ComponentStruct* componentInstance) {
     sPoKeysDevice* device = componentInstance->device;
 
-    for (int i = 0; i < NumberOfAxis; i++) {
+    for (int i = 0; i < componentInstance->configuration->numberOfAxes; i++) {
         *componentInstance->axis_position_feedback[i] = ((float)device->PEv2.CurrentPosition[i]) / ((float)componentInstance->axis_step_scale[i]);
         *componentInstance->axis_limit_positive[i] = (device->PEv2.LimitStatusP >> i) & 0x01;
         *componentInstance->axis_limit_negative[i] = (device->PEv2.LimitStatusN >> i) & 0x01;
@@ -1074,6 +1025,69 @@ void PrintElapsedTime(struct timespec* startTime, const char* log) {
     free(startTime);
 
     rtapi_print_msg(RTAPI_MSG_DBG, "%s took %f ms\n", log, t_ms);
+}
+
+// ------------------------------------
+// Reads the minimal configuration from the INI file.
+// ------------------------------------
+component_configuration* ReadConfiguration(const char *instanceName) {
+    const char* ini_path = getenv("INI_FILE_NAME");
+    FILE* ini_file_ptr = fopen(ini_path, "r");
+
+    if (ini_file_ptr == NULL) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to read INI '%s'\n", ini_path);
+        return NULL;
+    }
+
+    /* make sure file is closed on exec() */
+    //int fd = fileno(ini_file_ptr); // TODO check actual effect
+    //fcntl(fd, F_SETFD, FD_CLOEXEC);
+
+    const char* levelTag = "LOG_LEVEL";
+    int logLevel = 0;
+    int iniRead = iniFindInt(ini_file_ptr, levelTag, instanceName, &logLevel);
+
+    if (iniRead == 0 && logLevel > -1) {
+        rtapi_set_msg_level(logLevel);
+    }
+
+    const char* serialTag = "DEVICE_SERIAL";
+    int deviceSerial = 0;
+    iniRead = iniFindInt(ini_file_ptr, serialTag, instanceName, &deviceSerial);
+
+    if (iniRead != 0 || deviceSerial == 0) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "No device serial in INI set! '%d'\n", iniRead);
+        fclose(ini_file_ptr);
+        return NULL;
+    }
+
+    rtapi_print_msg(RTAPI_MSG_DBG, "Device serial '%d'\n", deviceSerial);
+
+    const char* axisTag = "NUMBER_AXES";
+    int numberOfAxes = 0;
+    iniRead = iniFindInt(ini_file_ptr, axisTag, instanceName, &numberOfAxes);
+
+    if (iniRead != 0 || numberOfAxes == 0) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "Number of axes not set in INI! '%d'\n", iniRead);
+        fclose(ini_file_ptr);
+        return NULL;
+    }
+
+    rtapi_print_msg(RTAPI_MSG_DBG, "Number of axes '%d'\n", numberOfAxes);
+    fclose(ini_file_ptr);
+
+    int configSize = sizeof(component_configuration);
+    component_configuration* configuration = malloc(sconfigSize); // TODO free() on close
+    memset(configuration, 0, sizeof(configSize);
+
+    configuration->deviceSerial = deviceSerial;
+    configuration->numberOfAxes = numberOfAxes;
+
+    for (int i=0; i < numberOfAxes; i++) {
+        configuration->streamType[i] = 'S';
+    }
+
+    return configuration;
 }
 
 static int __comp_get_data_size(void) { return 0; }
