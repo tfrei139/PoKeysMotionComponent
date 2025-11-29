@@ -21,34 +21,7 @@ During my tests I did get occasional high cycle times for the user component (I 
 
 ## Design decision: Parametrization using HAL
 While a userpace component can read from the machine ini file, an RT component cannot.  
-So to keep the configuration consistent for both, both will be configured using the HAL pins and parameters.
-
-Old example:  
-Requires `option extra_link_args "... -llinuxcncini";`
-```C
-const char* ini_path = getenv("INI_FILE_NAME");
-    
-FILE* ini_file_ptr = fopen(ini_path, "r");
-
-if (ini_file_ptr == NULL) {
-    rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to read INI '%s'\n", ini_path);
-    return false;
-}
-
-/* make sure file is closed on exec() */
-//int fd = fileno(ini_file_ptr); // TODO check actual effect
-//fcntl(fd, F_SETFD, FD_CLOEXEC);
-
-const char* section = "POKEYS"; // TODO append instance number. How to get instance number/name?
-const char* tag = "DEVICE_SERIAL"; 
-
-const char* tmpstr = iniFind(ini_file_ptr, tag, section);
-int deviceSerial = 0;
-int iniRead = iniFindInt(ini_file_ptr, tag, section, &deviceSerial);
-rtapi_print_msg(RTAPI_MSG_ERR, "Got device serial from INI '%d',%d\n", deviceSerial, iniRead);
-
-fclose(ini_file_ptr);
-```
+So to keep the configuration consistent for both, both will be mostly configured using the HAL pins and parameters.
 
 ## Relays, PWM behavior under E-Stop
 The relay pins are only "in". If we have a failure setting the signal on device side, or we shut down due to E-Stop, the pins will show the wrong state on LinuxCNC side.

@@ -33,7 +33,6 @@ MODULE_INFO(linuxcnc, "pin:axis.#.limit_negative:bit:3:out:Negative limit switch
 MODULE_INFO(linuxcnc, "pin:axis.#.home:bit:3:out:Home switches:None:None");
 MODULE_INFO(linuxcnc, "param:internal_state:s32:0:rw:Current component state:-1:None");
 MODULE_INFO(linuxcnc, "param:device_serial:u32:0:rw:PoKeys Device Serial:0:None");
-MODULE_INFO(linuxcnc, "param:log_level:s32:0:rw:log level (DEBUG):-1:None");
 MODULE_INFO(linuxcnc, "param:axis.#.step_scale:float:3:rw:1 machine unit equals x pulses:None:None");
 MODULE_INFO(linuxcnc, "param:io.input_pin_number.#:s32:5:rw:Digital input pin mapping, index 1 based:None:None");
 MODULE_INFO(linuxcnc, "param:io.output_pin_number.#:s32:5:rw:Digital output pin mapping, index 1 based:None:None");
@@ -62,7 +61,6 @@ struct __comp_state {
     hal_bit_t* axis_home[3];
     hal_s32_t internal_state;
     hal_u32_t device_serial;
-    hal_s32_t log_level;
     hal_float_t axis_step_scale[3];
     hal_s32_t io_input_pin_number[5];
     hal_s32_t io_output_pin_number[5];
@@ -82,6 +80,72 @@ static int __comp_get_data_size(void);
 #define true (1)
 #undef false
 #define false (0)
+
+// Component configuration
+typedef struct {
+    uint32_t deviceSerial;
+    uint8_t numberOfAxes;
+} component_configuration;
+
+static component_configuration* ReadConfiguration(char *instanceName, long instanceNumber);
+
+component_configuration* ReadConfiguration(char *instanceName, long instanceNumber) {
+    const char* ini_path = getenv("INI_FILE_NAME");
+
+    FILE* ini_file_ptr = fopen(ini_path, "r");
+
+    if (ini_file_ptr == NULL) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to read INI '%s'\n", ini_path);
+        return nullptr;
+    }
+
+    /* make sure file is closed on exec() */
+    //int fd = fileno(ini_file_ptr); // TODO check actual effect
+    //fcntl(fd, F_SETFD, FD_CLOEXEC);
+
+    const char* section = sprintf("%s_%d", instanceName, instanceNumber);
+
+    const char* levelTag = "LOG_LEVEL";
+    int logLevel = 0;
+    int iniRead = iniFindInt(ini_file_ptr, levelTag, section, &logLevel);
+    if (iniRead == 0 && logLevel > -1) {
+        rtapi_set_msg_level(logLevel);
+    }
+
+    const char* serialTag = "DEVICE_SERIAL";
+    int deviceSerial = 0;
+    iniRead = iniFindInt(ini_file_ptr, serialTag, section, &deviceSerial);
+
+    if (iniRead != 0 || deviceSerial == 0)
+    {
+        rtapi_print_msg(RTAPI_MSG_ERR, "No device serial in INI set! '%d'\n", iniRead);
+        fclose(ini_file_ptr);
+        return nullptr;
+    }
+
+    rtapi_print_msg(RTAPI_MSG_DBG, "Device serial '%d'\n", deviceSerial);
+
+    const char* axisTag = "NUMBER_AXES";
+    int numberOfAxes = 0;
+    iniRead = iniFindInt(ini_file_ptr, axisTag, section, &numberOfAxes);
+
+    if (iniRead != 0 || numberOfAxes == 0)
+    {
+        rtapi_print_msg(RTAPI_MSG_ERR, "Number of axes not set in INI! '%d'\n", iniRead);
+        fclose(ini_file_ptr);
+        return nullptr;
+    }
+
+    rtapi_print_msg(RTAPI_MSG_DBG, "Number of axes '%d'\n", numberOfAxes);
+
+    fclose(ini_file_ptr);
+    component_configuration* configuration = malloc(sizeof(component_configuration));
+    configuration->deviceSerial = deviceSerial;
+    configuration->numberOfAxes = numberOfAxes;
+
+    return configuration;
+}
+// End of component configuration
 
 static int export(char *prefix, long extra_arg) {
     int r = 0;
@@ -164,10 +228,6 @@ static int export(char *prefix, long extra_arg) {
         "%s.device-serial", prefix);
     inst->device_serial = 0;
     if(r != 0) return r;
-    r = hal_param_s32_newf(HAL_RW, &(inst->log_level), comp_id,
-        "%s.log-level", prefix);
-    inst->log_level = -1;
-    if(r != 0) return r;
     for(j=0; j < (3); j++) {
         r = hal_param_float_newf(HAL_RW, &(inst->axis_step_scale[j]), comp_id,
             "%s.axis.%01d.step-scale", prefix, j);
@@ -209,6 +269,7 @@ int rtapi_app_main(void) {
         for(i=0; i<count; i++) {
             char buf[HAL_NAME_LEN + 1];
             rtapi_snprintf(buf, sizeof(buf), "PoKeysController.%d", i);
+            component_configuration* = ReadConfiguration(buf, i)
             r = export(buf, i);
             if(r != 0) break;
        }
@@ -220,6 +281,7 @@ int rtapi_app_main(void) {
                 r = -EINVAL;
                 break;
             }
+            component_configuration* = ReadConfiguration(names[i], i)
             r = export(names[i], i);
             if(r != 0) break;
        }
@@ -491,15 +553,6 @@ void user_mainloop(void) {
 // Returns false if connection was unsuccessful, or the configuration is not matching.
 // ------------------------------------
 bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
-    if (componentInstance->log_level > -1) {
-        rtapi_set_msg_level(componentInstance->log_level);
-    }
-
-    if (componentInstance->device_serial == 0) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "No 'device-serial' set!\n");
-        return false;
-    }
-
     sPoKeysDevice* device = PK_ConnectToDeviceWSerial(componentInstance->device_serial, 2000);
     if (device == 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to Connect to device '%d'\n", componentInstance->device_serial);
