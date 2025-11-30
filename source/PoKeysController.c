@@ -46,7 +46,7 @@ MODULE_LICENSE("GPL");
 typedef struct {
     uint32_t deviceSerial;
     uint8_t numberOfAxes;
-    char[8] streamType;
+    char streamType[9];
 } component_configuration;
 
 struct __comp_state {
@@ -96,7 +96,7 @@ static int export(char *prefix, long extra_arg) {
 
     component_configuration* config = ReadConfiguration(prefix);
 
-    if (config == null) {
+    if (config == NULL) {
         return -57;
     }
 
@@ -1077,8 +1077,8 @@ component_configuration* ReadConfiguration(const char *instanceName) {
     fclose(ini_file_ptr);
 
     int configSize = sizeof(component_configuration);
-    component_configuration* configuration = malloc(sconfigSize); // TODO free() on close
-    memset(configuration, 0, sizeof(configSize);
+    component_configuration* configuration = malloc(configSize); // TODO free() on close
+    memset(configuration, 0, sizeof(configSize));
 
     configuration->deviceSerial = deviceSerial;
     configuration->numberOfAxes = numberOfAxes;
@@ -1086,6 +1086,7 @@ component_configuration* ReadConfiguration(const char *instanceName) {
     for (int i=0; i < numberOfAxes; i++) {
         configuration->streamType[i] = 'S';
     }
+    configuration->streamType[numberOfAxes] = 0;
 
     return configuration;
 }
