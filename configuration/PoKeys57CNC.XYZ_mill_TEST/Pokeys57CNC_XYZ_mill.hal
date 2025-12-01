@@ -9,7 +9,7 @@ loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD servo_period_nsec=[EM
 # PoKeys components
 #*******************
 
-loadusr -W PoKeysController
+loadusr -W PoKeysController personality=3
 setp PoKeysController.0.axis.0.step-scale 800.0
 setp PoKeysController.0.axis.1.step-scale 800.0
 setp PoKeysController.0.axis.2.step-scale 1600.0

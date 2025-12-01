@@ -46,7 +46,7 @@ EXTRA_SETUP() {
     for (int i=0; i < personality; i++) {
         streamType[i] = 'S';
     }
-    streamType[personality] = 0;
+    streamType[personality] = 0; // null terminate manually
 
     int ret = hal_stream_create(MotionStream, comp_id, SharedMemoryKey, BufferDepth, streamType);
     int exitCode = 0;

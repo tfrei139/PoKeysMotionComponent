@@ -28,12 +28,12 @@ MODULE_INFO(linuxcnc, "pin:io.open_collector.#:bit:4:in:Open collector digital o
 MODULE_INFO(linuxcnc, "pin:io.pwm_pin.#:float:6:in:PWM pins, valid values from 0.0 - 100.0 percent duty cycle:None:None");
 MODULE_INFO(linuxcnc, "pin:motion.started:bit:0:in:Motion is being streamed:false:None");
 MODULE_INFO(linuxcnc, "pin:motion.override_limit.#:bit:6:in:Limit switch override. Any pin set overrides globally on PoKeys:None:None");
-MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:8:out:Position in machine units:None:None");
-MODULE_INFO(linuxcnc, "pin:axis.#.limit_positive:bit:8:out:Positive limit switches:None:None");
-MODULE_INFO(linuxcnc, "pin:axis.#.limit_negative:bit:8:out:Negative limit switches:None:None");
-MODULE_INFO(linuxcnc, "pin:axis.#.home:bit:8:out:Home switches:None:None");
+MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:(8, 'personality'):out:Position in machine units:None:None");
+MODULE_INFO(linuxcnc, "pin:axis.#.limit_positive:bit:(8, 'personality'):out:Positive limit switches:None:None");
+MODULE_INFO(linuxcnc, "pin:axis.#.limit_negative:bit:(8, 'personality'):out:Negative limit switches:None:None");
+MODULE_INFO(linuxcnc, "pin:axis.#.home:bit:(8, 'personality'):out:Home switches:None:None");
 MODULE_INFO(linuxcnc, "param:internal_state:s32:0:rw:Current component state:-1:None");
-MODULE_INFO(linuxcnc, "param:axis.#.step_scale:float:8:rw:1 machine unit equals x pulses:None:None");
+MODULE_INFO(linuxcnc, "param:axis.#.step_scale:float:(8, 'personality'):rw:1 machine unit equals x pulses:None:None");
 MODULE_INFO(linuxcnc, "param:io.input_pin_number.#:s32:5:rw:Digital input pin mapping, index 1 based:None:None");
 MODULE_INFO(linuxcnc, "param:io.output_pin_number.#:s32:5:rw:Digital output pin mapping, index 1 based:None:None");
 MODULE_INFO(linuxcnc, "param:io.pwm_pin_number.#:s32:6:rw:PWM channel pin mapping, index 1 based:None:None");
@@ -46,11 +46,13 @@ MODULE_LICENSE("GPL");
 typedef struct {
     uint32_t deviceSerial;
     uint8_t numberOfAxes;
+    uint8_t maxMotionPackets;
     char streamType[9];
 } component_configuration;
 
 struct __comp_state {
     struct __comp_state* _next;
+    int _personality;
     hal_bit_t* machine_estop;
     hal_bit_t* machine_is_on;
     hal_bit_t* io_input_pin[5];
@@ -88,13 +90,13 @@ static int __comp_get_data_size(void);
 #define false (0)
 
 // Component configuration
-static component_configuration* ReadConfiguration(const char *instanceName);
+static component_configuration* ReadConfiguration(const char *instanceName, long personality);
 
-static int export(char *prefix, long extra_arg) {
+static int export(char *prefix, long extra_arg, long personality) {
     int r = 0;
     int j = 0;
 
-    component_configuration* config = ReadConfiguration(prefix);
+    component_configuration* config = ReadConfiguration(prefix, personality);
 
     if (config == NULL) {
         return -57;
@@ -105,6 +107,7 @@ static int export(char *prefix, long extra_arg) {
     memset(inst, 0, sz);
 
     inst->configuration = config;
+    inst->_personality = personality;
 
     r = hal_pin_bit_newf(HAL_OUT, &(inst->machine_estop), comp_id,
         "%s.machine-estop", prefix);
@@ -153,22 +156,38 @@ static int export(char *prefix, long extra_arg) {
             "%s.motion.override-limit.%01d", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->numberOfAxes); j++) {
+    if((personality) > (8)) {
+        rtapi_print_msg(RTAPI_MSG_ERR,"Pin axis.#.position_feedback: Requested size %d exceeds max size %d\n",(int)personality, (int)8);
+        return -ENOSPC;
+    }
+    for(j=0; j < (personality); j++) {
         r = hal_pin_float_newf(HAL_OUT, &(inst->axis_position_feedback[j]), comp_id,
             "%s.axis.%01d.position-feedback", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->numberOfAxes); j++) {
+    if((personality) > (8)) {
+        rtapi_print_msg(RTAPI_MSG_ERR,"Pin axis.#.limit_positive: Requested size %d exceeds max size %d\n",(int)personality, (int)8);
+        return -ENOSPC;
+    }
+    for(j=0; j < (personality); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->axis_limit_positive[j]), comp_id,
             "%s.axis.%01d.limit-positive", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->numberOfAxes); j++) {
+    if((personality) > (8)) {
+        rtapi_print_msg(RTAPI_MSG_ERR,"Pin axis.#.limit_negative: Requested size %d exceeds max size %d\n",(int)personality, (int)8);
+        return -ENOSPC;
+    }
+    for(j=0; j < (personality); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->axis_limit_negative[j]), comp_id,
             "%s.axis.%01d.limit-negative", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->numberOfAxes); j++) {
+    if((personality) > (8)) {
+        rtapi_print_msg(RTAPI_MSG_ERR,"Pin axis.#.home: Requested size %d exceeds max size %d\n",(int)personality, (int)8);
+        return -ENOSPC;
+    }
+    for(j=0; j < (personality); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->axis_home[j]), comp_id,
             "%s.axis.%01d.home", prefix, j);
         if(r != 0) return r;
@@ -177,7 +196,11 @@ static int export(char *prefix, long extra_arg) {
         "%s.internal-state", prefix);
     inst->internal_state = -1;
     if(r != 0) return r;
-    for(j=0; j < (config->numberOfAxes); j++) {
+    if((personality) > (8)) {
+        rtapi_print_msg(RTAPI_MSG_ERR,"Parameter axis.#.step_scale: Requested size %d exceeds max size %d\n",(int)personality, (int)8);
+        return -ENOSPC;
+    }
+    for(j=0; j < (personality); j++) {
         r = hal_param_float_newf(HAL_RW, &(inst->axis_step_scale[j]), comp_id,
             "%s.axis.%01d.step-scale", prefix, j);
         if(r != 0) return r;
@@ -204,6 +227,23 @@ static int export(char *prefix, long extra_arg) {
 }
 static int default_count=1, count=0;
 char *names[16] = {0,};
+static int personality[64] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+RTAPI_MP_ARRAY_INT(personality, 64, "personality of each PoKeysController");
+
+static int p_value(char* cname, char *name, int idx) {
+    int ans = personality[idx%64];
+    if (idx >= 64) {
+        if (name==NULL) {
+            rtapi_print_msg(RTAPI_MSG_ERR,"%s: instance %d assigned personality=%d(=%#0x)\n",
+                            cname, idx, ans, ans);
+        } else {
+            rtapi_print_msg(RTAPI_MSG_ERR,"%s: name %s assigned personality=%d(=%#0x)\n",
+                            cname, name, ans, ans);
+        }
+    }
+    return ans;
+}
+
 int rtapi_app_main(void) {
     int r = 0;
     int i;
@@ -218,7 +258,7 @@ int rtapi_app_main(void) {
         for(i=0; i<count; i++) {
             char buf[HAL_NAME_LEN + 1];
             rtapi_snprintf(buf, sizeof(buf), "PoKeysController.%d", i);
-            r = export(buf, i);
+            r = export(buf, i, p_value("PoKeysController", buf, i) );
             if(r != 0) break;
        }
     } else {
@@ -229,7 +269,7 @@ int rtapi_app_main(void) {
                 r = -EINVAL;
                 break;
             }
-            r = export(names[i], i);
+            r = export(names[i], i, p_value("PoKeysController", names[i], i) );
             if(r != 0) break;
        }
     }
@@ -797,6 +837,7 @@ bool ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
             int motionEntries = 0;
             uint8_t numberOfAxes = componentInstance->configuration->numberOfAxes;
+            uint8_t maxMotionPackets = componentInstance->configuration->maxMotionPackets;
 
             //struct timespec* streamStart = GetStartTime();
             do
@@ -829,8 +870,7 @@ bool ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
                 streamReadable = hal_stream_readable(&stream);
 
-                // floor(56 bytes / number of axes enabled) = floor(56 / 3) = 18 max allowable packet size
-                if (streamReadable == false || motionEntries == 18) {
+                if (streamReadable == false || motionEntries == maxMotionPackets) {
                     device->PEv2.newMotionBufferEntries = motionEntries;
 
                     //struct timespec* requestStart = GetStartTime();
@@ -1030,7 +1070,7 @@ void PrintElapsedTime(struct timespec* startTime, const char* log) {
 // ------------------------------------
 // Reads the minimal configuration from the INI file.
 // ------------------------------------
-component_configuration* ReadConfiguration(const char *instanceName) {
+component_configuration* ReadConfiguration(const char *instanceName, long personality) {
     const char* ini_path = getenv("INI_FILE_NAME");
     FILE* ini_file_ptr = fopen(ini_path, "r");
 
@@ -1069,14 +1109,17 @@ component_configuration* ReadConfiguration(const char *instanceName) {
     component_configuration* configuration = malloc(configSize); // TODO free() on close
     memset(configuration, 0, sizeof(configSize));
 
-    int numberOfAxes = 3; // TODO pass personality
+    int numberOfAxes = personality;
     configuration->deviceSerial = deviceSerial;
     configuration->numberOfAxes = numberOfAxes;
+    configuration->maxMotionPackets = floor(56 / numberOfAxes);  // floor(56 bytes / number of axes enabled) = max allowable packet size
+
+    rtapi_print_msg(RTAPI_MSG_INFO, "Motion packets '%d'\n", configuration->maxMotionPackets);
 
     for (int i=0; i < numberOfAxes; i++) {
         configuration->streamType[i] = 'S';
     }
-    configuration->streamType[numberOfAxes] = 0;
+    configuration->streamType[numberOfAxes] = 0; // null terminate manually
 
     return configuration;
 }
