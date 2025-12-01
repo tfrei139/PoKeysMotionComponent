@@ -9,10 +9,10 @@
 #include "rtapi_math64.h"
 
 // Component imports
+#include "rtapi_math.h"		// For floor()
 #include <PoKeysLib.h>      // For PoKeys communication
 #include <time.h>           // For clock_gettime()
 #include <unistd.h>         // For struct useconds_t
-#include "rtapi_math.h"		// For floor()
 #include <inifile.h>	    // reading ini
 
 static int comp_id;
@@ -228,8 +228,9 @@ static int export(char *prefix, long extra_arg, long personality) {
 }
 static int default_count=1, count=0;
 char *names[16] = {0,};
-static int personality[64] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-RTAPI_MP_ARRAY_INT(personality, 64, "personality of each PoKeysController");
+#define MAXPERS 64
+static int personality[MAXPERS] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+RTAPI_MP_ARRAY_INT(personality, MAXPERS, "personality of each PoKeysController");
 
 static int p_value(char* cname, char *name, int idx) {
     int ans = personality[idx%64];
