@@ -12,6 +12,7 @@
 #include <PoKeysLib.h>      // For PoKeys communication
 #include <time.h>           // For clock_gettime()
 #include <unistd.h>         // For struct useconds_t
+#include "rtapi_math.h"		// For floor()
 #include <inifile.h>	    // reading ini
 
 static int comp_id;
