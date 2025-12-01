@@ -41,9 +41,8 @@ EXTRA_SETUP() {
 #endif
 
     MotionStream = hal_malloc(sizeof(hal_stream_t));
-    
-    char streamType[personality + 1];
 
+    char streamType[personality + 1];
     for (int i=0; i < personality; i++) {
         streamType[i] = 'S';
     }

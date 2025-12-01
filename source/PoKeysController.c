@@ -1063,23 +1063,13 @@ component_configuration* ReadConfiguration(const char *instanceName) {
 
     rtapi_print_msg(RTAPI_MSG_DBG, "Device serial '%d'\n", deviceSerial);
 
-    const char* axisTag = "NUMBER_AXES";
-    int numberOfAxes = 0;
-    iniRead = iniFindInt(ini_file_ptr, axisTag, instanceName, &numberOfAxes);
-
-    if (iniRead != 0 || numberOfAxes == 0) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "Number of axes not set in INI! '%d'\n", iniRead);
-        fclose(ini_file_ptr);
-        return NULL;
-    }
-
-    rtapi_print_msg(RTAPI_MSG_DBG, "Number of axes '%d'\n", numberOfAxes);
     fclose(ini_file_ptr);
 
     int configSize = sizeof(component_configuration);
     component_configuration* configuration = malloc(configSize); // TODO free() on close
     memset(configuration, 0, sizeof(configSize));
 
+    int numberOfAxes = 3; // TODO pass personality
     configuration->deviceSerial = deviceSerial;
     configuration->numberOfAxes = numberOfAxes;
 
