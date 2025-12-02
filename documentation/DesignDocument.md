@@ -20,8 +20,10 @@ The drawback, that we consistently need to send unnecessary data. And add potent
 During my tests I did get occasional high cycle times for the user component (I assume due to the hardware). So the robustness of the mechanism is appreciated.
 
 ## Design decision: Parametrization using HAL
+The primary configuration is done in the ini file.
 While a userpace component can read from the machine ini file, an RT component cannot.  
-So to keep the common configuration consistent for both, both will be configured using the HAL pins and parameters.
+An RT component can use "personality" to parametrize the the amount of pins, but a userspace component cannot.  
+So to keep the common configuration consistent for both, certain paramaters will be configured using the HAL pins.
 
 ## Relays, PWM behavior under E-Stop
 The relay pins are only "in". If we have a failure setting the signal on device side, or we shut down due to E-Stop, the pins will show the wrong state on LinuxCNC side.

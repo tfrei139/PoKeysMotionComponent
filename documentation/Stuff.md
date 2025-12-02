@@ -37,3 +37,6 @@ ASUS all-in-one V161, BIOS V308, Intel Celeron N4000 1.1 GHz up to 2.6 GHz, 2 co
 PoKeys57CNC, V1.3, Firmware V4.4.19  
 LinuxCNC 2.9.4 PREEMPT-RT  
 Latency Test, Max Jitter: Servo Thread 53'936ns, Base Thread 79'713ns
+
+## Userspace components do not support personality
+[LinuxCNC Issue 1089](https://github.com/LinuxCNC/linuxcnc/issues/1089)
