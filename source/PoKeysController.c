@@ -47,6 +47,7 @@ MODULE_LICENSE("GPL");
 #define NumberOfOverridePins 6    // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
 #define NumberOfDigitalPins 10    // Applies to both input and output pins. Could be raised as necessary
 
+// TODO rename
 typedef struct {
     uint32_t deviceSerial;
     uint8_t numberOfAxes;
@@ -54,6 +55,10 @@ typedef struct {
     char streamType[9];
     uint8_t numberOfInputPins;
     uint8_t inputPinMapping[NumberOfDigitalPins];
+    uint8_t numberOfOutputPins;
+    uint8_t outputPinMapping[NumberOfDigitalPins];
+    uint8_t numberOfPwmPins;
+    uint8_t pwmPinMapping[6];
 } component_configuration;
 
 struct __comp_state {
@@ -126,7 +131,7 @@ static int export(char *prefix, long extra_arg) {
             "%s.io.input-pin.%01d", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (5); j++) {
+    for(j=0; j < (config->numberOfOutputPins); j++) {
         r = hal_pin_bit_newf(HAL_IN, &(inst->io_output_pin[j]), comp_id,
             "%s.io.output-pin.%01d", prefix, j);
         if(r != 0) return r;
@@ -146,7 +151,7 @@ static int export(char *prefix, long extra_arg) {
             "%s.io.open-collector.%01d", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (6); j++) {
+    for(j=0; j < (config->numberOfPwmPins); j++) {
         r = hal_pin_float_newf(HAL_IN, &(inst->io_pwm_pin[j]), comp_id,
             "%s.io.pwm-pin.%01d", prefix, j);
         if(r != 0) return r;
@@ -572,6 +577,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     ret = PK_PinConfigurationGet(device);
     rtapi_print_msg(RTAPI_MSG_DBG, "Getting pin info =%d\n", ret);
 
+    // TODO check configuration
     for (int i = 0; i < NumberOfDigitalPins; i++) {
         int pinNumber = componentInstance->io_input_pin_number[i];
 
@@ -600,6 +606,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         }
     }
 
+    // TODO check configuration
     // Read PWM pin capabilities
     ret = PK_PWMConfigurationGet(device);
     //rtapi_print_msg(RTAPI_MSG_DBG, "Getting PWM info =%d\n", ret);
@@ -1107,18 +1114,50 @@ component_configuration* ReadConfiguration(const char *instanceName) {
         rtapi_snprintf(inputPinTagFormat, 13, "INPUT_PIN_%d", i);
 
         int inputPinMap = 0;
-        const char* result = iniFind(ini_file_ptr, inputPinTagFormat, instanceName);
-        iniRead = iniFindInt(ini_file_ptr, axisTag, instanceName, &inputPinMap);
+        iniRead = iniFindInt(ini_file_ptr, inputPinTagFormat, instanceName, &inputPinMap);
 
         if (iniRead == 0) {
             configuration->inputPinMapping[inputPins] = inputPinMap;
+            rtapi_print_msg(RTAPI_MSG_DBG, "Read input pin '%d'\n", inputPinMap);
             inputPins++;
         }
     }
 
-    fclose(ini_file_ptr);
+    // Read and apply output pin configuration
+    uint8_t outputPins = 0;
+    for (int i = 0; i < NumberOfDigitalPins; i++)
+    {
+        char outputPinTagFormat[13];
+        rtapi_snprintf(outputPinTagFormat, 13, "OUTPUT_PIN_%d", i);
 
-    //const char* result = iniFind(ini_file_ptr, inputPinTagFormat, instanceName);
+        int outputPinMap = 0;
+        iniRead = iniFindInt(ini_file_ptr, outputPinTagFormat, instanceName, &outputPinMap);
+
+        if (iniRead == 0) {
+            configuration->outputPinMapping[outputPins] = outputPinMap;
+            rtapi_print_msg(RTAPI_MSG_DBG, "Read output pin '%d'\n", outputPinMap);
+            outputPins++;
+        }
+    }
+
+    // Read and apply PWM pin configuration
+    uint8_t pwmPins = 0;
+    for (int i = 0; i < 6; i++)
+    {
+        char pwmPinTagFormat[13];
+        rtapi_snprintf(pwmPinTagFormat, 13, "PWM_PIN_%d", i);
+
+        int pwmPinMap = 0;
+        iniRead = iniFindInt(ini_file_ptr, pwmPinTagFormat, instanceName, &pwmPinMap);
+
+        if (iniRead == 0) {
+            configuration->pwmPinMapping[pwmPins] = pwmPinMap;
+            rtapi_print_msg(RTAPI_MSG_DBG, "Read pwm pin '%d'\n", pwmPinMap);
+            pwmPins++;
+        }
+    }
+
+    fclose(ini_file_ptr);
 
     return configuration;
 }
