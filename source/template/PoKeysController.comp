@@ -5,8 +5,8 @@ component PoKeysController;
 pin out bit machine_estop = false "Machine is in E-Stop condition";
 pin in bit machine_is_on = false "Machine should be enabled";
 
-pin out bit io.input_pin.# [5] "Digital input pins";
-pin in bit io.output_pin.# [5] "Digital output pins";
+pin out bit io.input_pin.# [10] "Digital input pins";
+pin in bit io.output_pin.# [10] "Digital output pins";
 pin in bit io.solid_state_relay.# [2] "Solid state relays";
 pin in bit io.relay.# [2] "Relays";
 pin in bit io.open_collector.# [4] "Open collector digital outputs";
@@ -23,9 +23,6 @@ pin out bit axis.#.home [8] "Home switches";
 param rw signed internal_state = -1 "Current component state";
 
 param rw float axis.#.step_scale [8] "1 machine unit equals x pulses";
-param rw signed io.input_pin_number.# [5] "Digital input pin mapping, index 1 based";
-param rw signed io.output_pin_number.# [5] "Digital output pin mapping, index 1 based";
-param rw signed io.pwm_pin_number.# [6] "PWM channel pin mapping, index 1 based";
 
 option userspace yes;
 

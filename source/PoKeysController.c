@@ -44,11 +44,16 @@ MODULE_LICENSE("GPL");
 #endif // MODULE_INFO
 
 // Component extra configuration
+#define NumberOfOverridePins 6    // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
+#define NumberOfDigitalPins 10    // Applies to both input and output pins. Could be raised as necessary
+
 typedef struct {
     uint32_t deviceSerial;
     uint8_t numberOfAxes;
     uint8_t maxMotionPackets;
     char streamType[9];
+    uint8_t numberOfInputPins;
+    uint8_t inputPinMapping[NumberOfDigitalPins];
 } component_configuration;
 
 struct __comp_state {
@@ -62,7 +67,7 @@ struct __comp_state {
     hal_bit_t* io_open_collector[4];
     hal_float_t* io_pwm_pin[6];
     hal_bit_t* motion_started;
-    hal_bit_t* motion_override_limit[6];
+    hal_bit_t* motion_override_limit[NumberOfOverridePins];
     hal_float_t* axis_position_feedback[3];
     hal_bit_t* axis_limit_positive[3];
     hal_bit_t* axis_limit_negative[3];
@@ -116,7 +121,7 @@ static int export(char *prefix, long extra_arg) {
         "%s.machine-is-on", prefix);
     if(r != 0) return r;
     *(inst->machine_is_on) = false;
-    for(j=0; j < (5); j++) {
+    for(j=0; j < (config->numberOfInputPins); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->io_input_pin[j]), comp_id,
             "%s.io.input-pin.%01d", prefix, j);
         if(r != 0) return r;
@@ -150,7 +155,7 @@ static int export(char *prefix, long extra_arg) {
         "%s.motion.started", prefix);
     if(r != 0) return r;
     *(inst->motion_started) = false;
-    for(j=0; j < (6); j++) {
+    for(j=0; j < (NumberOfOverridePins); j++) {
         r = hal_pin_bit_newf(HAL_IN, &(inst->motion_override_limit[j]), comp_id,
             "%s.motion.override-limit.%01d", prefix, j);
         if(r != 0) return r;
@@ -314,9 +319,8 @@ int main(int argc_, char **argv_) {
 // ------------------------------------
 #define ComponentStruct __comp_state    // Internal struct of component
 
-#define NumberOfOverridePins 6    // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
+
 #define EstopPinNumber 51         // 0-based pin 52
-#define NumberOfDigitalPins 5     // Applies to both input and output pins. Could be raised as necessary
 #define CycleTimeMs 5.0f          // Target cycle time of uspace component
 #define SharedMemoryKey 57        // Arbitrary number
 #define EndOfMotionPacket 0x0101  // Arbitrary number > uint8
@@ -1053,6 +1057,11 @@ component_configuration* ReadConfiguration(const char *instanceName) {
         rtapi_set_msg_level(logLevel);
     }
 
+    int configSize = sizeof(component_configuration);
+    component_configuration* configuration = hal_malloc(configSize);
+    memset(configuration, 0, sizeof(configSize));
+
+    // Read device serial
     const char* serialTag = "DEVICE_SERIAL";
     int deviceSerial = 0;
     iniRead = iniFindInt(ini_file_ptr, serialTag, instanceName, &deviceSerial);
@@ -1063,8 +1072,9 @@ component_configuration* ReadConfiguration(const char *instanceName) {
         return NULL;
     }
 
-    rtapi_print_msg(RTAPI_MSG_DBG, "Device serial '%d'\n", deviceSerial);
+    configuration->deviceSerial = deviceSerial;
 
+    // Read and apply axes relevant configuration
     const char* axisTag = "NUMBER_AXES";
     int numberOfAxes = 0;
     iniRead = iniFindInt(ini_file_ptr, axisTag, instanceName, &numberOfAxes);
@@ -1075,30 +1085,40 @@ component_configuration* ReadConfiguration(const char *instanceName) {
         return NULL;
     }
 
-    rtapi_print_msg(RTAPI_MSG_DBG, "Number of axes '%d'\n", numberOfAxes);
-
     if (numberOfAxes < 1 || numberOfAxes > 8) {
         rtapi_print_msg(RTAPI_MSG_ERR, "Number of axes invalid (1..8) '%d'\n", numberOfAxes);
         fclose(ini_file_ptr);
         return NULL;
     }
 
-    fclose(ini_file_ptr);
-
-    int configSize = sizeof(component_configuration);
-    component_configuration* configuration = malloc(configSize); // TODO free() on close
-    memset(configuration, 0, sizeof(configSize));
-
-    configuration->deviceSerial = deviceSerial;
     configuration->numberOfAxes = numberOfAxes;
     configuration->maxMotionPackets = floor(56 / numberOfAxes);  // floor(56 bytes / number of axes enabled) = max allowable packet size
-
-    rtapi_print_msg(RTAPI_MSG_INFO, "Motion packets '%d'\n", configuration->maxMotionPackets);
 
     for (int i=0; i < numberOfAxes; i++) {
         configuration->streamType[i] = 'S';
     }
     configuration->streamType[numberOfAxes] = 0; // null terminate manually
+
+    // Read and apply input pin configuration
+    uint8_t inputPins = 0;
+    for (int i = 0; i < NumberOfDigitalPins; i++)
+    {
+        char inputPinTagFormat[13];
+        rtapi_snprintf(inputPinTagFormat, 13, "INPUT_PIN_%d", i);
+
+        int inputPinMap = 0;
+        const char* result = iniFind(ini_file_ptr, inputPinTagFormat, instanceName);
+        iniRead = iniFindInt(ini_file_ptr, axisTag, instanceName, &inputPinMap);
+
+        if (iniRead == 0) {
+            configuration->inputPinMapping[inputPins] = inputPinMap;
+            inputPins++;
+        }
+    }
+
+    fclose(ini_file_ptr);
+
+    //const char* result = iniFind(ini_file_ptr, inputPinTagFormat, instanceName);
 
     return configuration;
 }
