@@ -21,8 +21,8 @@ static int comp_id;
 MODULE_INFO(linuxcnc, "component:PoKeysController:");
 MODULE_INFO(linuxcnc, "pin:machine_estop:bit:0:out:Machine is in E-Stop condition:false:None");
 MODULE_INFO(linuxcnc, "pin:machine_is_on:bit:0:in:Machine should be enabled:false:None");
-MODULE_INFO(linuxcnc, "pin:io.input_pin.#:bit:5:out:Digital input pins:None:None");
-MODULE_INFO(linuxcnc, "pin:io.output_pin.#:bit:5:in:Digital output pins:None:None");
+MODULE_INFO(linuxcnc, "pin:io.input_pin.#:bit:10:out:Digital input pins:None:None");
+MODULE_INFO(linuxcnc, "pin:io.output_pin.#:bit:10:in:Digital output pins:None:None");
 MODULE_INFO(linuxcnc, "pin:io.solid_state_relay.#:bit:2:in:Solid state relays:None:None");
 MODULE_INFO(linuxcnc, "pin:io.relay.#:bit:2:in:Relays:None:None");
 MODULE_INFO(linuxcnc, "pin:io.open_collector.#:bit:4:in:Open collector digital outputs:None:None");
@@ -35,9 +35,6 @@ MODULE_INFO(linuxcnc, "pin:axis.#.limit_negative:bit:8:out:Negative limit switch
 MODULE_INFO(linuxcnc, "pin:axis.#.home:bit:8:out:Home switches:None:None");
 MODULE_INFO(linuxcnc, "param:internal_state:s32:0:rw:Current component state:-1:None");
 MODULE_INFO(linuxcnc, "param:axis.#.step_scale:float:8:rw:1 machine unit equals x pulses:None:None");
-MODULE_INFO(linuxcnc, "param:io.input_pin_number.#:s32:5:rw:Digital input pin mapping, index 1 based:None:None");
-MODULE_INFO(linuxcnc, "param:io.output_pin_number.#:s32:5:rw:Digital output pin mapping, index 1 based:None:None");
-MODULE_INFO(linuxcnc, "param:io.pwm_pin_number.#:s32:6:rw:PWM channel pin mapping, index 1 based:None:None");
 MODULE_INFO(linuxcnc, "license:GPL");
 MODULE_INFO(linuxcnc, "author:T.Frei");
 MODULE_LICENSE("GPL");
@@ -47,18 +44,17 @@ MODULE_LICENSE("GPL");
 #define NumberOfOverridePins 6    // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
 #define NumberOfDigitalPins 10    // Applies to both input and output pins. Could be raised as necessary
 
-// TODO rename
 typedef struct {
-    uint32_t deviceSerial;
-    uint8_t numberOfAxes;
-    uint8_t maxMotionPackets;
-    char streamType[9];
-    uint8_t numberOfInputPins;
-    uint8_t inputPinMapping[NumberOfDigitalPins];
-    uint8_t numberOfOutputPins;
-    uint8_t outputPinMapping[NumberOfDigitalPins];
-    uint8_t numberOfPwmPins;
-    uint8_t pwmPinMapping[6];
+    uint32_t device_serial;
+    uint8_t number_axes;
+    uint8_t max_motion_packets;
+    char streamtype[9];
+    uint8_t input_pins;
+    uint8_t input_pin_map[NumberOfDigitalPins];
+    uint8_t output_pins;
+    uint8_t output_pin_map[NumberOfDigitalPins];
+    uint8_t pwm_pins;
+    uint8_t pwm_pin_map[6]; // initially contains pin#, then channel#
 } component_configuration;
 
 struct __comp_state {
@@ -79,9 +75,6 @@ struct __comp_state {
     hal_bit_t* axis_home[3];
     hal_s32_t internal_state;
     hal_float_t axis_step_scale[3];
-    hal_s32_t io_input_pin_number[5];
-    hal_s32_t io_output_pin_number[5];
-    hal_s32_t io_pwm_pin_number[6];
     sPoKeysDevice* device;
     component_configuration* configuration;
 };
@@ -126,12 +119,12 @@ static int export(char *prefix, long extra_arg) {
         "%s.machine-is-on", prefix);
     if(r != 0) return r;
     *(inst->machine_is_on) = false;
-    for(j=0; j < (config->numberOfInputPins); j++) {
+    for(j=0; j < (config->input_pins); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->io_input_pin[j]), comp_id,
             "%s.io.input-pin.%01d", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->numberOfOutputPins); j++) {
+    for(j=0; j < (config->output_pins); j++) {
         r = hal_pin_bit_newf(HAL_IN, &(inst->io_output_pin[j]), comp_id,
             "%s.io.output-pin.%01d", prefix, j);
         if(r != 0) return r;
@@ -151,7 +144,7 @@ static int export(char *prefix, long extra_arg) {
             "%s.io.open-collector.%01d", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->numberOfPwmPins); j++) {
+    for(j=0; j < (config->pwm_pins); j++) {
         r = hal_pin_float_newf(HAL_IN, &(inst->io_pwm_pin[j]), comp_id,
             "%s.io.pwm-pin.%01d", prefix, j);
         if(r != 0) return r;
@@ -165,22 +158,22 @@ static int export(char *prefix, long extra_arg) {
             "%s.motion.override-limit.%01d", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->numberOfAxes); j++) {
+    for(j=0; j < (config->number_axes); j++) {
         r = hal_pin_float_newf(HAL_OUT, &(inst->axis_position_feedback[j]), comp_id,
             "%s.axis.%01d.position-feedback", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->numberOfAxes); j++) {
+    for(j=0; j < (config->number_axes); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->axis_limit_positive[j]), comp_id,
             "%s.axis.%01d.limit-positive", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->numberOfAxes); j++) {
+    for(j=0; j < (config->number_axes); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->axis_limit_negative[j]), comp_id,
             "%s.axis.%01d.limit-negative", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->numberOfAxes); j++) {
+    for(j=0; j < (config->number_axes); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->axis_home[j]), comp_id,
             "%s.axis.%01d.home", prefix, j);
         if(r != 0) return r;
@@ -189,24 +182,9 @@ static int export(char *prefix, long extra_arg) {
         "%s.internal-state", prefix);
     inst->internal_state = -1;
     if(r != 0) return r;
-    for(j=0; j < (config->numberOfAxes); j++) {
+    for(j=0; j < (config->number_axes); j++) {
         r = hal_param_float_newf(HAL_RW, &(inst->axis_step_scale[j]), comp_id,
             "%s.axis.%01d.step-scale", prefix, j);
-        if(r != 0) return r;
-    }
-    for(j=0; j < (5); j++) {
-        r = hal_param_s32_newf(HAL_RW, &(inst->io_input_pin_number[j]), comp_id,
-            "%s.io.input-pin-number.%01d", prefix, j);
-        if(r != 0) return r;
-    }
-    for(j=0; j < (5); j++) {
-        r = hal_param_s32_newf(HAL_RW, &(inst->io_output_pin_number[j]), comp_id,
-            "%s.io.output-pin-number.%01d", prefix, j);
-        if(r != 0) return r;
-    }
-    for(j=0; j < (6); j++) {
-        r = hal_param_s32_newf(HAL_RW, &(inst->io_pwm_pin_number[j]), comp_id,
-            "%s.io.pwm-pin-number.%01d", prefix, j);
         if(r != 0) return r;
     }
     if(__comp_last_inst) __comp_last_inst->_next = inst;
@@ -324,7 +302,6 @@ int main(int argc_, char **argv_) {
 // ------------------------------------
 #define ComponentStruct __comp_state    // Internal struct of component
 
-
 #define EstopPinNumber 51         // 0-based pin 52
 #define CycleTimeMs 5.0f          // Target cycle time of uspace component
 #define SharedMemoryKey 57        // Arbitrary number
@@ -334,7 +311,7 @@ int main(int argc_, char **argv_) {
 // States of the component
 // ------------------------------------
 enum State {
-    CREATED = -1,           // Component created, but not yet parametrized 
+    CREATED = -1,           // Component created, but not yet parametrized
     INIT = 0,               // Start connection (Set externally only)
     IDLE = 1,               // Connected and PE stopped state
     ENABLED = 2,            // Connected and PE running state (not moving)
@@ -510,16 +487,17 @@ void user_mainloop(void) {
 // Returns false if connection was unsuccessful, or the configuration is not matching.
 // ------------------------------------
 bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
-    sPoKeysDevice* device = PK_ConnectToDeviceWSerial(componentInstance->configuration->deviceSerial, 2000);
+    component_configuration* configuration = componentInstance->configuration;
+
+    sPoKeysDevice* device = PK_ConnectToDeviceWSerial(configuration->device_serial, 2000);
     if (device == 0) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to Connect to device '%d'\n", componentInstance->configuration->deviceSerial);
+        rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to Connect to device '%d'\n", configuration->device_serial);
         return false;
     }
 
     componentInstance->device = device;
 
-    switch (device->DeviceData.DeviceType)
-    {
+    switch (device->DeviceData.DeviceType) {
         //case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNC:
         //case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNCpro4x25:
         case 32:
@@ -546,7 +524,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
 
     int ret;
     // Check basic PE setup.
-    uint8_t numberOfAxes = componentInstance->configuration->numberOfAxes;
+    uint8_t numberOfAxes = configuration->number_axes;
     // 0=Use external pulse generator and 1<<7=IO (PoKeysCNCaddon)
     if (device->PEv2.PulseEngineEnabled != numberOfAxes || !(device->PEv2.PulseGeneratorType & (0 | (1<<7)))) {
         device->PEv2.PulseEngineEnabled = numberOfAxes;
@@ -573,60 +551,60 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         }
     }
 
-    // Read and verify digital pin capabilities with HAL configuration
+    // Read and verify digital pin capabilities with INI configuration
     ret = PK_PinConfigurationGet(device);
     rtapi_print_msg(RTAPI_MSG_DBG, "Getting pin info =%d\n", ret);
 
-    // TODO check configuration
-    for (int i = 0; i < NumberOfDigitalPins; i++) {
-        int pinNumber = componentInstance->io_input_pin_number[i];
+    for (int i = 0; i < configuration->input_pins; i++) {
+        int pinNumber = configuration->input_pin_map[i];
 
-        if (pinNumber > 0) {
-            uint8_t pinFunction = device->Pins[pinNumber - 1].PinFunction;
+        uint8_t pinFunction = device->Pins[pinNumber - 1].PinFunction;
 
-            if (pinFunction == 2) {
-                rtapi_print_msg(RTAPI_MSG_INFO, "Pin mapping %d => %d digital read ok\n", i, pinNumber);
-            } else {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read nok, actual: %d\n", i, pinNumber, pinFunction);
-                configurationOk = false;
-            }
-        }
-
-        pinNumber = componentInstance->io_output_pin_number[i];
-
-        if (pinNumber > 0) {
-            uint8_t pinFunction = device->Pins[pinNumber - 1].PinFunction;
-
-            if (pinFunction == 4) {
-                rtapi_print_msg(RTAPI_MSG_INFO, "Pin mapping %d => %d digital write ok\n", i, pinNumber);
-            } else {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write nok, actual: %d\n", i, pinNumber, pinFunction);
-                configurationOk = false;
-            }
+        if (pinFunction == 2) {
+            rtapi_print_msg(RTAPI_MSG_INFO, "Pin mapping %d => %d digital read ok\n", i, pinNumber);
+        } else {
+            rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read nok, actual: %d\n", i, pinNumber, pinFunction);
+            configurationOk = false;
         }
     }
 
-    // TODO check configuration
+    for (int i = 0; i < configuration->output_pins; i++) {
+        int pinNumber = configuration->output_pin_map[i];
+
+        uint8_t pinFunction = device->Pins[pinNumber - 1].PinFunction;
+
+        if (pinFunction == 4) {
+            rtapi_print_msg(RTAPI_MSG_INFO, "Pin mapping %d => %d digital write ok\n", i, pinNumber);
+        } else {
+            rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write nok, actual: %d\n", i, pinNumber, pinFunction);
+            configurationOk = false;
+        }
+    }
+
     // Read PWM pin capabilities
     ret = PK_PWMConfigurationGet(device);
     //rtapi_print_msg(RTAPI_MSG_DBG, "Getting PWM info =%d\n", ret);
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < configuration->pwm_pins; i++)
     {
-        int pinNumber = componentInstance->io_pwm_pin_number[i];
+        int pinNumber = configuration->pwm_pin_map[i];
+        int channelNumber = -1;
 
-        if (pinNumber > 0) {
-            if (device->PWM.PWMpinIDs[i] != pinNumber) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, mapped to pin %d, but is actually %d\n", i, pinNumber, device->PWM.PWMpinIDs[i]);
-                configurationOk = false;
-            }
-
-            if (device->PWM.PWMenabledChannels[i] == false) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, mapped to pin %d, but is disabled\n", i, pinNumber);
-                configurationOk = false;
+        for (int i = 0; i < 6; i++) {
+            if (device->PWM.PWMpinIDs[i] == pinNumber) {
+                channelNumber == i;
+                break;
             }
         }
 
-        // TODO fill in a list of valid/enabled pwm pins and iterate over that?
+        if (channelNumber == -1) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "PWM pin %d, not matching any channel.\n", pinNumber);
+            configurationOk = false;
+        } else if (device->PWM.PWMenabledChannels[channelNumber] == false) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "PWM pin %d, mapped to channel %d, but is disabled\n", pinNumber, channelNumber);
+            configurationOk = false;
+        } else {
+            configuration->pwm_pin_map[i] = channelNumber;
+        }
     }
 
     return configurationOk;
@@ -716,8 +694,8 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
 // Process output and input digital pins.
 // ------------------------------------
 void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
-    for (int i = 0; i < NumberOfDigitalPins; i++) {
-        int pinNumber = componentInstance->io_output_pin_number[i];
+    for (int i = 0; i < componentInstance->configuration->output_pins; i++) {
+        int pinNumber = componentInstance->configuration->output_pin_map[i];
 
         if (pinNumber > 0) {
             uint8_t pinState = *componentInstance->io_output_pin[i];
@@ -728,10 +706,10 @@ void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
     //struct timespec* requestIoStart = GetStartTime();
     int ret = PK_DigitalIOSetGet(componentInstance->device);
     //PrintElapsedTime(requestIoStart, "Update all digital Pins");
-    //rtapi_print_msg(RTAPI_MSG_DBG, "Update all digital pins:%d\n", ret); 
+    //rtapi_print_msg(RTAPI_MSG_DBG, "Update all digital pins:%d\n", ret);
 
-    for (int i = 0; i < NumberOfDigitalPins; i++) {
-        int pinNumber = componentInstance->io_input_pin_number[i];
+    for (int i = 0; i < componentInstance->configuration->input_pins; i++) {
+        int pinNumber = componentInstance->configuration->input_pin_map[i];
 
         if (pinNumber > 0) {
             uint8_t pinState = componentInstance->device->Pins[pinNumber - 1].DigitalValueGet;
@@ -752,26 +730,27 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
     bool setNecessary = false;
     sPoKeysDevice* device = componentInstance->device;
 
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < componentInstance->configuration->pwm_pins; i++)
     {
+        int channel = componentInstance->configuration->pwm_pin_map[i];
         float pinValue = *componentInstance->io_pwm_pin[i];
 
         if (pinValue < 0.0f || pinValue > 100.0f) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "PWM pin %d, exceeds range of 0.0 - 100.0!\n", i + 1);
+            rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, exceeds range of 0.0 - 100.0!\n", channel);
 
-            if (device->PWM.PWMduty[i] > 0.0f) {
+            if (device->PWM.PWMduty[channel] > 0) {
                 // something wrong, let's stop here.
-                device->PWM.PWMduty[i] = 0;
+                device->PWM.PWMduty[channel] = 0;
                 setNecessary = true;
             }
-        } else if (pinValue == 0.0f && device->PWM.PWMduty[i] == 0) {
+        } else if (pinValue == 0.0f && device->PWM.PWMduty[channel] == 0) {
             continue;
         } else {
             uint32_t dutyCycle = ((pinValue / 100.0f) * (float)device->PWM.PWMperiod);
 
-            if (device->PWM.PWMduty[i] - dutyCycle != 0) {
-                rtapi_print_msg(RTAPI_MSG_DBG, "PWM Pin %d, set from %d to %d\n", i + 1, device->PWM.PWMduty[i], dutyCycle);
-                device->PWM.PWMduty[i] = dutyCycle;
+            if (device->PWM.PWMduty[channel] - dutyCycle != 0) {
+                rtapi_print_msg(RTAPI_MSG_DBG, "PWM channel %d, set from %d to %d\n", channel, device->PWM.PWMduty[channel], dutyCycle);
+                device->PWM.PWMduty[channel] = dutyCycle;
                 setNecessary = true;
             }
         }
@@ -790,7 +769,7 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
 bool ProcessMoveCommand(struct ComponentStruct* componentInstance) {
     bool continueMove = true;
     hal_stream_t stream;
-    int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamType);
+    int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
 
     if (ret >= 0) {
         bool streamReadable = hal_stream_readable(&stream);
@@ -809,8 +788,8 @@ bool ProcessMoveCommand(struct ComponentStruct* componentInstance) {
             device->PEv2.newMotionBufferEntries = 0;
 
             int motionEntries = 0;
-            uint8_t numberOfAxes = componentInstance->configuration->numberOfAxes;
-            uint8_t maxMotionPackets = componentInstance->configuration->maxMotionPackets;
+            uint8_t numberOfAxes = componentInstance->configuration->number_axes;
+            uint8_t maxMotionPackets = componentInstance->configuration->max_motion_packets;
 
             //struct timespec* streamStart = GetStartTime();
             do
@@ -882,7 +861,7 @@ bool ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 void ProcessPositions(struct ComponentStruct* componentInstance) {
     sPoKeysDevice* device = componentInstance->device;
 
-    for (int i = 0; i < componentInstance->configuration->numberOfAxes; i++) {
+    for (int i = 0; i < componentInstance->configuration->number_axes; i++) {
         *componentInstance->axis_position_feedback[i] = ((float)device->PEv2.CurrentPosition[i]) / ((float)componentInstance->axis_step_scale[i]);
         *componentInstance->axis_limit_positive[i] = (device->PEv2.LimitStatusP >> i) & 0x01;
         *componentInstance->axis_limit_negative[i] = (device->PEv2.LimitStatusN >> i) & 0x01;
@@ -1079,7 +1058,7 @@ component_configuration* ReadConfiguration(const char *instanceName) {
         return NULL;
     }
 
-    configuration->deviceSerial = deviceSerial;
+    configuration->device_serial = deviceSerial;
 
     // Read and apply axes relevant configuration
     const char* axisTag = "NUMBER_AXES";
@@ -1098,64 +1077,73 @@ component_configuration* ReadConfiguration(const char *instanceName) {
         return NULL;
     }
 
-    configuration->numberOfAxes = numberOfAxes;
-    configuration->maxMotionPackets = floor(56 / numberOfAxes);  // floor(56 bytes / number of axes enabled) = max allowable packet size
+    configuration->number_axes = numberOfAxes;
+    configuration->max_motion_packets = floor(56 / numberOfAxes);  // floor(56 bytes / number of axes enabled) = max allowable packet size
 
     for (int i=0; i < numberOfAxes; i++) {
-        configuration->streamType[i] = 'S';
+        configuration->streamtype[i] = 'S';
     }
-    configuration->streamType[numberOfAxes] = 0; // null terminate manually
+    configuration->streamtype[numberOfAxes] = 0; // null terminate manually
 
     // Read and apply input pin configuration
     uint8_t inputPins = 0;
     for (int i = 0; i < NumberOfDigitalPins; i++)
     {
-        char inputPinTagFormat[13];
-        rtapi_snprintf(inputPinTagFormat, 13, "INPUT_PIN_%d", i);
+        char inputPinTagFormat[14];
+        rtapi_snprintf(inputPinTagFormat, 14, "INPUT_PIN_%d", i);
 
         int inputPinMap = 0;
         iniRead = iniFindInt(ini_file_ptr, inputPinTagFormat, instanceName, &inputPinMap);
 
         if (iniRead == 0) {
-            configuration->inputPinMapping[inputPins] = inputPinMap;
+            configuration->input_pin_map[inputPins] = inputPinMap;
             rtapi_print_msg(RTAPI_MSG_DBG, "Read input pin '%d'\n", inputPinMap);
             inputPins++;
+        } else {
+            break;
         }
     }
+    configuration->input_pins = inputPins;
 
     // Read and apply output pin configuration
     uint8_t outputPins = 0;
     for (int i = 0; i < NumberOfDigitalPins; i++)
     {
-        char outputPinTagFormat[13];
-        rtapi_snprintf(outputPinTagFormat, 13, "OUTPUT_PIN_%d", i);
+        char outputPinTagFormat[15];
+        rtapi_snprintf(outputPinTagFormat, 15, "OUTPUT_PIN_%d", i);
 
         int outputPinMap = 0;
         iniRead = iniFindInt(ini_file_ptr, outputPinTagFormat, instanceName, &outputPinMap);
 
         if (iniRead == 0) {
-            configuration->outputPinMapping[outputPins] = outputPinMap;
+            configuration->output_pin_map[outputPins] = outputPinMap;
             rtapi_print_msg(RTAPI_MSG_DBG, "Read output pin '%d'\n", outputPinMap);
             outputPins++;
+        } else {
+            break;
         }
     }
+    configuration->output_pins = outputPins;
 
     // Read and apply PWM pin configuration
     uint8_t pwmPins = 0;
     for (int i = 0; i < 6; i++)
     {
-        char pwmPinTagFormat[13];
-        rtapi_snprintf(pwmPinTagFormat, 13, "PWM_PIN_%d", i);
+        char pwmPinTagFormat[11];
+        rtapi_snprintf(pwmPinTagFormat, 11, "PWM_PIN_%d", i);
 
         int pwmPinMap = 0;
         iniRead = iniFindInt(ini_file_ptr, pwmPinTagFormat, instanceName, &pwmPinMap);
 
         if (iniRead == 0) {
-            configuration->pwmPinMapping[pwmPins] = pwmPinMap;
+            configuration->pwm_pin_map[pwmPins] = pwmPinMap;
             rtapi_print_msg(RTAPI_MSG_DBG, "Read pwm pin '%d'\n", pwmPinMap);
             pwmPins++;
+        } else {
+            break;
         }
     }
+    configuration->pwm_pins = pwmPins;
 
     fclose(ini_file_ptr);
 
