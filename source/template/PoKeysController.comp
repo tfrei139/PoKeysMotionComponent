@@ -20,7 +20,7 @@ pin out bit axis.#.limit_positive [8] "Positive limit switches";
 pin out bit axis.#.limit_negative [8] "Negative limit switches";
 pin out bit axis.#.home [8] "Home switches";
 
-param rw signed internal_state = -1 "Current component state";
+param rw signed internal_state = 0 "Current component state";
 
 param rw float axis.#.step_scale [8] "1 machine unit equals x pulses";
 

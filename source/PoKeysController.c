@@ -33,7 +33,7 @@ MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:8:out:Position in mach
 MODULE_INFO(linuxcnc, "pin:axis.#.limit_positive:bit:8:out:Positive limit switches:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.limit_negative:bit:8:out:Negative limit switches:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.home:bit:8:out:Home switches:None:None");
-MODULE_INFO(linuxcnc, "param:internal_state:s32:0:rw:Current component state:-1:None");
+MODULE_INFO(linuxcnc, "param:internal_state:s32:0:rw:Current component state:0:None");
 MODULE_INFO(linuxcnc, "param:axis.#.step_scale:float:8:rw:1 machine unit equals x pulses:None:None");
 MODULE_INFO(linuxcnc, "license:GPL");
 MODULE_INFO(linuxcnc, "author:T.Frei");
@@ -102,7 +102,7 @@ static int export(char *prefix, long extra_arg) {
     component_configuration* config = ReadConfiguration(prefix);
 
     if (config == NULL) {
-        return -57;
+        return -321;
     }
 
     int sz = sizeof(struct __comp_state) + __comp_get_data_size();
@@ -180,7 +180,7 @@ static int export(char *prefix, long extra_arg) {
     }
     r = hal_param_s32_newf(HAL_RW, &(inst->internal_state), comp_id,
         "%s.internal-state", prefix);
-    inst->internal_state = -1;
+    inst->internal_state = 0;
     if(r != 0) return r;
     for(j=0; j < (config->number_axes); j++) {
         r = hal_param_float_newf(HAL_RW, &(inst->axis_step_scale[j]), comp_id,
@@ -311,13 +311,12 @@ int main(int argc_, char **argv_) {
 // States of the component
 // ------------------------------------
 enum State {
-    CREATED = -1,           // Component created, but not yet parametrized
-    INIT = 0,               // Start connection (Set externally only)
+    SHUTDOWN = -1,          // Exit component (Set externally only)
+    INIT = 0,               // Component created
     IDLE = 1,               // Connected and PE stopped state
     ENABLED = 2,            // Connected and PE running state (not moving)
     MOVING = 3,             // Connected and PE running state (moving)
     ESTOP = 4,              // ESTOP toggled
-    SHUTDOWN = 5,           // Exit component (Set externally only)
 };
 
 // ------------------------------------
@@ -353,12 +352,6 @@ void user_mainloop(void) {
 
             enum State originState = currentInstance->internal_state;
             switch (originState) {
-                case CREATED:
-                    // Wait until prince HAL awakes us.
-                    usleep(1000);
-                    overrideCycleTime = true;
-                    break;
-
                 case INIT:
                     if (!ConnectPokeysDevice(currentInstance)) {
                         run = false; // TODO can we inform lcnc somehow that it will shutdown?
@@ -470,8 +463,10 @@ void user_mainloop(void) {
 
                     break;
                 case SHUTDOWN:
-                    SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
-                    SetActiveOutputsOff(currentInstance);
+                    if (currentInstance->device != NULL) {
+                        SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
+                        SetActiveOutputsOff(currentInstance);
+                    }
 
                     run = false;
                     return;
@@ -591,7 +586,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
 
         for (int i = 0; i < 6; i++) {
             if (device->PWM.PWMpinIDs[i] == pinNumber) {
-                channelNumber == i;
+                channelNumber = i;
                 break;
             }
         }
@@ -996,13 +991,12 @@ void ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum 
 // ------------------------------------
 inline const char* GetStateName(enum State state) {
     switch (state) {
-        case CREATED: return "CREATED";
+        case SHUTDOWN: return "SHUTDOWN";
         case INIT: return "INIT";
         case IDLE: return "IDLE";
         case ENABLED: return "ENABLED";
         case MOVING: return "MOVING";
         case ESTOP: return "ESTOP";
-        case SHUTDOWN: return "SHUTDOWN";
         default: return "UNDEFINED";
     }
 }
@@ -1092,12 +1086,12 @@ component_configuration* ReadConfiguration(const char *instanceName) {
         char inputPinTagFormat[14];
         rtapi_snprintf(inputPinTagFormat, 14, "INPUT_PIN_%d", i);
 
-        int inputPinMap = 0;
-        iniRead = iniFindInt(ini_file_ptr, inputPinTagFormat, instanceName, &inputPinMap);
+        int inputPin = 0;
+        iniRead = iniFindInt(ini_file_ptr, inputPinTagFormat, instanceName, &inputPin);
 
         if (iniRead == 0) {
-            configuration->input_pin_map[inputPins] = inputPinMap;
-            rtapi_print_msg(RTAPI_MSG_DBG, "Read input pin '%d'\n", inputPinMap);
+            configuration->input_pin_map[inputPins] = inputPin;
+            rtapi_print_msg(RTAPI_MSG_DBG, "Read input pin '%d'\n", inputPin);
             inputPins++;
         } else {
             break;
@@ -1112,12 +1106,12 @@ component_configuration* ReadConfiguration(const char *instanceName) {
         char outputPinTagFormat[15];
         rtapi_snprintf(outputPinTagFormat, 15, "OUTPUT_PIN_%d", i);
 
-        int outputPinMap = 0;
-        iniRead = iniFindInt(ini_file_ptr, outputPinTagFormat, instanceName, &outputPinMap);
+        int outputPin = 0;
+        iniRead = iniFindInt(ini_file_ptr, outputPinTagFormat, instanceName, &outputPin);
 
         if (iniRead == 0) {
-            configuration->output_pin_map[outputPins] = outputPinMap;
-            rtapi_print_msg(RTAPI_MSG_DBG, "Read output pin '%d'\n", outputPinMap);
+            configuration->output_pin_map[outputPins] = outputPin;
+            rtapi_print_msg(RTAPI_MSG_DBG, "Read output pin '%d'\n", outputPin);
             outputPins++;
         } else {
             break;
@@ -1132,12 +1126,12 @@ component_configuration* ReadConfiguration(const char *instanceName) {
         char pwmPinTagFormat[11];
         rtapi_snprintf(pwmPinTagFormat, 11, "PWM_PIN_%d", i);
 
-        int pwmPinMap = 0;
-        iniRead = iniFindInt(ini_file_ptr, pwmPinTagFormat, instanceName, &pwmPinMap);
+        int pwmPin = 0;
+        iniRead = iniFindInt(ini_file_ptr, pwmPinTagFormat, instanceName, &pwmPin);
 
         if (iniRead == 0) {
-            configuration->pwm_pin_map[pwmPins] = pwmPinMap;
-            rtapi_print_msg(RTAPI_MSG_DBG, "Read pwm pin '%d'\n", pwmPinMap);
+            configuration->pwm_pin_map[pwmPins] = pwmPin;
+            rtapi_print_msg(RTAPI_MSG_DBG, "Read pwm pin '%d'\n", pwmPin);
             pwmPins++;
         } else {
             break;

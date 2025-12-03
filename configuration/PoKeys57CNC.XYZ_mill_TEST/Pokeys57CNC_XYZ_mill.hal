@@ -13,9 +13,6 @@ loadusr -W PoKeysController
 setp PoKeysController.0.axis.0.step-scale [PoKeysController.0]AXIS0_STEP_SCALE
 setp PoKeysController.0.axis.1.step-scale [PoKeysController.0]AXIS1_STEP_SCALE
 setp PoKeysController.0.axis.2.step-scale [PoKeysController.0]AXIS2_STEP_SCALE
-setp PoKeysController.0.io.input-pin-number.0 19 # Pin 19 is default for probing
-setp PoKeysController.0.io.pwm-pin-number.5 17 # Pin 17 on Channel 5 is 0-10V PWM output
-setp PoKeysController.0.internal-state 0 # TODO remove this?
 
 loadrt PoKeysMotionBuffer personality=[PoKeysController.0]NUMBER_AXES
 setp PoKeysMotionBuffer.0.axis.0.step-scale [PoKeysController.0]AXIS0_STEP_SCALE
@@ -137,7 +134,7 @@ setp scale.0.gain 0.1
 net spindle-speed-scale <= spindle.0.speed-out-abs
 net spindle-speed-scale => scale.0.in
 net spindle-speed-pwm <= scale.0.out
-net spindle-speed-pwm => PoKeysController.0.io.pwm-pin.5
+net spindle-speed-pwm => PoKeysController.0.io.pwm-pin.0
 
 net spindle-enable <= spindle.0.on
 net spindle-enable => PoKeysController.0.io.solid-state-relay.0
