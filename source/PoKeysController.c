@@ -54,7 +54,7 @@ typedef struct {
     uint8_t output_pins;
     uint8_t output_pin_map[NumberOfDigitalPins];
     uint8_t pwm_pins;
-    uint8_t pwm_pin_map[6]; // initially contains pin#, then channel#
+    uint8_t pwm_pin_map[6]; // initially contains 1-based pin#, then 0-based channel#
 } component_configuration;
 
 struct __comp_state {
@@ -102,7 +102,7 @@ static int export(char *prefix, long extra_arg) {
     component_configuration* config = ReadConfiguration(prefix);
 
     if (config == NULL) {
-        return -321;
+        return -321; // arbitrary number
     }
 
     int sz = sizeof(struct __comp_state) + __comp_get_data_size();
@@ -578,7 +578,8 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
 
     // Read PWM pin capabilities
     ret = PK_PWMConfigurationGet(device);
-    //rtapi_print_msg(RTAPI_MSG_DBG, "Getting PWM info =%d\n", ret);
+    rtapi_print_msg(RTAPI_MSG_DBG, "Getting PWM info =%d\n", ret);
+
     for (int i = 0; i < configuration->pwm_pins; i++)
     {
         int pinNumber = configuration->pwm_pin_map[i];
@@ -653,7 +654,7 @@ void ProcessLimitOverride(struct ComponentStruct* componentInstance) {
 }
 
 // ------------------------------------
-// Reads the PulseEngine status, if an emergency stop has occured.
+// Reads the PulseEngine status, checks if an emergency stop has occured.
 // Since the PE will not reset when the switch is changed, we switch to stopped and from then on read the raw pin.
 // ------------------------------------
 void ProcessEStop(struct ComponentStruct* componentInstance) {
@@ -674,7 +675,6 @@ void ProcessEStop(struct ComponentStruct* componentInstance) {
 			rtapi_print_msg(RTAPI_MSG_WARN, "E-Stop is Reset (by pin)\n");
 
 			*componentInstance->machine_estop = false;
-
 		} else if (currentEstop == 0 && eStopPin > 0) {
 			rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop due to pin!\n");
 
@@ -725,8 +725,7 @@ void ProcessPwmPins(struct ComponentStruct* componentInstance) {
     bool setNecessary = false;
     sPoKeysDevice* device = componentInstance->device;
 
-    for (int i = 0; i < componentInstance->configuration->pwm_pins; i++)
-    {
+    for (int i = 0; i < componentInstance->configuration->pwm_pins; i++) {
         int channel = componentInstance->configuration->pwm_pin_map[i];
         float pinValue = *componentInstance->io_pwm_pin[i];
 
@@ -770,10 +769,10 @@ bool ProcessMoveCommand(struct ComponentStruct* componentInstance) {
         bool streamReadable = hal_stream_readable(&stream);
 
         if (!streamReadable) {
-            // if the last cycle was slow (>5ms), we do not wait and almost "immediately" process the next motion state.
+            // if the last cycle was slow (>5ms), we do not wait and "almost immediately" process the next motion state.
             // since the servo thread may not have updated yet, we delay here to get at least one value here.
             rtapi_print_msg(RTAPI_MSG_WARN, "Potential Buffer underrun? EndOfMotion Packet missing? Try sleep\n");
-            usleep(500); // half the time of the servo period (1ms).
+            usleep(1000); // the time of the servo period (1ms).
             streamReadable = hal_stream_readable(&stream);
         }
 
@@ -933,8 +932,7 @@ void SetActiveOutputsOff(struct ComponentStruct* componentInstance) {
     }
 
     bool setNecessary = false;
-    for (int i = 0; i < 6; i++)
-    {
+    for (int i = 0; i < 6; i++) {
         if (device->PWM.PWMduty[i] > 0) {
             device->PWM.PWMduty[i] = 0;
             setNecessary = true;
@@ -1081,8 +1079,7 @@ component_configuration* ReadConfiguration(const char *instanceName) {
 
     // Read and apply input pin configuration
     uint8_t inputPins = 0;
-    for (int i = 0; i < NumberOfDigitalPins; i++)
-    {
+    for (int i = 0; i < NumberOfDigitalPins; i++) {
         char inputPinTagFormat[14];
         rtapi_snprintf(inputPinTagFormat, 14, "INPUT_PIN_%d", i);
 
@@ -1091,7 +1088,7 @@ component_configuration* ReadConfiguration(const char *instanceName) {
 
         if (iniRead == 0) {
             configuration->input_pin_map[inputPins] = inputPin;
-            rtapi_print_msg(RTAPI_MSG_DBG, "Read input pin '%d'\n", inputPin);
+            rtapi_print_msg(RTAPI_MSG_DBG, "Read input pin '%d' on HAL pin '%d'\n", inputPin, i);
             inputPins++;
         } else {
             break;
@@ -1101,8 +1098,7 @@ component_configuration* ReadConfiguration(const char *instanceName) {
 
     // Read and apply output pin configuration
     uint8_t outputPins = 0;
-    for (int i = 0; i < NumberOfDigitalPins; i++)
-    {
+    for (int i = 0; i < NumberOfDigitalPins; i++) {
         char outputPinTagFormat[15];
         rtapi_snprintf(outputPinTagFormat, 15, "OUTPUT_PIN_%d", i);
 
@@ -1111,7 +1107,7 @@ component_configuration* ReadConfiguration(const char *instanceName) {
 
         if (iniRead == 0) {
             configuration->output_pin_map[outputPins] = outputPin;
-            rtapi_print_msg(RTAPI_MSG_DBG, "Read output pin '%d'\n", outputPin);
+            rtapi_print_msg(RTAPI_MSG_DBG, "Write output pin '%d' on HAL pin '%d'\n", outputPin, i);
             outputPins++;
         } else {
             break;
@@ -1131,7 +1127,7 @@ component_configuration* ReadConfiguration(const char *instanceName) {
 
         if (iniRead == 0) {
             configuration->pwm_pin_map[pwmPins] = pwmPin;
-            rtapi_print_msg(RTAPI_MSG_DBG, "Read pwm pin '%d'\n", pwmPin);
+            rtapi_print_msg(RTAPI_MSG_DBG, "PWM pin '%d' on HAL pin '%d'\n", pwmPin, i);
             pwmPins++;
         } else {
             break;
