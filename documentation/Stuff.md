@@ -16,7 +16,8 @@ There are two separate repositories for the same code:
 
 ## PoKeys protocol definition
 [PoLabs downloads](https://www.poscope.com/downloads-manuals/)  
-[Protocol specification](https://www.poscope.com/wp-content/uploads/downloads/Pokeys/Manuals/PoKeys%20-%20protocol%20specification.pdf)
+[Protocol specification](https://www.poscope.com/wp-content/uploads/downloads/Pokeys/Manuals/PoKeys%20-%20protocol%20specification.pdf)  
+[Pin layout explained](https://blog.poscope.com/pokeys57cnc-pinout-explained/)
 
 ## How to wire up an Estop
 https://forum.linuxcnc.org/24-hal-components/37906-an-e-stop-hal-and-an-overall-how-things-work-series  

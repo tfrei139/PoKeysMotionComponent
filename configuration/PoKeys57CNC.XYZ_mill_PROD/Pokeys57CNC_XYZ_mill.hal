@@ -10,18 +10,14 @@ loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD servo_period_nsec=[EM
 #*******************
 
 loadusr -W PoKeysController
-# setp PoKeysController.0.log-level 4 # 0..5 = none, error, warning, info, debug, all
-setp PoKeysController.0.device-serial 40760
-setp PoKeysController.0.axis.0.step-scale 800.0
-setp PoKeysController.0.axis.1.step-scale 800.0
-setp PoKeysController.0.axis.2.step-scale 1600.0
-setp PoKeysController.0.io.input-pin-number.0 19 # Pin 19 is default for probing
-setp PoKeysController.0.internal-state 0
+setp PoKeysController.0.axis.0.step-scale [PoKeysController.0]AXIS0_STEP_SCALE
+setp PoKeysController.0.axis.1.step-scale [PoKeysController.0]AXIS1_STEP_SCALE
+setp PoKeysController.0.axis.2.step-scale [PoKeysController.0]AXIS2_STEP_SCALE
 
-loadrt PoKeysMotionBuffer
-setp PoKeysMotionBuffer.0.axis.0.step-scale 800.0
-setp PoKeysMotionBuffer.0.axis.1.step-scale 800.0
-setp PoKeysMotionBuffer.0.axis.2.step-scale 1600.0
+loadrt PoKeysMotionBuffer personality=[PoKeysController.0]NUMBER_AXES
+setp PoKeysMotionBuffer.0.axis.0.step-scale [PoKeysController.0]AXIS0_STEP_SCALE
+setp PoKeysMotionBuffer.0.axis.1.step-scale [PoKeysController.0]AXIS1_STEP_SCALE
+setp PoKeysMotionBuffer.0.axis.2.step-scale [PoKeysController.0]AXIS2_STEP_SCALE
 
 # external output signals
 net machine-is-on => PoKeysMotionBuffer.0.machine-is-on
