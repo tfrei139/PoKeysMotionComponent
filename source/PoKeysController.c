@@ -548,7 +548,7 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
 
     // Read and verify digital pin capabilities with INI configuration
     ret = PK_PinConfigurationGet(device);
-    rtapi_print_msg(RTAPI_MSG_DBG, "Getting pin info =%d\n", ret);
+    rtapi_print_msg(RTAPI_MSG_DBG, "Getting pin info:%d\n", ret);
 
     for (int i = 0; i < configuration->input_pins; i++) {
         int pinNumber = configuration->input_pin_map[i];
@@ -556,9 +556,9 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         uint8_t pinFunction = device->Pins[pinNumber - 1].PinFunction;
 
         if (pinFunction == 2) {
-            rtapi_print_msg(RTAPI_MSG_INFO, "Pin mapping %d => %d digital read ok\n", i, pinNumber);
+            rtapi_print_msg(RTAPI_MSG_INFO, "IO input pin %d => PoKeys pin %d, digital read ok\n", i, pinNumber);
         } else {
-            rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital read nok, actual: %d\n", i, pinNumber, pinFunction);
+            rtapi_print_msg(RTAPI_MSG_ERR, "IO input pin %d => PoKeys pin %d, digital read nok, actual function: %d\n", i, pinNumber, pinFunction);
             configurationOk = false;
         }
     }
@@ -569,16 +569,16 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         uint8_t pinFunction = device->Pins[pinNumber - 1].PinFunction;
 
         if (pinFunction == 4) {
-            rtapi_print_msg(RTAPI_MSG_INFO, "Pin mapping %d => %d digital write ok\n", i, pinNumber);
+            rtapi_print_msg(RTAPI_MSG_INFO, "IO output pin %d => PoKeys pin %d, digital write ok\n", i, pinNumber);
         } else {
-            rtapi_print_msg(RTAPI_MSG_ERR, "Pin mapping %d => %d digital write nok, actual: %d\n", i, pinNumber, pinFunction);
+            rtapi_print_msg(RTAPI_MSG_ERR, "IO output pin %d => PoKeys pin %d, digital write nok, actual function: %d\n", i, pinNumber, pinFunction);
             configurationOk = false;
         }
     }
 
     // Read PWM pin capabilities
     ret = PK_PWMConfigurationGet(device);
-    rtapi_print_msg(RTAPI_MSG_DBG, "Getting PWM info =%d\n", ret);
+    rtapi_print_msg(RTAPI_MSG_DBG, "Getting PWM info:%d\n", ret);
 
     for (int i = 0; i < configuration->pwm_pins; i++)
     {
@@ -596,10 +596,11 @@ bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             rtapi_print_msg(RTAPI_MSG_ERR, "PWM pin %d, not matching any channel.\n", pinNumber);
             configurationOk = false;
         } else if (device->PWM.PWMenabledChannels[channelNumber] == false) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "PWM pin %d, mapped to channel %d, but is disabled\n", pinNumber, channelNumber);
+            rtapi_print_msg(RTAPI_MSG_ERR, "IO PWM pin %d => PoKeys pin %d, channel %d, but is disabled\n", i, pinNumber, channelNumber);
             configurationOk = false;
         } else {
             configuration->pwm_pin_map[i] = channelNumber;
+            rtapi_print_msg(RTAPI_MSG_INFO, "IO PWM pin %d => PoKeys pin %d, channel %d, PWM ok\n", i, pinNumber, channelNumber);
         }
     }
 
