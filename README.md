@@ -27,10 +27,11 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
     - PWM pins
 
 ### Backlog
-- Test/Extend probing
-- Test Soft limits
-- Technical: Benchmark component
 - Allow reading encoders for jogging
+- Test motion buffer in error situation
+- Test probing
+- Test soft limits
+- Technical: Benchmark component
 - Provide more example configurations
 
 ## Setup
