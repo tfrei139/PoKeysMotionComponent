@@ -1024,10 +1024,6 @@ component_configuration* ReadConfiguration(const char *instanceName) {
         return NULL;
     }
 
-    /* make sure file is closed on exec() */
-    //int fd = fileno(ini_file_ptr); // TODO check actual effect
-    //fcntl(fd, F_SETFD, FD_CLOEXEC);
-
     const char* levelTag = "LOG_LEVEL";
     int logLevel = 0;
     int iniRead = iniFindInt(ini_file_ptr, levelTag, instanceName, &logLevel);
