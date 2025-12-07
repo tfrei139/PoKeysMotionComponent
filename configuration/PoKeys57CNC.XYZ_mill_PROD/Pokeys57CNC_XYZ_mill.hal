@@ -57,8 +57,9 @@ addf estop-latch.0            servo-thread
 # Axis X
 #*******************
 
-net x-homing <= joint.0.homing
-net x-homing => PoKeysController.0.motion.override-limit.0
+# Machine would use limit switches as home switches
+# net x-homing <= joint.0.homing
+# net x-homing => PoKeysController.0.motion.override-limit.0
 
 net x-override-limit <= halui.joint.0.override-limits
 net x-override-limit => PoKeysController.0.motion.override-limit.1
@@ -80,8 +81,8 @@ net home-x         =>  joint.0.home-sw-in
 # Axis Y
 #*******************
 
-net y-homing <= joint.1.homing
-net y-homing => PoKeysController.0.motion.override-limit.2
+# net y-homing <= joint.1.homing
+# net y-homing => PoKeysController.0.motion.override-limit.2
 
 net y-override-limit <= halui.joint.1.override-limits
 net y-override-limit => PoKeysController.0.motion.override-limit.3
@@ -103,8 +104,8 @@ net home-y         =>  joint.1.home-sw-in
 # Axis Z
 #*******************
 
-net z-homing <= joint.2.homing
-net z-homing => PoKeysController.0.motion.override-limit.4
+# net z-homing <= joint.2.homing
+# net z-homing => PoKeysController.0.motion.override-limit.4
 
 net z-override-limit <= halui.joint.2.override-limits
 net z-override-limit => PoKeysController.0.motion.override-limit.5
