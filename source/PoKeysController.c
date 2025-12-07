@@ -93,13 +93,13 @@ static int __comp_get_data_size(void);
 #define false (0)
 
 // Component configuration
-static component_configuration* ReadConfiguration(const char *instanceName);
+static component_configuration* PMC_ReadConfiguration(const char *instanceName);
 
 static int export(char *prefix, long extra_arg) {
     int r = 0;
     int j = 0;
 
-    component_configuration* config = ReadConfiguration(prefix);
+    component_configuration* config = PMC_ReadConfiguration(prefix);
 
     if (config == NULL) {
         return -321; // arbitrary number
@@ -297,6 +297,8 @@ int main(int argc_, char **argv_) {
     return 0;
 }
 
+static int __comp_get_data_size(void) { return 0; }
+
 // ------------------------------------
 // Component code starts here
 // ------------------------------------
@@ -322,22 +324,24 @@ enum State {
 // ------------------------------------
 // Function declarations
 // ------------------------------------
-bool ConnectPokeysDevice(struct ComponentStruct* componentInstance);
-void ReadPulseEngineStatus(struct ComponentStruct* componentInstance);
-void SetPulseEngineStatus(struct ComponentStruct* componentInstance, enum ePK_PEState state, const char* log);
-void ProcessLimitOverride(struct ComponentStruct* componentInstance);
-void ProcessEStop(struct ComponentStruct* componentInstance);
-void ProcessDigitalPins(struct ComponentStruct* componentInstance);
-void ProcessPwmPins(struct ComponentStruct* componentInstance);
-bool ProcessMoveCommand(struct ComponentStruct* componentInstance);
-void ProcessPositions(struct ComponentStruct* componentInstance);
-void ProcessRelays(struct ComponentStruct* componentInstance);
-bool CompareRelayState(sPoKeysDevice* device, bool state, int offset);
-void SetActiveOutputsOff(struct ComponentStruct* componentInstance);
-struct timespec* GetStartTime();
-void ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, enum State currentState, enum State nextState);
-const char* GetStateName(enum State state);
-void PrintElapsedTime(struct timespec* startTime, const char* log);
+bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance);
+void PMC_ReadPulseEngineStatus(struct ComponentStruct* componentInstance);
+void PMC_SetPulseEngineStatus(struct ComponentStruct* componentInstance, enum ePK_PEState state, const char* log);
+void PMC_ProcessLimitOverride(struct ComponentStruct* componentInstance);
+void PMC_ProcessEStop(struct ComponentStruct* componentInstance);
+void PMC_ProcessDigitalPins(struct ComponentStruct* componentInstance);
+void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance);
+bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance);
+void PMC_ProcessPositions(struct ComponentStruct* componentInstance);
+void PMC_ProcessRelays(struct ComponentStruct* componentInstance);
+bool PMC_CompareRelayState(sPoKeysDevice* device, bool state, int offset);
+void PMC_SetActiveOutputsOff(struct ComponentStruct* componentInstance);
+struct timespec* PMC_GetStartTime();
+void PMC_ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, enum State currentState, enum State nextState);
+const char* PMC_GetStateName(enum State state);
+void PMC_PrintElapsedTime(struct timespec* startTime, const char* log);
+
+int32_t PMC_DigitalIOSetGet(sPoKeysDevice* device);
 
 // ------------------------------------
 // Main Loop
@@ -348,12 +352,12 @@ void user_mainloop(void) {
         struct ComponentStruct* currentInstance;
         for(currentInstance = __comp_first_inst; currentInstance; currentInstance = currentInstance->_next) {
             bool overrideCycleTime = false;
-            struct timespec* cycleStart = GetStartTime();
+            struct timespec* cycleStart = PMC_GetStartTime();
 
             enum State originState = currentInstance->internal_state;
             switch (originState) {
                 case INIT:
-                    if (!ConnectPokeysDevice(currentInstance)) {
+                    if (!PMC_ConnectPokeysDevice(currentInstance)) {
                         run = false; // TODO can we inform lcnc somehow that it will shutdown?
                         return;
                     }
@@ -363,8 +367,8 @@ void user_mainloop(void) {
                     break;
 
                 case IDLE:
-                    ReadPulseEngineStatus(currentInstance);
-                    ProcessEStop(currentInstance);
+                    PMC_ReadPulseEngineStatus(currentInstance);
+                    PMC_ProcessEStop(currentInstance);
 
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
@@ -374,22 +378,22 @@ void user_mainloop(void) {
 
                     // Machine is enabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == true) {
-                        SetPulseEngineStatus(currentInstance, PK_PEState_peRUNNING, "Set PE Running from IDLE");
+                        PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peRUNNING, "Set PE Running from IDLE");
                         currentInstance->internal_state = ENABLED;
                         break;
                     }
 
-                    ProcessDigitalPins(currentInstance);
-                    ProcessPositions(currentInstance);
-                    ProcessRelays(currentInstance);
-                    ProcessPwmPins(currentInstance);
-                    ProcessLimitOverride(currentInstance);
+                    PMC_ProcessDigitalPins(currentInstance);
+                    PMC_ProcessPositions(currentInstance);
+                    PMC_ProcessRelays(currentInstance);
+                    PMC_ProcessPwmPins(currentInstance);
+                    PMC_ProcessLimitOverride(currentInstance);
 
                     break;
 
                 case ENABLED:
-                    ReadPulseEngineStatus(currentInstance);
-                    ProcessEStop(currentInstance);
+                    PMC_ReadPulseEngineStatus(currentInstance);
+                    PMC_ProcessEStop(currentInstance);
 
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
@@ -399,16 +403,16 @@ void user_mainloop(void) {
 
                     // Machine is disabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == false) {
-                        SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
+                        PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
                         currentInstance->internal_state = IDLE;
                         break;
                     }
 
-                    ProcessDigitalPins(currentInstance);
-                    ProcessPositions(currentInstance);
-                    ProcessRelays(currentInstance);
-                    ProcessPwmPins(currentInstance);
-                    ProcessLimitOverride(currentInstance);
+                    PMC_ProcessDigitalPins(currentInstance);
+                    PMC_ProcessPositions(currentInstance);
+                    PMC_ProcessRelays(currentInstance);
+                    PMC_ProcessPwmPins(currentInstance);
+                    PMC_ProcessLimitOverride(currentInstance);
 
                     // Check if motion is commanded
                     if (0 + *currentInstance->motion_started == true) {
@@ -423,11 +427,11 @@ void user_mainloop(void) {
 
                     break;
                 case MOVING:
-                    if (!ProcessMoveCommand(currentInstance)) {
+                    if (!PMC_ProcessMoveCommand(currentInstance)) {
                         currentInstance->internal_state = ENABLED;
                     }
 
-                    ProcessEStop(currentInstance);
+                    PMC_ProcessEStop(currentInstance);
 
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
@@ -438,22 +442,22 @@ void user_mainloop(void) {
 
                     // Machine is disabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == false) {
-                        SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
+                        PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
                         currentInstance->internal_state = IDLE;
                         break;
                     }
 
-                    ProcessDigitalPins(currentInstance);
-                    ProcessPositions(currentInstance);
-                    ProcessRelays(currentInstance);
-                    ProcessPwmPins(currentInstance);
+                    PMC_ProcessDigitalPins(currentInstance);
+                    PMC_ProcessPositions(currentInstance);
+                    PMC_ProcessRelays(currentInstance);
+                    PMC_ProcessPwmPins(currentInstance);
 
                     break;
                 case ESTOP:
-                    ReadPulseEngineStatus(currentInstance);
-                    ProcessDigitalPins(currentInstance); // necessary to update E-Stop pin
-                    ProcessEStop(currentInstance);
+                    PMC_ReadPulseEngineStatus(currentInstance);
+                    PMC_ProcessDigitalPins(currentInstance); // necessary to update E-Stop pin
+                    PMC_ProcessEStop(currentInstance);
 
                     // Reset Estop from PoKeys
                     if (*currentInstance->machine_estop == false) {
@@ -464,558 +468,23 @@ void user_mainloop(void) {
                     break;
                 case SHUTDOWN:
                     if (currentInstance->device != NULL) {
-                        SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
-                        SetActiveOutputsOff(currentInstance);
+                        PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from SHUTDOWN");
+                        PMC_SetActiveOutputsOff(currentInstance);
                     }
 
                     run = false;
                     return;
             }
 
-            ProcessCycleTime(cycleStart, overrideCycleTime, originState, currentInstance->internal_state);
+            PMC_ProcessCycleTime(cycleStart, overrideCycleTime, originState, currentInstance->internal_state);
         }
     }
-}
-
-// ------------------------------------
-// Connects to the device.
-// Returns false if connection was unsuccessful, or the configuration is not matching.
-// ------------------------------------
-bool ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
-    component_configuration* configuration = componentInstance->configuration;
-
-    sPoKeysDevice* device = PK_ConnectToDeviceWSerial(configuration->device_serial, 2000);
-    if (device == 0) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to Connect to device '%d'\n", configuration->device_serial);
-        return false;
-    }
-
-    componentInstance->device = device;
-
-    switch (device->DeviceData.DeviceType) {
-        //case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNC:
-        //case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNCpro4x25:
-        case 32:
-        case 33:
-            rtapi_print_msg(RTAPI_MSG_INFO, "CONNECTED.\n");
-            break;
-        default:
-            rtapi_print_msg(RTAPI_MSG_WARN, "CONNECTED. Unsupported device type: %d\n", device->DeviceData.DeviceType);
-            break;
-    }
-
-    if (device->connectionType == 0) {
-        // connection 0=USB, 1=ETH, 2=FastUSB
-        rtapi_print_msg(RTAPI_MSG_WARN, "Connection type is standard USB mode. Enable FastUSB!\n", device->connectionType);
-    }
-
-    bool configurationOk = true;
-
-    ReadPulseEngineStatus(componentInstance);
-
-    if (device->PEv2.PulseEngineState != PK_PEState_peSTOPPED) {
-        SetPulseEngineStatus(componentInstance, PK_PEState_peSTOPPED, "Set PE stopped on connect(!)");
-    }
-
-    int ret;
-    // Check basic PE setup.
-    uint8_t numberOfAxes = configuration->number_axes;
-    // 0=Use external pulse generator and 1<<7=IO (PoKeysCNCaddon)
-    if (device->PEv2.PulseEngineEnabled != numberOfAxes || !(device->PEv2.PulseGeneratorType & (0 | (1<<7)))) {
-        device->PEv2.PulseEngineEnabled = numberOfAxes;
-        device->PEv2.PulseGeneratorType = 0 | (1<<7);
-        ret = PK_PEv2_PulseEngineSetup(device);
-        rtapi_print_msg(RTAPI_MSG_WARN, "PE Setup:%d\n", ret);
-
-        ret = PK_PEv2_PulseEngineReboot(device);
-        rtapi_print_msg(RTAPI_MSG_DBG, "PE Reboot:%d\n", ret);
-        // In theory we should sleep, but it'l highly unlikely you'll start a motion 1 second after opening LCNC.
-        // TODO or is the device communication down during this time?
-    }
-
-    // Set up axis configuration
-    for (int i = 0; i < numberOfAxes; i++) {
-        device->PEv2.param1 = i;
-        ret = PK_PEv2_AxisConfigurationGet(device);
-
-        if (device->PEv2.AxesConfig[i] & (PK_AC_INTERNAL_PLANNER)) {
-            device->PEv2.AxesConfig[i] &= ~(PK_AC_INTERNAL_PLANNER); // NOT internal => Buffer operated
-            device->PEv2.param1 = i; // redundant?
-            ret = PK_PEv2_AxisConfigurationSet(device);
-            rtapi_print_msg(RTAPI_MSG_INFO, "PE axis %d configured:%d\n", i, ret);
-        }
-    }
-
-    // Read and verify digital pin capabilities with INI configuration
-    ret = PK_PinConfigurationGet(device);
-    rtapi_print_msg(RTAPI_MSG_DBG, "Getting pin info:%d\n", ret);
-
-    for (int i = 0; i < configuration->input_pins; i++) {
-        int pinNumber = configuration->input_pin_map[i];
-
-        uint8_t pinFunction = device->Pins[pinNumber - 1].PinFunction;
-
-        if (pinFunction == 2) {
-            rtapi_print_msg(RTAPI_MSG_INFO, "IO input pin %d => PoKeys pin %d, digital read ok\n", i, pinNumber);
-        } else {
-            rtapi_print_msg(RTAPI_MSG_ERR, "IO input pin %d => PoKeys pin %d, digital read nok, actual function: %d\n", i, pinNumber, pinFunction);
-            configurationOk = false;
-        }
-    }
-
-    for (int i = 0; i < configuration->output_pins; i++) {
-        int pinNumber = configuration->output_pin_map[i];
-
-        uint8_t pinFunction = device->Pins[pinNumber - 1].PinFunction;
-
-        if (pinFunction == 4) {
-            rtapi_print_msg(RTAPI_MSG_INFO, "IO output pin %d => PoKeys pin %d, digital write ok\n", i, pinNumber);
-        } else {
-            rtapi_print_msg(RTAPI_MSG_ERR, "IO output pin %d => PoKeys pin %d, digital write nok, actual function: %d\n", i, pinNumber, pinFunction);
-            configurationOk = false;
-        }
-    }
-
-    // Read PWM pin capabilities
-    ret = PK_PWMConfigurationGet(device);
-    rtapi_print_msg(RTAPI_MSG_DBG, "Getting PWM info:%d\n", ret);
-
-    for (int i = 0; i < configuration->pwm_pins; i++)
-    {
-        int pinNumber = configuration->pwm_pin_map[i];
-        int channelNumber = -1;
-
-        for (int i = 0; i < 6; i++) {
-            if (device->PWM.PWMpinIDs[i] == pinNumber) {
-                channelNumber = i;
-                break;
-            }
-        }
-
-        if (channelNumber == -1) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "PWM pin %d, not matching any channel.\n", pinNumber);
-            configurationOk = false;
-        } else if (device->PWM.PWMenabledChannels[channelNumber] == false) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "IO PWM pin %d => PoKeys pin %d, channel %d, but is disabled\n", i, pinNumber, channelNumber);
-            configurationOk = false;
-        } else {
-            configuration->pwm_pin_map[i] = channelNumber;
-            rtapi_print_msg(RTAPI_MSG_INFO, "IO PWM pin %d => PoKeys pin %d, channel %d, PWM ok\n", i, pinNumber, channelNumber);
-        }
-    }
-
-    return configurationOk;
-}
-
-// ------------------------------------
-// Read the PulseEngines state, and positions and limits etc.
-// Also reads extended device status: IO, analog, encoders
-// ------------------------------------
-void ReadPulseEngineStatus(struct ComponentStruct* componentInstance) {
-    //struct timespec* requestStart = GetStartTime();
-    int ret = PK_PEv2_StatusGet(componentInstance->device);
-    //PrintElapsedTime(requestStart, "Getting PE STATE");
-    rtapi_print_msg(RTAPI_MSG_DBG, "Getting status:%d, state=%d, limitOverride=%d\n", ret, componentInstance->device->PEv2.PulseEngineState, componentInstance->device->PEv2.LimitOverride);
-}
-
-// ------------------------------------
-// Sets the PulseEngines state
-// ------------------------------------
-void SetPulseEngineStatus(struct ComponentStruct* componentInstance, enum ePK_PEState state, const char* log) {
-    componentInstance->device->PEv2.PulseEngineStateSetup = state;
-
-    //struct timespec* requestStart = GetStartTime();
-    int ret = PK_PEv2_PulseEngineStateSet(componentInstance->device);
-    //PrintElapsedTime(requestStart, "Setting PE STATE");
-
-    rtapi_print_msg(RTAPI_MSG_INFO, "%s:%d\n", log, ret);
-}
-
-// ------------------------------------
-// If any pin is enabled, the limit switches will be overridden, we forward that to the PE.
-// Note: LCNC will reset the axis override as soon as the (jogging-)motion has finished.
-// ------------------------------------
-void ProcessLimitOverride(struct ComponentStruct* componentInstance) {
-    bool limitOverride = false;
-    sPoKeysDevice* device = componentInstance->device;
-
-    for (int i = 0; i < NumberOfOverridePins; i++) {
-        limitOverride |= *componentInstance->motion_override_limit[i];
-    }
-
-    if (limitOverride == true && device->PEv2.LimitOverride == 0) {
-        device->PEv2.LimitOverrideSetup = 1;
-        int ret = PK_PEv2_PulseEngineStateSet(device);
-        rtapi_print_msg(RTAPI_MSG_WARN, "SET LIMIT OVERRIDE TRUE:%d\n", ret);
-    } else if (limitOverride == false && device->PEv2.LimitOverride == 1) {
-        device->PEv2.LimitOverrideSetup = 0;
-        int ret = PK_PEv2_PulseEngineStateSet(device);
-        rtapi_print_msg(RTAPI_MSG_WARN, "SET LIMIT OVERRIDE FALSE:%d\n", ret);
-    }
-}
-
-// ------------------------------------
-// Reads the PulseEngine status, checks if an emergency stop has occured.
-// Since the PE will not reset when the switch is changed, we switch to stopped and from then on read the raw pin.
-// ------------------------------------
-void ProcessEStop(struct ComponentStruct* componentInstance) {
-    if (componentInstance->device->PEv2.PulseEngineState == PK_PEState_peSTOP_EMERGENCY) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop due to PulseEngine\n");
-
-        *componentInstance->machine_estop = true;
-
-        SetPulseEngineStatus(componentInstance, PK_PEState_peSTOPPED, "Set PE stopped due to ESTOP!");
-        SetActiveOutputsOff(componentInstance);
-    } else {
-		bool currentEstop = 0 + *componentInstance->machine_estop;
-
-        uint8_t eStopPin = componentInstance->device->Pins[EstopPinNumber].DigitalValueGet;
-		rtapi_print_msg(RTAPI_MSG_DBG, "Getting E-Stop:%d\n", eStopPin);
-
-		if (currentEstop == 1 && eStopPin == 0) {
-			rtapi_print_msg(RTAPI_MSG_WARN, "E-Stop is Reset (by pin)\n");
-
-			*componentInstance->machine_estop = false;
-		} else if (currentEstop == 0 && eStopPin > 0) {
-			rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop due to pin!\n");
-
-			*componentInstance->machine_estop = true;
-
-            SetActiveOutputsOff(componentInstance);
-		}
-    }
-}
-
-// ------------------------------------
-// Process output and input digital pins.
-// ------------------------------------
-void ProcessDigitalPins(struct ComponentStruct* componentInstance) {
-    for (int i = 0; i < componentInstance->configuration->output_pins; i++) {
-        int pinNumber = componentInstance->configuration->output_pin_map[i];
-
-        if (pinNumber > 0) {
-            uint8_t pinState = *componentInstance->io_output_pin[i];
-            componentInstance->device->Pins[pinNumber - 1].DigitalValueSet = pinState;
-        }
-    }
-
-    //struct timespec* requestIoStart = GetStartTime();
-    int ret = PK_DigitalIOSetGet(componentInstance->device);
-    //PrintElapsedTime(requestIoStart, "Update all digital Pins");
-    //rtapi_print_msg(RTAPI_MSG_DBG, "Update all digital pins:%d\n", ret);
-
-    for (int i = 0; i < componentInstance->configuration->input_pins; i++) {
-        int pinNumber = componentInstance->configuration->input_pin_map[i];
-
-        if (pinNumber > 0) {
-            uint8_t pinState = componentInstance->device->Pins[pinNumber - 1].DigitalValueGet;
-
-            if (pinState > 0) {
-                *componentInstance->io_input_pin[i] = true;
-            } else {
-                *componentInstance->io_input_pin[i] = false;
-            }
-        }
-    }
-}
-
-// ------------------------------------
-// Process PWM pins.
-// ------------------------------------
-void ProcessPwmPins(struct ComponentStruct* componentInstance) {
-    bool setNecessary = false;
-    sPoKeysDevice* device = componentInstance->device;
-
-    for (int i = 0; i < componentInstance->configuration->pwm_pins; i++) {
-        int channel = componentInstance->configuration->pwm_pin_map[i];
-        float pinValue = *componentInstance->io_pwm_pin[i];
-
-        if (pinValue < 0.0f || pinValue > 100.0f) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, exceeds range of 0.0 - 100.0!\n", channel);
-
-            if (device->PWM.PWMduty[channel] > 0) {
-                // something wrong, let's stop here.
-                device->PWM.PWMduty[channel] = 0;
-                setNecessary = true;
-            }
-        } else if (pinValue == 0.0f && device->PWM.PWMduty[channel] == 0) {
-            continue;
-        } else {
-            uint32_t dutyCycle = ((pinValue / 100.0f) * (float)device->PWM.PWMperiod);
-
-            if (device->PWM.PWMduty[channel] - dutyCycle != 0) {
-                rtapi_print_msg(RTAPI_MSG_DBG, "PWM channel %d, set from %d to %d\n", channel, device->PWM.PWMduty[channel], dutyCycle);
-                device->PWM.PWMduty[channel] = dutyCycle;
-                setNecessary = true;
-            }
-        }
-    }
-
-    if (setNecessary) {
-        int ret = PK_PWMUpdate(device);
-        rtapi_print_msg(RTAPI_MSG_DBG, "Update PWM:%d\n", ret);
-    }
-}
-
-// ------------------------------------
-// Process streamed move command and implicitly update PE status information.
-// Returns false when movement stops.
-// ------------------------------------
-bool ProcessMoveCommand(struct ComponentStruct* componentInstance) {
-    bool continueMove = true;
-    hal_stream_t stream;
-    int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
-
-    if (ret >= 0) {
-        bool streamReadable = hal_stream_readable(&stream);
-
-        if (!streamReadable) {
-            // if the last cycle was slow (>5ms), we do not wait and "almost immediately" process the next motion state.
-            // since the servo thread may not have updated yet, we delay here to get at least one value here.
-            rtapi_print_msg(RTAPI_MSG_WARN, "Potential Buffer underrun? EndOfMotion Packet missing? Try sleep\n");
-            usleep(1000); // the time of the servo period (1ms).
-            streamReadable = hal_stream_readable(&stream);
-        }
-
-        if (streamReadable) {
-            sPoKeysDevice* device = componentInstance->device;
-            device->PEv2.motionBufferEntriesAccepted = 0;
-            device->PEv2.newMotionBufferEntries = 0;
-
-            int motionEntries = 0;
-            uint8_t numberOfAxes = componentInstance->configuration->number_axes;
-            uint8_t maxMotionPackets = componentInstance->configuration->max_motion_packets;
-
-            //struct timespec* streamStart = GetStartTime();
-            do
-            {
-                union hal_stream_data dataToReceive[numberOfAxes];
-
-                ret = hal_stream_read(&stream, dataToReceive, NULL);
-
-                if (ret != 0) {
-                    rtapi_print_msg(RTAPI_MSG_ERR, "Error reading stream:%d\n", ret);
-                    continueMove = false;
-                    break;
-                }
-
-                if (dataToReceive[0].s == EndOfMotionPacket) {
-                    rtapi_print_msg(RTAPI_MSG_DBG, "End of motion\n");
-                    continueMove = false;
-                    break;
-                }
-
-                for (int i = 0; i < numberOfAxes; i++) {
-                    uint8_t motion = dataToReceive[i].s;
-                    //rtapi_print_msg(RTAPI_MSG_ERR, "%d,", motion);
-                    device->PEv2.MotionBuffer[(motionEntries * numberOfAxes) + i] = motion;
-                }
-
-                //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
-
-                motionEntries++;
-
-                streamReadable = hal_stream_readable(&stream);
-
-                if (streamReadable == false || motionEntries == maxMotionPackets) {
-                    device->PEv2.newMotionBufferEntries = motionEntries;
-
-                    //struct timespec* requestStart = GetStartTime();
-                    ret = PK_PEv2_BufferFill(device);
-                    //PrintElapsedTime(requestStart, "BufferFill");
-
-                    if (device->PEv2.motionBufferEntriesAccepted != motionEntries) {
-                        // TODO handle if not all buffer entries are accepted
-                        rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes NOT ALL BUFFER ENTRIES ACCEPTED (%d, accepted %d)%d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
-                    }
-
-                    motionEntries = 0;
-                    //rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes (%d, accepted %d), Move commanded:%d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
-                }
-            }
-            while (streamReadable);
-
-            //PrintElapsedTime(streamStart, "StreamRead");
-        } else {
-            rtapi_print_msg(RTAPI_MSG_ERR, "Buffer underrun? EndOfMotion Packet missing?\n");
-            continueMove = false;
-        }
-
-        hal_stream_detach(&stream);
-    } else {
-        rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error=%d\n", ret);
-        continueMove = false;
-    }
-
-    return continueMove;
-}
-
-// ------------------------------------
-// Updates the HAL pins based on the current PE position information.
-// ------------------------------------
-void ProcessPositions(struct ComponentStruct* componentInstance) {
-    sPoKeysDevice* device = componentInstance->device;
-
-    for (int i = 0; i < componentInstance->configuration->number_axes; i++) {
-        *componentInstance->axis_position_feedback[i] = ((float)device->PEv2.CurrentPosition[i]) / ((float)componentInstance->axis_step_scale[i]);
-        *componentInstance->axis_limit_positive[i] = (device->PEv2.LimitStatusP >> i) & 0x01;
-        *componentInstance->axis_limit_negative[i] = (device->PEv2.LimitStatusN >> i) & 0x01;
-        *componentInstance->axis_home[i] = (device->PEv2.HomeStatus >> i) & 0x01;
-
-        //rtapi_print_msg(RTAPI_MSG_ERR, "Axis %d: %fmm, P%d, N%d, H%d", i, *componentInstance->axis_position_feedback[i], *componentInstance->axis_limit_positive[i], *componentInstance->axis_limit_negative[i], *componentInstance->axis_home[i]);
-    }
-
-    //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
-}
-
-// ------------------------------------
-// Process relays on/off
-// ------------------------------------
-void ProcessRelays(struct ComponentStruct* componentInstance) {
-    sPoKeysDevice* device = componentInstance->device;
-
-    //struct timespec* requestStart = GetStartTime();
-    int ret = PK_PEv2_ExternalOutputsGet(device);
-    //PrintElapsedTime(requestStart, "GetExternalOutputs");
-    //rtapi_print_msg(RTAPI_MSG_DBG, "Getting Relay status:%d, %d\n", ret, device->PEv2.ExternalOCOutputs);
-
-    bool ssr1on = 0 + *componentInstance->io_solid_state_relay[0];
-    bool ssr2on = 0 + *componentInstance->io_solid_state_relay[1];
-    bool relay1on = 0 + *componentInstance->io_relay[0];
-    bool relay2on = 0 + *componentInstance->io_relay[1];
-    bool oc1on = 0 + *componentInstance->io_open_collector[0];
-    bool oc2on = 0 + *componentInstance->io_open_collector[1];
-    bool oc3on = 0 + *componentInstance->io_open_collector[2];
-    bool oc4on = 0 + *componentInstance->io_open_collector[3];
-
-    bool setNecessary = false;
-    setNecessary |= CompareRelayState(device, ssr1on, 7);
-    setNecessary |= CompareRelayState(device, ssr2on, 0);
-    setNecessary |= CompareRelayState(device, relay1on, 2);
-    setNecessary |= CompareRelayState(device, relay2on, 1);
-    setNecessary |= CompareRelayState(device, oc1on, 3);
-    setNecessary |= CompareRelayState(device, oc2on, 4);
-    setNecessary |= CompareRelayState(device, oc3on, 5);
-    setNecessary |= CompareRelayState(device, oc4on, 6);
-
-    if (setNecessary) {
-        ret = PK_PEv2_ExternalOutputsSet(device);
-        rtapi_print_msg(RTAPI_MSG_INFO, "Change relays:%d\n", ret);
-    }
-}
-
-// ------------------------------------
-// Compare actual relay state to expected state.
-// On Pokeys57CNC the outputs are all accessed using ExternalOCOutputs! 0=SSR2, 7=SSR1, etc. See protocol definition.
-// ------------------------------------
-inline bool CompareRelayState(sPoKeysDevice* device, bool state, int offset) {
-    if (state == true && ((device->PEv2.ExternalOCOutputs >> offset) & 0x01) == 0) {
-        device->PEv2.ExternalOCOutputs |= (1 << offset);
-        return true;
-    } else if (state == false && ((device->PEv2.ExternalOCOutputs >> offset) & 0x01) == 1) {
-        device->PEv2.ExternalOCOutputs &= (0 << offset);
-        return true;
-    }
-
-    return false;
-}
-
-// ------------------------------------
-// Set all relays and PWM outputs off.
-// ------------------------------------
-void SetActiveOutputsOff(struct ComponentStruct* componentInstance) {
-    sPoKeysDevice* device = componentInstance->device;
-
-    if (device->PEv2.ExternalOCOutputs > 0) {
-        device->PEv2.ExternalOCOutputs = 0;
-        int ret = PK_PEv2_ExternalOutputsSet(device);
-        rtapi_print_msg(RTAPI_MSG_WARN, "Turn all relays off:%d\n", ret);
-    }
-
-    bool setNecessary = false;
-    for (int i = 0; i < 6; i++) {
-        if (device->PWM.PWMduty[i] > 0) {
-            device->PWM.PWMduty[i] = 0;
-            setNecessary = true;
-        }
-    }
-
-    if (setNecessary) {
-        int ret = PK_PWMUpdate(device);
-        rtapi_print_msg(RTAPI_MSG_WARN, "Turn PWM off:%d\n", ret);
-    }
-}
-
-// ------------------------------------
-// Get the current timestamp. Consumer must free the memory of the timestamp!
-// ------------------------------------
-struct timespec* GetStartTime() {
-    struct timespec* timeStamp;
-    timeStamp = malloc(sizeof(struct timespec));
-    clock_gettime(CLOCK_REALTIME, timeStamp);
-
-    return timeStamp;
-}
-
-// ------------------------------------
-// Try to keep the cycle time within defined limits.
-// ------------------------------------
-void ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum State currentState, enum State nextState) {
-    struct timespec cycleEnd;
-    clock_gettime(CLOCK_REALTIME, &cycleEnd);
-    float t_ms = ((float)(cycleEnd.tv_sec - cycleStart->tv_sec) * 1.0e9 + (float)(cycleEnd.tv_nsec - cycleStart->tv_nsec)) / 1.0e6;
-    free(cycleStart);
-
-    rtapi_print_msg(RTAPI_MSG_DBG, "Time elapsed %f ms\n", t_ms);
-
-    if (!overrideCycleTime) {
-        if (t_ms <= CycleTimeMs) {
-            useconds_t sleepTimeUs = (CycleTimeMs - t_ms) * 1000;
-            usleep(sleepTimeUs);
-        } else {
-            const char* currentStateName = GetStateName(currentState);
-            const char* nextStateName = GetStateName(nextState);
-
-            if (t_ms <= CycleTimeMs + 3.0) {
-                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle greater than %fms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
-            } else {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle greater than %f!ms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
-            }
-        }
-    }
-}
-
-// ------------------------------------
-// Helper method to get the state enum name.
-// ------------------------------------
-inline const char* GetStateName(enum State state) {
-    switch (state) {
-        case SHUTDOWN: return "SHUTDOWN";
-        case INIT: return "INIT";
-        case IDLE: return "IDLE";
-        case ENABLED: return "ENABLED";
-        case MOVING: return "MOVING";
-        case ESTOP: return "ESTOP";
-        default: return "UNDEFINED";
-    }
-}
-
-// ------------------------------------
-// Logs the difference of the timestamp and current time.
-// ------------------------------------
-void PrintElapsedTime(struct timespec* startTime, const char* log) {
-    struct timespec endTime;
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    float t_ms = ((float)(endTime.tv_sec - startTime->tv_sec) * 1.0e9 + (float)(endTime.tv_nsec - startTime->tv_nsec)) / 1.0e6;
-    free(startTime);
-
-    rtapi_print_msg(RTAPI_MSG_DBG, "%s took %f ms\n", log, t_ms);
 }
 
 // ------------------------------------
 // Reads the minimal configuration from the INI file.
 // ------------------------------------
-component_configuration* ReadConfiguration(const char *instanceName) {
+component_configuration* PMC_ReadConfiguration(const char *instanceName) {
     const char* ini_path = getenv("INI_FILE_NAME");
     FILE* ini_file_ptr = fopen(ini_path, "r");
 
@@ -1137,4 +606,581 @@ component_configuration* ReadConfiguration(const char *instanceName) {
     return configuration;
 }
 
-static int __comp_get_data_size(void) { return 0; }
+// ------------------------------------
+// Connects to the device.
+// Returns false if connection was unsuccessful, or the configuration is not matching.
+// ------------------------------------
+bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
+    component_configuration* configuration = componentInstance->configuration;
+
+    sPoKeysDevice* device = PK_ConnectToDeviceWSerial(configuration->device_serial, 2000);
+    if (device == 0) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to Connect to device '%d'\n", configuration->device_serial);
+        return false;
+    }
+
+    componentInstance->device = device;
+
+    switch (device->DeviceData.DeviceType) {
+        //case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNC:
+        //case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNCpro4x25:
+        case 32:
+        case 33:
+            rtapi_print_msg(RTAPI_MSG_INFO, "CONNECTED.\n");
+            break;
+        default:
+            rtapi_print_msg(RTAPI_MSG_WARN, "CONNECTED. Unsupported device type: %d\n", device->DeviceData.DeviceType);
+            break;
+    }
+
+    if (device->connectionType == 0) {
+        // connection 0=USB, 1=ETH, 2=FastUSB
+        rtapi_print_msg(RTAPI_MSG_WARN, "Connection type is standard USB mode. Enable FastUSB!\n", device->connectionType);
+    }
+
+    bool configurationOk = true;
+
+    PMC_ReadPulseEngineStatus(componentInstance);
+
+    if (device->PEv2.PulseEngineState != PK_PEState_peSTOPPED) {
+        PMC_SetPulseEngineStatus(componentInstance, PK_PEState_peSTOPPED, "Set PE stopped on connect(!)");
+    }
+
+    int ret;
+    // Check basic PE setup.
+    uint8_t numberOfAxes = configuration->number_axes;
+    // 0=Use external pulse generator and 1<<7=IO (PoKeysCNCaddon)
+    if (device->PEv2.PulseEngineEnabled != numberOfAxes || !(device->PEv2.PulseGeneratorType & (0 | (1<<7)))) {
+        device->PEv2.PulseEngineEnabled = numberOfAxes;
+        device->PEv2.PulseGeneratorType = 0 | (1<<7);
+        ret = PK_PEv2_PulseEngineSetup(device);
+        rtapi_print_msg(RTAPI_MSG_WARN, "PE Setup:%d\n", ret);
+
+        ret = PK_PEv2_PulseEngineReboot(device);
+        rtapi_print_msg(RTAPI_MSG_DBG, "PE Reboot:%d\n", ret);
+        // In theory we should sleep, but it'l highly unlikely you'll start a motion 1 second after opening LCNC.
+        // TODO or is the device communication down during this time?
+    }
+
+    // Set up axis configuration
+    for (int i = 0; i < numberOfAxes; i++) {
+        device->PEv2.param1 = i;
+        ret = PK_PEv2_AxisConfigurationGet(device);
+
+        if (device->PEv2.AxesConfig[i] & (PK_AC_INTERNAL_PLANNER)) {
+            device->PEv2.AxesConfig[i] &= ~(PK_AC_INTERNAL_PLANNER); // NOT internal => Buffer operated
+            device->PEv2.param1 = i; // redundant?
+            ret = PK_PEv2_AxisConfigurationSet(device);
+            rtapi_print_msg(RTAPI_MSG_INFO, "PE axis %d configured:%d\n", i, ret);
+        }
+    }
+
+    // Read and verify digital pin capabilities with INI configuration
+    ret = PK_PinConfigurationGet(device);
+    rtapi_print_msg(RTAPI_MSG_DBG, "Getting pin info:%d\n", ret);
+
+    for (int i = 0; i < configuration->input_pins; i++) {
+        int pinNumber = configuration->input_pin_map[i];
+
+        uint8_t pinFunction = device->Pins[pinNumber - 1].PinFunction;
+
+        if (pinFunction == 2) {
+            rtapi_print_msg(RTAPI_MSG_INFO, "IO input pin %d => PoKeys pin %d, digital read ok\n", i, pinNumber);
+        } else {
+            rtapi_print_msg(RTAPI_MSG_ERR, "IO input pin %d => PoKeys pin %d, digital read nok, actual function: %d\n", i, pinNumber, pinFunction);
+            configurationOk = false;
+        }
+    }
+
+    for (int i = 0; i < configuration->output_pins; i++) {
+        int pinNumber = configuration->output_pin_map[i];
+
+        uint8_t pinFunction = device->Pins[pinNumber - 1].PinFunction;
+
+        if (pinFunction == 4) {
+            rtapi_print_msg(RTAPI_MSG_INFO, "IO output pin %d => PoKeys pin %d, digital write ok\n", i, pinNumber);
+        } else {
+            rtapi_print_msg(RTAPI_MSG_ERR, "IO output pin %d => PoKeys pin %d, digital write nok, actual function: %d\n", i, pinNumber, pinFunction);
+            configurationOk = false;
+        }
+    }
+
+    // Read PWM pin capabilities
+    ret = PK_PWMConfigurationGet(device);
+    rtapi_print_msg(RTAPI_MSG_DBG, "Getting PWM info:%d\n", ret);
+
+    for (int i = 0; i < configuration->pwm_pins; i++)
+    {
+        int pinNumber = configuration->pwm_pin_map[i];
+        int channelNumber = -1;
+
+        for (int i = 0; i < 6; i++) {
+            if (device->PWM.PWMpinIDs[i] == pinNumber) {
+                channelNumber = i;
+                break;
+            }
+        }
+
+        if (channelNumber == -1) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "PWM pin %d, not matching any channel.\n", pinNumber);
+            configurationOk = false;
+        } else if (device->PWM.PWMenabledChannels[channelNumber] == false) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "IO PWM pin %d => PoKeys pin %d, channel %d, but is disabled\n", i, pinNumber, channelNumber);
+            configurationOk = false;
+        } else {
+            configuration->pwm_pin_map[i] = channelNumber;
+            rtapi_print_msg(RTAPI_MSG_INFO, "IO PWM pin %d => PoKeys pin %d, channel %d, PWM ok\n", i, pinNumber, channelNumber);
+        }
+    }
+
+    // Read Encoder configuration
+    ret = PK_EncoderConfigurationGet(device);
+    rtapi_print_msg(RTAPI_MSG_DBG, "Getting encoder info:%d\n", ret);
+
+    // TODO compare with ini configuration
+
+    return configurationOk;
+}
+
+// ------------------------------------
+// Read the PulseEngines state, and positions and limits etc.
+// Also reads extended device status: IO, analog, encoders
+// ------------------------------------
+void PMC_ReadPulseEngineStatus(struct ComponentStruct* componentInstance) {
+    //struct timespec* requestStart = PMC_GetStartTime();
+    int ret = PK_PEv2_StatusGet(componentInstance->device);
+    //PMC_PrintElapsedTime(requestStart, "Getting PE STATE");
+    rtapi_print_msg(RTAPI_MSG_DBG, "Getting status:%d, state=%d, limitOverride=%d\n", ret, componentInstance->device->PEv2.PulseEngineState, componentInstance->device->PEv2.LimitOverride);
+}
+
+// ------------------------------------
+// Sets the PulseEngines state
+// ------------------------------------
+void PMC_SetPulseEngineStatus(struct ComponentStruct* componentInstance, enum ePK_PEState state, const char* log) {
+    componentInstance->device->PEv2.PulseEngineStateSetup = state;
+
+    //struct timespec* requestStart = PMC_GetStartTime();
+    int ret = PK_PEv2_PulseEngineStateSet(componentInstance->device);
+    //PMC_PrintElapsedTime(requestStart, "Setting PE STATE");
+
+    rtapi_print_msg(RTAPI_MSG_INFO, "%s:%d\n", log, ret);
+}
+
+// ------------------------------------
+// If any pin is enabled, the limit switches will be overridden, we forward that to the PE.
+// Note: LCNC will reset the axis override as soon as the (jogging-)motion has finished.
+// ------------------------------------
+void PMC_ProcessLimitOverride(struct ComponentStruct* componentInstance) {
+    bool limitOverride = false;
+    sPoKeysDevice* device = componentInstance->device;
+
+    for (int i = 0; i < NumberOfOverridePins; i++) {
+        limitOverride |= *componentInstance->motion_override_limit[i];
+    }
+
+    if (limitOverride == true && device->PEv2.LimitOverride == 0) {
+        device->PEv2.LimitOverrideSetup = 1;
+        int ret = PK_PEv2_PulseEngineStateSet(device);
+        rtapi_print_msg(RTAPI_MSG_WARN, "SET LIMIT OVERRIDE TRUE:%d\n", ret);
+    } else if (limitOverride == false && device->PEv2.LimitOverride == 1) {
+        device->PEv2.LimitOverrideSetup = 0;
+        int ret = PK_PEv2_PulseEngineStateSet(device);
+        rtapi_print_msg(RTAPI_MSG_WARN, "SET LIMIT OVERRIDE FALSE:%d\n", ret);
+    }
+}
+
+// ------------------------------------
+// Reads the PulseEngine status, checks if an emergency stop has occured.
+// Since the PE will not reset when the switch is changed, we switch to stopped and from then on read the raw pin.
+// ------------------------------------
+void PMC_ProcessEStop(struct ComponentStruct* componentInstance) {
+    if (componentInstance->device->PEv2.PulseEngineState == PK_PEState_peSTOP_EMERGENCY) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop due to PulseEngine\n");
+
+        *componentInstance->machine_estop = true;
+
+        PMC_SetPulseEngineStatus(componentInstance, PK_PEState_peSTOPPED, "Set PE stopped due to ESTOP!");
+        PMC_SetActiveOutputsOff(componentInstance);
+    } else {
+		bool currentEstop = 0 + *componentInstance->machine_estop;
+
+        uint8_t eStopPin = componentInstance->device->Pins[EstopPinNumber].DigitalValueGet;
+		rtapi_print_msg(RTAPI_MSG_DBG, "Getting E-Stop:%d\n", eStopPin);
+
+		if (currentEstop == 1 && eStopPin == 0) {
+			rtapi_print_msg(RTAPI_MSG_WARN, "E-Stop is Reset (by pin)\n");
+
+			*componentInstance->machine_estop = false;
+		} else if (currentEstop == 0 && eStopPin > 0) {
+			rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop due to pin!\n");
+
+			*componentInstance->machine_estop = true;
+
+            PMC_SetActiveOutputsOff(componentInstance);
+		}
+    }
+}
+
+// ------------------------------------
+// Process output and input digital pins.
+// ------------------------------------
+void PMC_ProcessDigitalPins(struct ComponentStruct* componentInstance) {
+    for (int i = 0; i < componentInstance->configuration->output_pins; i++) {
+        int pinNumber = componentInstance->configuration->output_pin_map[i];
+
+        if (pinNumber > 0) {
+            uint8_t pinState = *componentInstance->io_output_pin[i];
+            componentInstance->device->Pins[pinNumber - 1].DigitalValueSet = pinState;
+        }
+    }
+
+    //struct timespec* requestIoStart = PMC_GetStartTime();
+    int ret = PMC_DigitalIOSetGet(componentInstance->device);
+    //PMC_PrintElapsedTime(requestIoStart, "Update all digital Pins");
+    //rtapi_print_msg(RTAPI_MSG_DBG, "Update all digital pins:%d\n", ret);
+
+    for (int i = 0; i < componentInstance->configuration->input_pins; i++) {
+        int pinNumber = componentInstance->configuration->input_pin_map[i];
+
+        if (pinNumber > 0) {
+            uint8_t pinState = componentInstance->device->Pins[pinNumber - 1].DigitalValueGet;
+
+            if (pinState > 0) {
+                *componentInstance->io_input_pin[i] = true;
+            } else {
+                *componentInstance->io_input_pin[i] = false;
+            }
+        }
+    }
+}
+
+// ------------------------------------
+// Process PWM pins.
+// ------------------------------------
+void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance) {
+    bool setNecessary = false;
+    sPoKeysDevice* device = componentInstance->device;
+
+    for (int i = 0; i < componentInstance->configuration->pwm_pins; i++) {
+        int channel = componentInstance->configuration->pwm_pin_map[i];
+        float pinValue = *componentInstance->io_pwm_pin[i];
+
+        if (pinValue < 0.0f || pinValue > 100.0f) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, exceeds range of 0.0 - 100.0!\n", channel);
+
+            if (device->PWM.PWMduty[channel] > 0) {
+                // something wrong, let's stop here.
+                device->PWM.PWMduty[channel] = 0;
+                setNecessary = true;
+            }
+        } else if (pinValue == 0.0f && device->PWM.PWMduty[channel] == 0) {
+            continue;
+        } else {
+            uint32_t dutyCycle = ((pinValue / 100.0f) * (float)device->PWM.PWMperiod);
+
+            if (device->PWM.PWMduty[channel] - dutyCycle != 0) {
+                rtapi_print_msg(RTAPI_MSG_DBG, "PWM channel %d, set from %d to %d\n", channel, device->PWM.PWMduty[channel], dutyCycle);
+                device->PWM.PWMduty[channel] = dutyCycle;
+                setNecessary = true;
+            }
+        }
+    }
+
+    if (setNecessary) {
+        int ret = PK_PWMUpdate(device);
+        rtapi_print_msg(RTAPI_MSG_DBG, "Update PWM:%d\n", ret);
+    }
+}
+
+// ------------------------------------
+// Process streamed move command and implicitly update PE status information.
+// Returns false when movement stops.
+// ------------------------------------
+bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
+    bool continueMove = true;
+    hal_stream_t stream;
+    int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
+
+    if (ret >= 0) {
+        bool streamReadable = hal_stream_readable(&stream);
+
+        if (!streamReadable) {
+            // if the last cycle was slow (>5ms), we do not wait and "almost immediately" process the next motion state.
+            // since the servo thread may not have updated yet, we delay here to get at least one value here.
+            rtapi_print_msg(RTAPI_MSG_WARN, "Potential Buffer underrun? EndOfMotion Packet missing? Try sleep\n");
+            usleep(1000); // the time of the servo period (1ms).
+            streamReadable = hal_stream_readable(&stream);
+        }
+
+        if (streamReadable) {
+            sPoKeysDevice* device = componentInstance->device;
+            device->PEv2.motionBufferEntriesAccepted = 0;
+            device->PEv2.newMotionBufferEntries = 0;
+
+            int motionEntries = 0;
+            uint8_t numberOfAxes = componentInstance->configuration->number_axes;
+            uint8_t maxMotionPackets = componentInstance->configuration->max_motion_packets;
+
+            //struct timespec* streamStart = PMC_GetStartTime();
+            do
+            {
+                union hal_stream_data dataToReceive[numberOfAxes];
+
+                ret = hal_stream_read(&stream, dataToReceive, NULL);
+
+                if (ret != 0) {
+                    rtapi_print_msg(RTAPI_MSG_ERR, "Error reading stream:%d\n", ret);
+                    continueMove = false;
+                    break;
+                }
+
+                if (dataToReceive[0].s == EndOfMotionPacket) {
+                    rtapi_print_msg(RTAPI_MSG_DBG, "End of motion\n");
+                    continueMove = false;
+                    break;
+                }
+
+                for (int i = 0; i < numberOfAxes; i++) {
+                    uint8_t motion = dataToReceive[i].s;
+                    //rtapi_print_msg(RTAPI_MSG_ERR, "%d,", motion);
+                    device->PEv2.MotionBuffer[(motionEntries * numberOfAxes) + i] = motion;
+                }
+
+                //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
+
+                motionEntries++;
+
+                streamReadable = hal_stream_readable(&stream);
+
+                if (streamReadable == false || motionEntries == maxMotionPackets) {
+                    device->PEv2.newMotionBufferEntries = motionEntries;
+
+                    //struct timespec* requestStart = PMC_GetStartTime();
+                    ret = PK_PEv2_BufferFill(device);
+                    //PMC_PrintElapsedTime(requestStart, "BufferFill");
+
+                    if (device->PEv2.motionBufferEntriesAccepted != motionEntries) {
+                        // TODO handle if not all buffer entries are accepted
+                        rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes NOT ALL BUFFER ENTRIES ACCEPTED (%d, accepted %d)%d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
+                    }
+
+                    motionEntries = 0;
+                    //rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes (%d, accepted %d), Move commanded:%d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
+                }
+            }
+            while (streamReadable);
+
+            //PMC_PrintElapsedTime(streamStart, "StreamRead");
+        } else {
+            rtapi_print_msg(RTAPI_MSG_ERR, "Buffer underrun? EndOfMotion Packet missing?\n");
+            continueMove = false;
+        }
+
+        hal_stream_detach(&stream);
+    } else {
+        rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error=%d\n", ret);
+        continueMove = false;
+    }
+
+    return continueMove;
+}
+
+// ------------------------------------
+// Updates the HAL pins based on the current PE position information.
+// ------------------------------------
+void PMC_ProcessPositions(struct ComponentStruct* componentInstance) {
+    sPoKeysDevice* device = componentInstance->device;
+
+    for (int i = 0; i < componentInstance->configuration->number_axes; i++) {
+        *componentInstance->axis_position_feedback[i] = ((float)device->PEv2.CurrentPosition[i]) / ((float)componentInstance->axis_step_scale[i]);
+        *componentInstance->axis_limit_positive[i] = (device->PEv2.LimitStatusP >> i) & 0x01;
+        *componentInstance->axis_limit_negative[i] = (device->PEv2.LimitStatusN >> i) & 0x01;
+        *componentInstance->axis_home[i] = (device->PEv2.HomeStatus >> i) & 0x01;
+
+        //rtapi_print_msg(RTAPI_MSG_ERR, "Axis %d: %fmm, P%d, N%d, H%d", i, *componentInstance->axis_position_feedback[i], *componentInstance->axis_limit_positive[i], *componentInstance->axis_limit_negative[i], *componentInstance->axis_home[i]);
+    }
+
+    //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
+}
+
+// ------------------------------------
+// Process relays on/off
+// ------------------------------------
+void PMC_ProcessRelays(struct ComponentStruct* componentInstance) {
+    sPoKeysDevice* device = componentInstance->device;
+
+    //struct timespec* requestStart = PMC_GetStartTime();
+    int ret = PK_PEv2_ExternalOutputsGet(device);
+    //PMC_PrintElapsedTime(requestStart, "GetExternalOutputs");
+    //rtapi_print_msg(RTAPI_MSG_DBG, "Getting Relay status:%d, %d\n", ret, device->PEv2.ExternalOCOutputs);
+
+    bool ssr1on = 0 + *componentInstance->io_solid_state_relay[0];
+    bool ssr2on = 0 + *componentInstance->io_solid_state_relay[1];
+    bool relay1on = 0 + *componentInstance->io_relay[0];
+    bool relay2on = 0 + *componentInstance->io_relay[1];
+    bool oc1on = 0 + *componentInstance->io_open_collector[0];
+    bool oc2on = 0 + *componentInstance->io_open_collector[1];
+    bool oc3on = 0 + *componentInstance->io_open_collector[2];
+    bool oc4on = 0 + *componentInstance->io_open_collector[3];
+
+    bool setNecessary = false;
+    setNecessary |= PMC_CompareRelayState(device, ssr1on, 7);
+    setNecessary |= PMC_CompareRelayState(device, ssr2on, 0);
+    setNecessary |= PMC_CompareRelayState(device, relay1on, 2);
+    setNecessary |= PMC_CompareRelayState(device, relay2on, 1);
+    setNecessary |= PMC_CompareRelayState(device, oc1on, 3);
+    setNecessary |= PMC_CompareRelayState(device, oc2on, 4);
+    setNecessary |= PMC_CompareRelayState(device, oc3on, 5);
+    setNecessary |= PMC_CompareRelayState(device, oc4on, 6);
+
+    if (setNecessary) {
+        ret = PK_PEv2_ExternalOutputsSet(device);
+        rtapi_print_msg(RTAPI_MSG_INFO, "Change relays:%d\n", ret);
+    }
+}
+
+// ------------------------------------
+// Compare actual relay state to expected state.
+// On Pokeys57CNC the outputs are all accessed using ExternalOCOutputs! 0=SSR2, 7=SSR1, etc. See protocol definition.
+// ------------------------------------
+inline bool PMC_CompareRelayState(sPoKeysDevice* device, bool state, int offset) {
+    if (state == true && ((device->PEv2.ExternalOCOutputs >> offset) & 0x01) == 0) {
+        device->PEv2.ExternalOCOutputs |= (1 << offset);
+        return true;
+    } else if (state == false && ((device->PEv2.ExternalOCOutputs >> offset) & 0x01) == 1) {
+        device->PEv2.ExternalOCOutputs &= (0 << offset);
+        return true;
+    }
+
+    return false;
+}
+
+// ------------------------------------
+// Set all relays and PWM outputs off.
+// ------------------------------------
+void PMC_SetActiveOutputsOff(struct ComponentStruct* componentInstance) {
+    sPoKeysDevice* device = componentInstance->device;
+
+    if (device->PEv2.ExternalOCOutputs > 0) {
+        device->PEv2.ExternalOCOutputs = 0;
+        int ret = PK_PEv2_ExternalOutputsSet(device);
+        rtapi_print_msg(RTAPI_MSG_WARN, "Turn all relays off:%d\n", ret);
+    }
+
+    bool setNecessary = false;
+    for (int i = 0; i < 6; i++) {
+        if (device->PWM.PWMduty[i] > 0) {
+            device->PWM.PWMduty[i] = 0;
+            setNecessary = true;
+        }
+    }
+
+    if (setNecessary) {
+        int ret = PK_PWMUpdate(device);
+        rtapi_print_msg(RTAPI_MSG_WARN, "Turn PWM off:%d\n", ret);
+    }
+}
+
+// ------------------------------------
+// Get the current timestamp. Consumer must free the memory of the timestamp!
+// ------------------------------------
+struct timespec* PMC_GetStartTime() {
+    struct timespec* timeStamp;
+    timeStamp = malloc(sizeof(struct timespec));
+    clock_gettime(CLOCK_REALTIME, timeStamp);
+
+    return timeStamp;
+}
+
+// ------------------------------------
+// Try to keep the cycle time within defined limits.
+// ------------------------------------
+void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum State currentState, enum State nextState) {
+    struct timespec cycleEnd;
+    clock_gettime(CLOCK_REALTIME, &cycleEnd);
+    float t_ms = ((float)(cycleEnd.tv_sec - cycleStart->tv_sec) * 1.0e9 + (float)(cycleEnd.tv_nsec - cycleStart->tv_nsec)) / 1.0e6;
+    free(cycleStart);
+
+    rtapi_print_msg(RTAPI_MSG_DBG, "Time elapsed %f ms\n", t_ms);
+
+    if (!overrideCycleTime) {
+        if (t_ms <= CycleTimeMs) {
+            useconds_t sleepTimeUs = (CycleTimeMs - t_ms) * 1000;
+            usleep(sleepTimeUs);
+        } else {
+            const char* currentStateName = PMC_GetStateName(currentState);
+            const char* nextStateName = PMC_GetStateName(nextState);
+
+            if (t_ms <= CycleTimeMs + 3.0) {
+                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle greater than %fms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
+            } else {
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle greater than %f!ms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
+            }
+        }
+    }
+}
+
+// ------------------------------------
+// Helper method to get the state enum name.
+// ------------------------------------
+inline const char* PMC_GetStateName(enum State state) {
+    switch (state) {
+        case SHUTDOWN: return "SHUTDOWN";
+        case INIT: return "INIT";
+        case IDLE: return "IDLE";
+        case ENABLED: return "ENABLED";
+        case MOVING: return "MOVING";
+        case ESTOP: return "ESTOP";
+        default: return "UNDEFINED";
+    }
+}
+
+// ------------------------------------
+// Logs the difference of the timestamp and current time.
+// ------------------------------------
+void PMC_PrintElapsedTime(struct timespec* startTime, const char* log) {
+    struct timespec endTime;
+    clock_gettime(CLOCK_REALTIME, &endTime);
+    float t_ms = ((float)(endTime.tv_sec - startTime->tv_sec) * 1.0e9 + (float)(endTime.tv_nsec - startTime->tv_nsec)) / 1.0e6;
+    free(startTime);
+
+    rtapi_print_msg(RTAPI_MSG_DBG, "%s took %f ms\n", log, t_ms);
+}
+
+// ------------------------------------
+// Override?!
+// ------------------------------------
+//?? #include "PoKeysLibCore.h"
+int32_t PMC_DigitalIOSetGet(sPoKeysDevice* device)
+{
+    uint32_t i;
+    if (device == NULL) return PK_ERR_NOT_CONNECTED;
+
+    // Set digital outputs
+	CreateRequest(device->request, 0xCC, 1, 0, 0, 0);
+	for (i = 0; i < device->info.iPinCount; i++)
+    {
+        if (device->Pins[i].preventUpdate > 0)
+        {
+            device->request[20 + i / 8] |= (unsigned char)(1 << (i % 8));
+        } else if (device->Pins[i].DigitalValueSet > 0)
+        {
+            device->request[8 + i / 8] |= (unsigned char)(1 << (i % 8));
+        }
+    }
+	if (SendRequest(device) != PK_OK) return PK_ERR_TRANSFER;
+	// Get digital inputs
+	for (i = 0; i < device->info.iPinCount; i++)
+    {
+		device->Pins[i].DigitalValueGet = ((unsigned char)(device->response[8 + i / 8] & (1 << (i % 8))) > 0) ? 1 : 0;
+    }
+
+    // Fast encoders are only 1 byte value
+    // TODO UF encoder get
+    if (1)
+    {
+        device->Encoders[25].encoderValue = *((unsigned int*)&device->response[58]);
+    }
+
+	return PK_OK;
+}

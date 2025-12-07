@@ -23,16 +23,17 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 - Homing
 - IO
     - All relays (example Spindle on/off)
-    - Configurable digital input output pins
+    - Configurable digital input/output pins
     - PWM pins
+    - Fast and Ultrafast Encoders
 
 ### Backlog
-- Allow reading encoders for jogging
 - Test motion buffer in error situation
 - Test probing
 - Test soft limits
 - Technical: Benchmark component
 - Provide more example configurations
+- Merge components using `hal_export_funct`?
 
 ## Setup
 A walkthrough to set this component up is available here [Setup](documentation/Setup.md)
