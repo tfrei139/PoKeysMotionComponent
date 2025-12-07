@@ -1,3 +1,3 @@
 # Include your shutdown HAL commands here
-setp PoKeysController.0.internal-state 5
+setp PoKeysController.0.internal-state -1
 waitusr PoKeysController

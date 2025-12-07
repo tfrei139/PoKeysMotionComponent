@@ -16,7 +16,8 @@ There are two separate repositories for the same code:
 
 ## PoKeys protocol definition
 [PoLabs downloads](https://www.poscope.com/downloads-manuals/)  
-[Protocol specification](https://www.poscope.com/wp-content/uploads/downloads/Pokeys/Manuals/PoKeys%20-%20protocol%20specification.pdf)
+[Protocol specification](https://www.poscope.com/wp-content/uploads/downloads/Pokeys/Manuals/PoKeys%20-%20protocol%20specification.pdf)  
+[Pin layout explained](https://blog.poscope.com/pokeys57cnc-pinout-explained/)
 
 ## How to wire up an Estop
 https://forum.linuxcnc.org/24-hal-components/37906-an-e-stop-hal-and-an-overall-how-things-work-series  
@@ -37,3 +38,6 @@ ASUS all-in-one V161, BIOS V308, Intel Celeron N4000 1.1 GHz up to 2.6 GHz, 2 co
 PoKeys57CNC, V1.3, Firmware V4.4.19  
 LinuxCNC 2.9.4 PREEMPT-RT  
 Latency Test, Max Jitter: Servo Thread 53'936ns, Base Thread 79'713ns
+
+## Userspace components do not support personality
+[LinuxCNC Issue 1089](https://github.com/LinuxCNC/linuxcnc/issues/1089)

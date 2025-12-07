@@ -2,5 +2,5 @@
 
 scriptDir=$(dirname "$0")
 
-sudo halcompile --install $scriptDir/../source/PoKeysController.comp
+sudo halcompile --install --userspace --extra-link-args="-L/usr/lib -lPoKeys -llinuxcncini" $scriptDir/../source/PoKeysController.c
 sudo halcompile --install $scriptDir/../source/PoKeysMotionBuffer.comp

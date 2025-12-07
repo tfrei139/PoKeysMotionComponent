@@ -8,7 +8,7 @@ I used the same approach for buffering the motion. As consequence we will always
 
 ## Design decision: Instance vs singleton
 There is no technical limitation that you could use multiple PoKeysCNC devices. I do not find any use case for it, but why not allow it.  
-The component is mostly written to support multiple instances. However currently it would not work.
+The component is written to support multiple instances. However currently it is untested.
 
 ## Design decision: Motion only streamed if necessary
 As the component was developed, creating distinct states of being enabled and in motion made more sense to me.
@@ -20,35 +20,10 @@ The drawback, that we consistently need to send unnecessary data. And add potent
 During my tests I did get occasional high cycle times for the user component (I assume due to the hardware). So the robustness of the mechanism is appreciated.
 
 ## Design decision: Parametrization using HAL
+The primary configuration is done in the ini file.
 While a userpace component can read from the machine ini file, an RT component cannot.  
-So to keep the configuration consistent for both, both will be configured using the HAL pins and parameters.
-
-Old example:  
-Requires `option extra_link_args "... -llinuxcncini";`
-```C
-const char* ini_path = getenv("INI_FILE_NAME");
-    
-FILE* ini_file_ptr = fopen(ini_path, "r");
-
-if (ini_file_ptr == NULL) {
-    rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to read INI '%s'\n", ini_path);
-    return false;
-}
-
-/* make sure file is closed on exec() */
-//int fd = fileno(ini_file_ptr); // TODO check actual effect
-//fcntl(fd, F_SETFD, FD_CLOEXEC);
-
-const char* section = "POKEYS"; // TODO append instance number. How to get instance number/name?
-const char* tag = "DEVICE_SERIAL"; 
-
-const char* tmpstr = iniFind(ini_file_ptr, tag, section);
-int deviceSerial = 0;
-int iniRead = iniFindInt(ini_file_ptr, tag, section, &deviceSerial);
-rtapi_print_msg(RTAPI_MSG_ERR, "Got device serial from INI '%d',%d\n", deviceSerial, iniRead);
-
-fclose(ini_file_ptr);
-```
+An RT component can use "personality" to parametrize the the amount of pins, but a userspace component cannot.  
+So to keep the common configuration consistent for both, certain paramaters will be configured using the HAL pins.
 
 ## Relays, PWM behavior under E-Stop
 The relay pins are only "in". If we have a failure setting the signal on device side, or we shut down due to E-Stop, the pins will show the wrong state on LinuxCNC side.

@@ -17,7 +17,7 @@ The motion buffer will grab the commanded positions, compute the necessary pulse
 The controller will read the buffer and forward it to the PoKeysCNC. This way, slight deviations in timing are unproblematic.
 
 ### Features
-- 3 Axis (motor) motion control
+- 1-8 Axis (motor) motion control
 - E-Stop
 - Limit switches and override
 - Homing
@@ -27,12 +27,11 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
     - PWM pins
 
 ### Backlog
-- Make number of axes configurable in HAL
-- Test/Extend probing
-- Test Soft limits
-- Technical: Benchmark component
-- Technical: convert to `C` component
 - Allow reading encoders for jogging
+- Test motion buffer in error situation
+- Test probing
+- Test soft limits
+- Technical: Benchmark component
 - Provide more example configurations
 
 ## Setup

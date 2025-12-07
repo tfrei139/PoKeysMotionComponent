@@ -1,0 +1,39 @@
+// This file serves only as reference to precompile the boiler plate code of the C-component
+
+component PoKeysController;
+
+pin out bit machine_estop = false "Machine is in E-Stop condition";
+pin in bit machine_is_on = false "Machine should be enabled";
+
+pin out bit io.input_pin.# [10] "Digital input pins";
+pin in bit io.output_pin.# [10] "Digital output pins";
+pin in bit io.solid_state_relay.# [2] "Solid state relays";
+pin in bit io.relay.# [2] "Relays";
+pin in bit io.open_collector.# [4] "Open collector digital outputs";
+pin in float io.pwm_pin.# [6] "PWM pins, valid values from 0.0 - 100.0 percent duty cycle";
+
+pin in bit motion.started = false "Motion is being streamed";
+pin in bit motion.override_limit.# [6] "Limit switch override. Any pin set overrides globally on PoKeys";
+
+pin out float axis.#.position_feedback [8] "Position in machine units";
+pin out bit axis.#.limit_positive [8] "Positive limit switches";
+pin out bit axis.#.limit_negative [8] "Negative limit switches";
+pin out bit axis.#.home [8] "Home switches";
+
+param rw signed internal_state = 0 "Current component state";
+
+param rw float axis.#.step_scale [8] "1 machine unit equals x pulses";
+
+option userspace yes;
+
+license "GPL"; // indicates GPL v2 or later
+author "T.Frei";
+;;
+// ------------------------------------
+// Empty template Loop
+// ------------------------------------
+void user_mainloop(void) {
+    FOR_ALL_INSTS() {
+        rtapi_print_msg(RTAPI_MSG_DBG, "Empty\n");
+    }
+}
