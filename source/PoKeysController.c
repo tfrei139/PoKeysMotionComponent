@@ -43,6 +43,8 @@ MODULE_LICENSE("GPL");
 // Component extra configuration
 #define NumberOfOverridePins 6    // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
 #define NumberOfDigitalPins 10    // Applies to both input and output pins. Could be raised as necessary
+#define NumberOfEncoders 25
+#define NoEncoderIndex -1
 
 typedef struct {
     uint32_t device_serial;
@@ -55,6 +57,9 @@ typedef struct {
     uint8_t output_pin_map[NumberOfDigitalPins];
     uint8_t pwm_pins;
     uint8_t pwm_pin_map[6]; // initially contains 1-based pin#, then 0-based channel#
+    uint8_t encoders;
+    uint8_t encoders_map[NumberOfEncoders];
+    int8_t encoders_index_pin[NumberOfEncoders];
 } component_configuration;
 
 struct __comp_state {
@@ -305,7 +310,7 @@ static int __comp_get_data_size(void) { return 0; }
 #define ComponentStruct __comp_state    // Internal struct of component
 
 #define EstopPinNumber 51         // 0-based pin 52
-#define CycleTimeMs 5.0f          // Target cycle time of uspace component
+#define CycleTimeMs 5.0f          // Target cycle time of uspace component (200Hz)
 #define SharedMemoryKey 57        // Arbitrary number
 #define EndOfMotionPacket 0x0101  // Arbitrary number > uint8
 
@@ -482,7 +487,7 @@ void user_mainloop(void) {
 }
 
 // ------------------------------------
-// Reads the minimal configuration from the INI file.
+// Reads the configuration from the INI file.
 // ------------------------------------
 component_configuration* PMC_ReadConfiguration(const char *instanceName) {
     const char* ini_path = getenv("INI_FILE_NAME");
@@ -600,6 +605,39 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
         }
     }
     configuration->pwm_pins = pwmPins;
+
+    // Read and apply encoder configuration
+    uint8_t encoders = 0;
+    for (int i = 0; i < NumberOfEncoders; i++)
+    {
+        char encoderTagFormat[30];
+        rtapi_snprintf(encoderTagFormat, 30, "ENCODER_PIN_%d", i);
+
+        int encoder = 0;
+        iniRead = iniFindInt(ini_file_ptr, encoderTagFormat, instanceName, &encoder);
+
+        if (iniRead == 0) {
+            configuration->encoders_map[encoders] = encoder;
+            rtapi_print_msg(RTAPI_MSG_DBG, "Encoder '%d' on HAL pin '%d'\n", encoder, i);
+            encoders++;
+
+            rtapi_snprintf(encoderTagFormat, 30, "ENCODER_PIN_%d_INDEX_PIN", i);
+            int indexPin = 0;
+            iniRead = iniFindInt(ini_file_ptr, encoderTagFormat, instanceName, &indexPin);
+
+            if (iniRead == 0) {
+                configuration->encoders_map[encoders] = indexPin;
+            } else {
+                configuration->encoders_map[encoders] = NoEncoderIndex;
+            }
+
+            // TODO read rest of configuration
+        } else {
+            break;
+        }
+    }
+    configuration->encoders = encoders;
+
 
     fclose(ini_file_ptr);
 
