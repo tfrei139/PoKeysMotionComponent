@@ -11,6 +11,7 @@
 // Component imports
 #include "rtapi_math.h"		// For floor()
 #include <PoKeysLib.h>      // For PoKeys communication
+#include <PoKeysLibCore.h>  // For PoKeys requests
 #include <time.h>           // For clock_gettime()
 #include <unistd.h>         // For struct useconds_t
 #include <inifile.h>	    // reading ini
@@ -27,6 +28,9 @@ MODULE_INFO(linuxcnc, "pin:io.solid_state_relay.#:bit:2:in:Solid state relays:No
 MODULE_INFO(linuxcnc, "pin:io.relay.#:bit:2:in:Relays:None:None");
 MODULE_INFO(linuxcnc, "pin:io.open_collector.#:bit:4:in:Open collector digital outputs:None:None");
 MODULE_INFO(linuxcnc, "pin:io.pwm_pin.#:float:6:in:PWM pins, valid values from 0.0 - 100.0 percent duty cycle:None:None");
+MODULE_INFO(linuxcnc, "pin:io.encoder.#.count:s32:25:out:Encoders, raw count:None:None");
+MODULE_INFO(linuxcnc, "pin:io.encoder.#.index:bit:25:out:Encoders, index triggered:None:None");
+MODULE_INFO(linuxcnc, "pin:io.encoder.#.cpm:float:25:out:Encoders, counts/sec:None:None");
 MODULE_INFO(linuxcnc, "pin:motion.started:bit:0:in:Motion is being streamed:false:None");
 MODULE_INFO(linuxcnc, "pin:motion.override_limit.#:bit:6:in:Limit switch override. Any pin set overrides globally on PoKeys:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:8:out:Position in machine units:None:None");
@@ -43,9 +47,10 @@ MODULE_LICENSE("GPL");
 // Component extra configuration
 #define NumberOfOverridePins 6    // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
 #define NumberOfDigitalPins 10    // Applies to both input and output pins. Could be raised as necessary
-#define NumberOfEncoders 25
+#define NumberOfEncoders 10       // Up to 25+1 encoders. Could be raised as necessary
 #define NoEncoderIndex -1
 
+// TODO xy_map contain 1-based information, cognitive friction. Rewrite to 0-based?
 typedef struct {
     uint32_t device_serial;
     uint8_t number_axes;
@@ -72,6 +77,9 @@ struct __comp_state {
     hal_bit_t* io_relay[2];
     hal_bit_t* io_open_collector[4];
     hal_float_t* io_pwm_pin[6];
+    hal_s32_t* io_encoder_count[NumberOfEncoders];
+    hal_bit_t* io_encoder_index[NumberOfEncoders];
+    hal_float_t* io_encoder_cpm[NumberOfEncoders];
     hal_bit_t* motion_started;
     hal_bit_t* motion_override_limit[NumberOfOverridePins];
     hal_float_t* axis_position_feedback[8];
@@ -152,6 +160,21 @@ static int export(char *prefix, long extra_arg) {
     for(j=0; j < (config->pwm_pins); j++) {
         r = hal_pin_float_newf(HAL_IN, &(inst->io_pwm_pin[j]), comp_id,
             "%s.io.pwm-pin.%01d", prefix, j);
+        if(r != 0) return r;
+    }
+    for(j=0; j < (config->encoders); j++) {
+        r = hal_pin_s32_newf(HAL_OUT, &(inst->io_encoder_count[j]), comp_id,
+            "%s.io.encoder.%01d.count", prefix, j);
+        if(r != 0) return r;
+    }
+    for(j=0; j < (config->encoders); j++) {
+        r = hal_pin_bit_newf(HAL_OUT, &(inst->io_encoder_index[j]), comp_id,
+            "%s.io.encoder.%01d.index", prefix, j);
+        if(r != 0) return r;
+    }
+    for(j=0; j < (config->encoders); j++) {
+        r = hal_pin_float_newf(HAL_OUT, &(inst->io_encoder_cpm[j]), comp_id,
+            "%s.io.encoder.%01d.cpm", prefix, j);
         if(r != 0) return r;
     }
     r = hal_pin_bit_newf(HAL_IN, &(inst->motion_started), comp_id,
@@ -336,6 +359,7 @@ void PMC_ProcessLimitOverride(struct ComponentStruct* componentInstance);
 void PMC_ProcessEStop(struct ComponentStruct* componentInstance);
 void PMC_ProcessDigitalPins(struct ComponentStruct* componentInstance);
 void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance);
+void PMC_ProcessEncoders(struct ComponentStruct* componentInstance);
 bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance);
 void PMC_ProcessPositions(struct ComponentStruct* componentInstance);
 void PMC_ProcessRelays(struct ComponentStruct* componentInstance);
@@ -347,6 +371,7 @@ const char* PMC_GetStateName(enum State state);
 void PMC_PrintElapsedTime(struct timespec* startTime, const char* log);
 
 int32_t PMC_DigitalIOSetGet(sPoKeysDevice* device);
+int32_t PMC_EncoderValuesGet(sPoKeysDevice* device, bool lowerEncoders, bool upperEncoders);
 
 // ------------------------------------
 // Main Loop
@@ -392,6 +417,7 @@ void user_mainloop(void) {
                     PMC_ProcessPositions(currentInstance);
                     PMC_ProcessRelays(currentInstance);
                     PMC_ProcessPwmPins(currentInstance);
+                    PMC_ProcessEncoders(currentInstance);
                     PMC_ProcessLimitOverride(currentInstance);
 
                     break;
@@ -417,12 +443,14 @@ void user_mainloop(void) {
                     PMC_ProcessPositions(currentInstance);
                     PMC_ProcessRelays(currentInstance);
                     PMC_ProcessPwmPins(currentInstance);
+                    PMC_ProcessEncoders(currentInstance);
                     PMC_ProcessLimitOverride(currentInstance);
 
                     // Check if motion is commanded
                     if (0 + *currentInstance->motion_started == true) {
                         // switching states gives us at most "CycleTimeMs" of buffer.
                         // sleep specific time to give the buffer extra time (20ms) to fill up.
+                        // OPTIONAL introduce "Buffering" state.
                         usleep(20000);
                         overrideCycleTime = true;
                         rtapi_print_msg(RTAPI_MSG_DBG, "Going to motion\n");
@@ -457,6 +485,7 @@ void user_mainloop(void) {
                     PMC_ProcessPositions(currentInstance);
                     PMC_ProcessRelays(currentInstance);
                     PMC_ProcessPwmPins(currentInstance);
+                    PMC_ProcessEncoders(currentInstance);
 
                     break;
                 case ESTOP:
@@ -626,6 +655,9 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
             iniRead = iniFindInt(ini_file_ptr, encoderTagFormat, instanceName, &indexPin);
 
             if (iniRead == 0) {
+                // OPTIONAL check if index pin is already used as IO pin?
+                // OPTIONAL check if index pin is supplied for (ultra-) fast encoders?
+
                 configuration->encoders_map[encoders] = indexPin;
             } else {
                 configuration->encoders_map[encoders] = NoEncoderIndex;
@@ -660,10 +692,10 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     componentInstance->device = device;
 
     switch (device->DeviceData.DeviceType) {
-        //case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNC:
-        //case ePK_DeviceTypeID.PK_DeviceID_PoKeys57CNCpro4x25:
-        case 32:
-        case 33:
+        case PK_DeviceID_PoKeys57CNC:
+        case PK_DeviceID_PoKeys57CNCpro4x25:
+        //case 32: // TODO remove after test
+        //case 33:
             rtapi_print_msg(RTAPI_MSG_INFO, "CONNECTED.\n");
             break;
         default:
@@ -760,7 +792,7 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         }
 
         if (channelNumber == -1) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "PWM pin %d, not matching any channel.\n", pinNumber);
+            rtapi_print_msg(RTAPI_MSG_ERR, "PWM pin %d, not matching any channel\n", pinNumber);
             configurationOk = false;
         } else if (device->PWM.PWMenabledChannels[channelNumber] == false) {
             rtapi_print_msg(RTAPI_MSG_ERR, "IO PWM pin %d => PoKeys pin %d, channel %d, but is disabled\n", i, pinNumber, channelNumber);
@@ -774,8 +806,16 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     // Read Encoder configuration
     ret = PK_EncoderConfigurationGet(device);
     rtapi_print_msg(RTAPI_MSG_DBG, "Getting encoder info:%d\n", ret);
+    for (int i = 0; i < configuration->encoders; i++) {
+        int encoder = configuration->encoders_map[i];
 
-    // TODO compare with ini configuration
+        if (device->Encoders[encoder - 1].encoderOptions & 0x01 == true) {
+            rtapi_print_msg(RTAPI_MSG_INFO, "Encoder pin %d => PoKeys encoder %d, ok\n", i, encoder);
+        } else {
+            rtapi_print_msg(RTAPI_MSG_ERR, "Encoder pin %d => PoKeys encoder %d, not enabled\n", i, encoder);
+            configurationOk = false;
+        }
+    }
 
     return configurationOk;
 }
@@ -927,6 +967,39 @@ void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance) {
     if (setNecessary) {
         int ret = PK_PWMUpdate(device);
         rtapi_print_msg(RTAPI_MSG_DBG, "Update PWM:%d\n", ret);
+    }
+}
+
+// ------------------------------------
+// Process encoders.
+// ------------------------------------
+void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
+    component_configuration* config = componentInstance->configuration;
+    sPoKeysDevice* device = componentInstance->device;
+
+    // TODO compute this at configuration time?
+    bool lowerEncoders = false;
+    bool upperEncoders = false;
+    for (int i = 0; i < ->encoders; i++) {
+        lowerEncoders |= config->encoders_map[i] <= 13;
+        upperEncoders |= config->encoders_map[i] >= 14;
+    }
+
+    if (lowerEncoders || upperEncoders) {
+        //struct timespec* requestEncoderGet = PMC_GetStartTime();
+        int ret = PMC_EncoderValuesGet(device, lowerEncoders, upperEncoders);
+        //PMC_PrintElapsedTime(requestEncoderGet, "Get encoders");
+
+        for (int i = 0; i < config->encoders; i++) {
+            int encoder = config->encoders_map[i];
+            int indexPin = config->encoders_index_pin[i];
+
+            *componentInstance->io_encoder_count = device->Encoders[encoder - 1].encoderValue;
+
+            if (indexPin > NoEncoderIndex) {
+                *componentInstance->io_encoder_index[i] = device->Pins[indexPin - 1].DigitalValueGet;
+            }
+        }
     }
 }
 
@@ -1186,39 +1259,71 @@ void PMC_PrintElapsedTime(struct timespec* startTime, const char* log) {
 }
 
 // ------------------------------------
-// Override?!
+// Override of method `PK_DigitalIOSetGet`.
+// With addition of Ultra-Fast encoder count and encoder index pins.
 // ------------------------------------
-//?? #include "PoKeysLibCore.h"
-int32_t PMC_DigitalIOSetGet(sPoKeysDevice* device)
-{
+int32_t PMC_DigitalIOSetGet(sPoKeysDevice* device) {
     uint32_t i;
-    if (device == NULL) return PK_ERR_NOT_CONNECTED;
+    if (device == NULL) {
+        return PK_ERR_NOT_CONNECTED;
+    }
 
     // Set digital outputs
 	CreateRequest(device->request, 0xCC, 1, 0, 0, 0);
-	for (i = 0; i < device->info.iPinCount; i++)
-    {
-        if (device->Pins[i].preventUpdate > 0)
-        {
+	for (i = 0; i < device->info.iPinCount; i++) {
+        if (device->Pins[i].preventUpdate > 0) {
             device->request[20 + i / 8] |= (unsigned char)(1 << (i % 8));
-        } else if (device->Pins[i].DigitalValueSet > 0)
-        {
+        } else if (device->Pins[i].DigitalValueSet > 0) {
             device->request[8 + i / 8] |= (unsigned char)(1 << (i % 8));
         }
     }
-	if (SendRequest(device) != PK_OK) return PK_ERR_TRANSFER;
+
+	if (SendRequest(device) != PK_OK) {
+        return PK_ERR_TRANSFER;
+    }
+
 	// Get digital inputs
-	for (i = 0; i < device->info.iPinCount; i++)
-    {
+	for (i = 0; i < device->info.iPinCount; i++) {
 		device->Pins[i].DigitalValueGet = ((unsigned char)(device->response[8 + i / 8] & (1 << (i % 8))) > 0) ? 1 : 0;
     }
 
-    // Fast encoders are only 1 byte value
-    // TODO UF encoder get
-    if (1)
-    {
-        device->Encoders[25].encoderValue = *((unsigned int*)&device->response[58]);
-    }
+    // (Fast-) encoders are only 1 byte value, not enough resolution
+    device->Encoders[25].encoderValue = *((unsigned int*)&device->response[58]);
 
 	return PK_OK;
+}
+
+// ------------------------------------
+// Override of method `PK_EncoderValuesGet`.
+// Removed extra steps of UltraFast encoder reading.
+// ------------------------------------
+int32_t PMC_EncoderValuesGet(sPoKeysDevice* device, bool lowerEncoders, bool upperEncoders) {
+    uint32_t i;
+    if (device == NULL) {
+        return PK_ERR_NOT_CONNECTED;
+    }
+
+    if (lowerEncoders) {
+        // Read the first 13 encoders
+        CreateRequest(device->request, 0xCD, 0, 0, 0, 0);
+        if (SendRequest(device) == PK_OK) {
+            for (i = 0; i < 13; i++) {
+                device->Encoders[i].encoderValue = *((unsigned int*)&device->response[8 + i * 4]);
+            }
+        } else return PK_ERR_TRANSFER;
+    }
+
+    if (upperEncoders) {
+        // Read the next 12 encoders
+        CreateRequest(device->request, 0xCD, 1, 0, 0, 0);
+        if (SendRequest(device) == PK_OK) {
+            for (i = 0; i < 12; i++) {
+                device->Encoders[13 + i].encoderValue = *((unsigned int*)&device->response[8 + i * 4]);
+            }
+        } else {
+            return PK_ERR_TRANSFER;
+        }
+    }
+
+    return PK_OK;
 }
