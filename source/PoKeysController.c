@@ -11,7 +11,6 @@
 // Component imports
 #include "rtapi_math.h"		// For floor()
 #include <PoKeysLib.h>      // For PoKeys communication
-#include <PoKeysLibCore.h>  // For PoKeys requests
 #include <time.h>           // For clock_gettime()
 #include <unistd.h>         // For struct useconds_t
 #include <inifile.h>	    // reading ini
@@ -980,7 +979,7 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
     // TODO compute this at configuration time?
     bool lowerEncoders = false;
     bool upperEncoders = false;
-    for (int i = 0; i < ->encoders; i++) {
+    for (int i = 0; i < config->encoders; i++) {
         lowerEncoders |= config->encoders_map[i] <= 13;
         upperEncoders |= config->encoders_map[i] >= 14;
     }
@@ -994,7 +993,7 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
             int encoder = config->encoders_map[i];
             int indexPin = config->encoders_index_pin[i];
 
-            *componentInstance->io_encoder_count = device->Encoders[encoder - 1].encoderValue;
+            *componentInstance->io_encoder_count[i] = device->Encoders[encoder - 1].encoderValue;
 
             if (indexPin > NoEncoderIndex) {
                 *componentInstance->io_encoder_index[i] = device->Pins[indexPin - 1].DigitalValueGet;
