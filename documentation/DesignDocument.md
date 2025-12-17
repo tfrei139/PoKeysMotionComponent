@@ -23,13 +23,13 @@ During my tests I did get occasional high cycle times for the user component (I 
 The primary configuration is done in the ini file.
 While a userpace component can read from the machine ini file, an RT component cannot.  
 An RT component can use "personality" to parametrize the the amount of pins, but a userspace component cannot.  
-So to keep the common configuration consistent for both, certain paramaters will be configured using the HAL pins.
+So to keep the common configuration consistent for both, certain parameters will be configured using the HAL pins.
 
 ## Relays, PWM behavior under E-Stop
 The relay pins are only "in". If we have a failure setting the signal on device side, or we shut down due to E-Stop, the pins will show the wrong state on LinuxCNC side.
 "io" pins are not always possible, for example the spindle signal does not support io.
 
-In case of an E-Stop, I will also turn off all relays and PWM output. Assuming they trigger a part of the machine that should also stop in E-Stop conditions.
+In case of an E-Stop, the component will also turn off all relays and PWM output. Assuming they trigger a part of the machine that should also stop in E-Stop conditions.
 In this case I prefer to err on the side of caution and allow a mismatch. 
 
 The other option would be to put this responsibilty to LinuxCNC and only forward the E-Stop pin, otherwise behaving normal.

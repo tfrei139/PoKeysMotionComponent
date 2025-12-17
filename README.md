@@ -22,9 +22,9 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
 - Limit switches and override
 - Homing
 - IO
-    - All relays (example Spindle on/off)
+    - All relays (example spindle on/off)
     - Configurable digital input/output pins
-    - PWM pins
+    - PWM pins (example spindle speed control)
     - Fast and Ultrafast Encoders
 
 ### Backlog
