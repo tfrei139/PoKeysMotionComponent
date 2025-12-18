@@ -804,13 +804,25 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     // Read Encoder configuration
     ret = PK_EncoderConfigurationGet(device);
     rtapi_print_msg(RTAPI_MSG_DBG, "Getting encoder info:%d\n", ret);
+
+    // According to documentation "10" is the only available configuration for type 57 devices
+    if (device->FastEncodersConfiguration & 0x0F == 10) {
+        rtapi_print_msg(RTAPI_MSG_DBG, "Fast encoders are enabled\n");
+        // Fast encoders are tracked separated
+        device->Encoders[0].encoderOptions = 1;
+        device->Encoders[1].encoderOptions = 1;
+        device->Encoders[2].encoderOptions = 1;
+    }
+
+    // TODO if UltraFastEncoder apply to device->Encoders[25]
+
     for (int i = 0; i < configuration->encoders; i++) {
         int encoder = configuration->encoders_map[i];
 
         if (device->Encoders[encoder].encoderOptions & 0x01 == true) {
             rtapi_print_msg(RTAPI_MSG_INFO, "Encoder pin %d => PoKeys encoder %d, ok\n", i, encoder + 1);
         } else {
-            rtapi_print_msg(RTAPI_MSG_ERR, "Encoder pin %d => PoKeys encoder %d, not enabled (%d)\n", i, encoder + 1, device->Encoders[encoder].encoderOptions);
+            rtapi_print_msg(RTAPI_MSG_ERR, "Encoder pin %d => PoKeys encoder %d, not enabled\n", i, encoder + 1);
             configurationOk = false;
         }
     }
@@ -991,7 +1003,13 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
             *componentInstance->io_encoder_count[i] = device->Encoders[encoder].encoderValue;
 
             if (indexPin > NoEncoderIndex) {
-                *componentInstance->io_encoder_index[i] = device->Pins[indexPin].DigitalValueGet;
+                uint8_t pinState = device->Pins[indexPin].DigitalValueGet;
+
+                if (pinState > 0) {
+                    *componentInstance->io_encoder_index[i] = true;
+                } else {
+                    *componentInstance->io_encoder_index[i] = false;
+                }
             }
         }
     }
