@@ -689,15 +689,7 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
 
     componentInstance->device = device;
 
-    switch (device->DeviceData.DeviceType) {
-        case PK_DeviceID_PoKeys57CNC:
-        case PK_DeviceID_PoKeys57CNCpro4x25:
-            rtapi_print_msg(RTAPI_MSG_INFO, "CONNECTED.\n");
-            break;
-        default:
-            rtapi_print_msg(RTAPI_MSG_WARN, "CONNECTED. Unsupported device type: %d\n", device->DeviceData.DeviceType);
-            break;
-    }
+    rtapi_print_msg(RTAPI_MSG_INFO, "CONNECTED.\n");
 
     if (device->connectionType == 0) {
         // connection 0=USB, 1=ETH, 2=FastUSB
@@ -713,14 +705,12 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     }
 
     int ret;
-    // Check basic PE setup.
+    // Check if all axes are enabled.
     uint8_t numberOfAxes = configuration->number_axes;
-    // 0=Use external pulse generator and 1<<7=IO (PoKeysCNCaddon)
-    if (device->PEv2.PulseEngineEnabled != numberOfAxes || !(device->PEv2.PulseGeneratorType & (0 | (1<<7)))) {
+    if (device->PEv2.PulseEngineEnabled != numberOfAxes) {
         device->PEv2.PulseEngineEnabled = numberOfAxes;
-        device->PEv2.PulseGeneratorType = 0 | (1<<7);
         ret = PK_PEv2_PulseEngineSetup(device);
-        rtapi_print_msg(RTAPI_MSG_WARN, "PE Setup:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_WARN, "PE axes setup:%d\n", ret);
 
         ret = PK_PEv2_PulseEngineReboot(device);
         rtapi_print_msg(RTAPI_MSG_DBG, "PE Reboot:%d\n", ret);

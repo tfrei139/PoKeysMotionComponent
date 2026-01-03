@@ -7,7 +7,7 @@ LinuxCNC already has a component that grabs HAL pins from the servo thread and r
 I used the same approach for buffering the motion. As consequence we will always have a small following error.
 
 ## Design decision: Instance vs singleton
-There is no technical limitation that you could use multiple PoKeysCNC devices. I do not find any use case for it, but why not allow it.  
+There is no technical limitation that you could use multiple PoKeys devices. I do not find any use case for it, but why not allow it.  
 The component is written to support multiple instances. However currently it is untested.
 
 ## Design decision: Motion only streamed if necessary
@@ -24,6 +24,17 @@ The primary configuration is done in the ini file.
 While a userpace component can read from the machine ini file, an RT component cannot.  
 An RT component can use "personality" to parametrize the the amount of pins, but a userspace component cannot.  
 So to keep the common configuration consistent for both, certain parameters will be configured using the HAL pins.
+
+## Support of various PoKeys Board
+The used PoKeys library is independent of the exact type of controller. Primary design of this component is with the external IO of a PoKeys57CNC (or PoKeys57CNCpro4x25) in mind.  
+However also other controller types (example 56U, 56E, 57U, 57E) can use an internal pulse engine.  
+
+```
+- Internal: similar to basic Pulse engine, limited to 25 kHz pulse frequency at 3 channels, uses built-in circuitry and pins
+- External: new in v2, limited to 125 kHz pulse frequency at 8 channels, requires external circuitry to deserialize the data to pulses
+```
+
+Note: more information on the exact setup an capabilities can be found in PoScopes documentation.
 
 ## Relays, PWM behavior under E-Stop
 The relay pins are only "in". If we have a failure setting the signal on device side, or we shut down due to E-Stop, the pins will show the wrong state on LinuxCNC side.
