@@ -25,7 +25,7 @@ The controller will read the buffer and forward it to the PoKeysCNC. This way, s
     - All relays (example spindle on/off)
     - Configurable digital input/output pins
     - PWM pins (example spindle speed control)
-    - Fast and Ultrafast Encoders
+    - Basic, fast and ultrafast Encoders
 
 ### Backlog
 - Test motion buffer in error situation

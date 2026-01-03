@@ -692,8 +692,6 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     switch (device->DeviceData.DeviceType) {
         case PK_DeviceID_PoKeys57CNC:
         case PK_DeviceID_PoKeys57CNCpro4x25:
-        //case 32: // TODO remove after test
-        //case 33:
             rtapi_print_msg(RTAPI_MSG_INFO, "CONNECTED.\n");
             break;
         default:
