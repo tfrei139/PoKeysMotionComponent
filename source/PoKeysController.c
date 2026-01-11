@@ -369,7 +369,7 @@ const char* PMC_GetStateName(enum State state);
 void PMC_PrintElapsedTime(struct timespec* startTime, const char* log);
 
 int32_t PMC_DigitalIOSetGet(sPoKeysDevice* device);
-int32_t PMC_EncoderValuesGet(sPoKeysDevice* device, bool lowerEncoders, bool upperEncoders);
+//TODO remove int32_t PMC_EncoderValuesGet(sPoKeysDevice* device, bool lowerEncoders, bool upperEncoders);
 
 // ------------------------------------
 // Main Loop
@@ -971,7 +971,26 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
     component_configuration* config = componentInstance->configuration;
     sPoKeysDevice* device = componentInstance->device;
 
-    // TODO compute this at configuration time?
+    for (int i = 0; i < config->encoders; i++) {
+        int encoder = config->encoders_map[i];
+        int indexPin = config->encoders_index_pin[i];
+
+        if (indexPin > NoEncoderIndex) {
+            uint8_t pinState = device->Pins[indexPin].DigitalValueGet;
+
+            if (pinState > 0) {
+                // Basic encoders will not be updated, TODO document or implement workaround?
+                device->Encoders[encoder].encoderValue = 0;
+                *componentInstance->io_encoder_index[i] = true;
+            } else {
+                *componentInstance->io_encoder_index[i] = false;
+            }
+        }
+
+        *componentInstance->io_encoder_count[i] = device->Encoders[encoder].encoderValue;
+    }
+
+    /*// TODO compute this at configuration time?
     bool lowerEncoders = false;
     bool upperEncoders = false;
     for (int i = 0; i < config->encoders; i++) {
@@ -1000,7 +1019,7 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
                 }
             }
         }
-    }
+    }*/
 }
 
 // ------------------------------------
@@ -1259,39 +1278,32 @@ void PMC_PrintElapsedTime(struct timespec* startTime, const char* log) {
 }
 
 // ------------------------------------
-// Override of method `PK_DigitalIOSetGet`.
-// With addition of Ultra-Fast encoder count and encoder index pins.
+// "Override" of method `PK_DigitalIOSetGet`.
+// With addition of reading and handling encoder counts.
 // ------------------------------------
 int32_t PMC_DigitalIOSetGet(sPoKeysDevice* device) {
-    uint32_t i;
-    if (device == NULL) {
-        return PK_ERR_NOT_CONNECTED;
-    }
+    int ret = PK_DigitalIOSetGet(device);
 
-    // Set digital outputs
-	CreateRequest(device->request, 0xCC, 1, 0, 0, 0);
-	for (i = 0; i < device->info.iPinCount; i++) {
-        if (device->Pins[i].preventUpdate > 0) {
-            device->request[20 + i / 8] |= (unsigned char)(1 << (i % 8));
-        } else if (device->Pins[i].DigitalValueSet > 0) {
-            device->request[8 + i / 8] |= (unsigned char)(1 << (i % 8));
+    if (ret == PK_OK) {
+        for (i = 0; i < 25; i++) {
+            // handle byte overflow
+            int8_t previousValue = device->Encoders[i].encoderValue;
+            int8_t currentValue = &device->response[25 + i];
+            int16_t difference = currentValue - previousValue;
+
+            if (difference > 127) {
+                difference -= 255;
+            } else if (difference < -127) {
+                difference += 255;
+            }
+
+            device->Encoders[i].encoderValue += difference;
         }
+
+        device->Encoders[25].encoderValue = *((unsigned int*)&device->response[58]);
     }
 
-	if (SendRequest(device) != PK_OK) {
-        return PK_ERR_TRANSFER;
-    }
-
-	// Get digital inputs
-	for (i = 0; i < device->info.iPinCount; i++) {
-		device->Pins[i].DigitalValueGet = ((unsigned char)(device->response[8 + i / 8] & (1 << (i % 8))) > 0) ? 1 : 0;
-    }
-
-     // TODO is it worth the bother to treat UF encoder separately?
-    // (Fast-) encoders are only 1 byte value, not enough resolution
-    device->Encoders[25].encoderValue = *((unsigned int*)&device->response[58]);
-
-	return PK_OK;
+	return ret;
 }
 
 // ------------------------------------
@@ -1299,7 +1311,7 @@ int32_t PMC_DigitalIOSetGet(sPoKeysDevice* device) {
 // Removed extra steps of UltraFast encoder reading.
 // Only read necessary encoder group.
 // ------------------------------------
-int32_t PMC_EncoderValuesGet(sPoKeysDevice* device, bool lowerEncoders, bool upperEncoders) {
+/*int32_t PMC_EncoderValuesGet(sPoKeysDevice* device, bool lowerEncoders, bool upperEncoders) {
     uint32_t i;
     if (device == NULL) {
         return PK_ERR_NOT_CONNECTED;
@@ -1328,4 +1340,4 @@ int32_t PMC_EncoderValuesGet(sPoKeysDevice* device, bool lowerEncoders, bool upp
     }
 
     return PK_OK;
-}
+}/
