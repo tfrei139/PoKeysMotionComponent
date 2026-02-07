@@ -990,7 +990,6 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
             }*/
         }
 
-		// TODO get an internal diff counter
         *componentInstance->io_encoder_count[i] += componentInstance->encoders_value_difference[encoder];
     }
 
@@ -1287,7 +1286,8 @@ void PMC_PrintElapsedTime(struct timespec* startTime, const char* log) {
 // PoKeysLib updates encoders with a separate method "PK_EncoderValuesGet", which uses separate requests.
 // ------------------------------------
 int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance) {
-    int ret = PK_DigitalIOSetGet(componentInstance->device);
+    sPoKeysDevice* device = componentInstance->device;
+    int ret = PK_DigitalIOSetGet(device);
 
     if (ret == PK_OK) {
         for (int i = 0; i < 25; i++) {
@@ -1303,12 +1303,8 @@ int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance) {
                 difference += 255;
             }
 
-			if (i == 0) {
-				rtapi_print_msg(RTAPI_MSG_INFO, "Prev: %d Raw: %d, Diff: %d\n", previousValue, currentValue, difference);
-			}
-
             componentInstance->encoders_value_previous[i] = currentValue;
-            componentInstance->encoders_diff[i] = difference;
+            componentInstance->encoders_value_difference[i] = difference;
         }
 
         // TODO Encoder, UltraFast
