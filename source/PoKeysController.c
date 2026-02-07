@@ -794,9 +794,10 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     rtapi_print_msg(RTAPI_MSG_DBG, "Getting encoder info:%d\n", ret);
 
     // According to documentation "10" is the only available configuration for type 57 devices
-    if (device->FastEncodersConfiguration & 0x0F == 10) {
+    // TODO mapping
+    if (device->FastEncodersConfiguration & 10 == true) {
         rtapi_print_msg(RTAPI_MSG_DBG, "Fast encoders are enabled\n");
-        // Fast encoders are tracked separated
+        // Fast encoder options are tracked separated, overwrite the basic encoder for simplicity
         device->Encoders[0].encoderOptions = 1;
         device->Encoders[1].encoderOptions = 1;
         device->Encoders[2].encoderOptions = 1;
@@ -978,15 +979,16 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
         if (indexPin > NoEncoderIndex) {
             uint8_t pinState = device->Pins[indexPin].DigitalValueGet;
 
-            if (pinState > 0) {
+            /*if (pinState > 0) {
                 // Basic encoders will not be updated, TODO document or implement workaround?
                 device->Encoders[encoder].encoderValue = 0;
                 *componentInstance->io_encoder_index[i] = true;
             } else {
                 *componentInstance->io_encoder_index[i] = false;
-            }
+            }*/
         }
 
+		// TODO get an internal diff counter
         *componentInstance->io_encoder_count[i] = device->Encoders[encoder].encoderValue;
     }
 
@@ -1285,19 +1287,24 @@ int32_t PMC_DigitalIOSetGet(sPoKeysDevice* device) {
     int ret = PK_DigitalIOSetGet(device);
 
     if (ret == PK_OK) {
-        for (i = 0; i < 25; i++) {
-            // handle byte overflow
+        for (int i = 0; i < 25; i++) {
+            // encoderValues are not automatically updated
             int8_t previousValue = device->Encoders[i].encoderValue;
-            int8_t currentValue = &device->response[25 + i];
+            int8_t currentValue = device->response[25 + i];
             int16_t difference = currentValue - previousValue;
 
+			// handle byte overflow
             if (difference > 127) {
                 difference -= 255;
             } else if (difference < -127) {
                 difference += 255;
             }
 
-            device->Encoders[i].encoderValue += difference;
+			if (i == 0) {
+				rtapi_print_msg(RTAPI_MSG_INFO, "Prev: %d Raw: %d, Diff: %d\n", previousValue, currentValue, difference);
+			}
+
+            device->Encoders[i].encoderValue = difference;
         }
 
         device->Encoders[25].encoderValue = *((unsigned int*)&device->response[58]);
@@ -1340,4 +1347,4 @@ int32_t PMC_DigitalIOSetGet(sPoKeysDevice* device) {
     }
 
     return PK_OK;
-}/
+}*/
