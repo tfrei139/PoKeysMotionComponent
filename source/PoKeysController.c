@@ -88,6 +88,8 @@ struct __comp_state {
     hal_float_t axis_step_scale[8];
     sPoKeysDevice* device;
     component_configuration* configuration;
+    int8_t encoders_value_previous[25]; // TODO Encoder, add new "internal" struct?
+    int8_t encoders_value_difference[25]; // TODO Encoder, add new "internal" struct?
 };
 
 #include <stdlib.h>
@@ -368,7 +370,7 @@ void PMC_ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, en
 const char* PMC_GetStateName(enum State state);
 void PMC_PrintElapsedTime(struct timespec* startTime, const char* log);
 
-int32_t PMC_DigitalIOSetGet(sPoKeysDevice* device);
+int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance);
 //TODO remove int32_t PMC_EncoderValuesGet(sPoKeysDevice* device, bool lowerEncoders, bool upperEncoders);
 
 // ------------------------------------
@@ -793,9 +795,8 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     ret = PK_EncoderConfigurationGet(device);
     rtapi_print_msg(RTAPI_MSG_DBG, "Getting encoder info:%d\n", ret);
 
-    // According to documentation "10" is the only available configuration for type 57 devices
-    // TODO mapping
-    if (device->FastEncodersConfiguration & 10 == true) {
+    // According to documentation "1" and "10" are the only active pin configurations
+    if ((device->FastEncodersConfiguration & 1) == 1 || (device->FastEncodersConfiguration & 10) == 10) {
         rtapi_print_msg(RTAPI_MSG_DBG, "Fast encoders are enabled\n");
         // Fast encoder options are tracked separated, overwrite the basic encoder for simplicity
         device->Encoders[0].encoderOptions = 1;
@@ -910,7 +911,7 @@ void PMC_ProcessDigitalPins(struct ComponentStruct* componentInstance) {
     }
 
     //struct timespec* requestIoStart = PMC_GetStartTime();
-    int ret = PMC_DigitalIOSetGet(componentInstance->device);
+    int ret = PMC_DigitalIOSetGet(componentInstance);
     //PMC_PrintElapsedTime(requestIoStart, "Update all digital Pins");
     //rtapi_print_msg(RTAPI_MSG_DBG, "Update all digital pins:%d\n", ret);
 
@@ -979,6 +980,7 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
         if (indexPin > NoEncoderIndex) {
             uint8_t pinState = device->Pins[indexPin].DigitalValueGet;
 
+            // TODO Encoder, where does the signal come from?!
             /*if (pinState > 0) {
                 // Basic encoders will not be updated, TODO document or implement workaround?
                 device->Encoders[encoder].encoderValue = 0;
@@ -989,7 +991,7 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
         }
 
 		// TODO get an internal diff counter
-        *componentInstance->io_encoder_count[i] = device->Encoders[encoder].encoderValue;
+        *componentInstance->io_encoder_count[i] += componentInstance->encoders_value_difference[encoder];
     }
 
     /*// TODO compute this at configuration time?
@@ -1280,16 +1282,17 @@ void PMC_PrintElapsedTime(struct timespec* startTime, const char* log) {
 }
 
 // ------------------------------------
-// "Override" of method `PK_DigitalIOSetGet`.
+// Extension of method `PK_DigitalIOSetGet`.
 // With addition of reading and handling encoder counts.
+// PoKeysLib updates encoders with a separate method "PK_EncoderValuesGet", which uses separate requests.
 // ------------------------------------
-int32_t PMC_DigitalIOSetGet(sPoKeysDevice* device) {
-    int ret = PK_DigitalIOSetGet(device);
+int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance) {
+    int ret = PK_DigitalIOSetGet(componentInstance->device);
 
     if (ret == PK_OK) {
         for (int i = 0; i < 25; i++) {
-            // encoderValues are not automatically updated
-            int8_t previousValue = device->Encoders[i].encoderValue;
+            // encoderValues
+            int8_t previousValue = componentInstance->encoders_value_previous[i];
             int8_t currentValue = device->response[25 + i];
             int16_t difference = currentValue - previousValue;
 
@@ -1304,10 +1307,12 @@ int32_t PMC_DigitalIOSetGet(sPoKeysDevice* device) {
 				rtapi_print_msg(RTAPI_MSG_INFO, "Prev: %d Raw: %d, Diff: %d\n", previousValue, currentValue, difference);
 			}
 
-            device->Encoders[i].encoderValue = difference;
+            componentInstance->encoders_value_previous[i] = currentValue;
+            componentInstance->encoders_diff[i] = difference;
         }
 
-        device->Encoders[25].encoderValue = *((unsigned int*)&device->response[58]);
+        // TODO Encoder, UltraFast
+        // device->Encoders[25].encoderValue = *((unsigned int*)&device->response[58]);
     }
 
 	return ret;
