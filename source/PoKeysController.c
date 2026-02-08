@@ -48,6 +48,8 @@ MODULE_LICENSE("GPL");
 #define NumberOfDigitalPins 10    // Applies to both input and output pins. Could be raised as necessary
 #define NumberOfEncoders 10       // Up to 25+1 encoders. Could be raised as necessary
 #define NoEncoderIndex -1
+#define NoEncoderScale -1.0
+#define EncoderBuffer 20
 
 typedef struct {
     uint32_t device_serial;
@@ -63,7 +65,15 @@ typedef struct {
     uint8_t encoders;
     uint8_t encoders_map[NumberOfEncoders];
     int8_t encoders_index_pin[NumberOfEncoders];
+    float encoders_scale[NumberOfEncoders];
 } component_configuration;
+
+typedef struct {
+    uint8_t encoders_position;
+    int32_t encoders_values[NumberOfEncoders][EncoderBuffer];
+    int8_t encoders_value_previous[NumberOfEncoders];
+    int8_t encoders_value_difference[NumberOfEncoders];
+} component_internals;
 
 struct __comp_state {
     struct __comp_state* _next;
@@ -88,8 +98,7 @@ struct __comp_state {
     hal_float_t axis_step_scale[8];
     sPoKeysDevice* device;
     component_configuration* configuration;
-    int8_t encoders_value_previous[25]; // TODO Encoder, add new "internal" struct?
-    int8_t encoders_value_difference[25]; // TODO Encoder, add new "internal" struct?
+    component_internals* internals;
 };
 
 #include <stdlib.h>
@@ -123,6 +132,11 @@ static int export(char *prefix, long extra_arg) {
     memset(inst, 0, sz);
 
     inst->configuration = config;
+
+    int internalsSize = sizeof(component_internals);
+    component_internals* internals = hal_malloc(internalsSize);
+    memset(internals, 0, sizeof(internalsSize));
+    inst->internals = internals;
 
     r = hal_pin_bit_newf(HAL_OUT, &(inst->machine_estop), comp_id,
         "%s.machine-estop", prefix);
@@ -647,7 +661,7 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
         if (iniRead == 0) {
             configuration->encoders_map[encoders] = encoder - 1;
             rtapi_print_msg(RTAPI_MSG_DBG, "Encoder '%d' on HAL pin '%d'\n", encoder, i);
-            
+
             rtapi_snprintf(encoderTagFormat, 30, "ENCODER_PIN_%d_INDEX_PIN", i);
             int indexPin = 0;
             iniRead = iniFindInt(ini_file_ptr, encoderTagFormat, instanceName, &indexPin);
@@ -660,8 +674,18 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
                 configuration->encoders_index_pin[encoders] = NoEncoderIndex;
             }
 
-            // TODO read rest of configuration
-            
+            // TODO Encoder, invert pin?
+
+            rtapi_snprintf(encoderTagFormat, 30, "ENCODER_PIN_%d_SCALE", i);
+            double scale = 0;
+            iniRead = iniFindDouble(ini_file_ptr, encoderTagFormat, instanceName, &scale);
+
+            if (iniRead == 0) {
+                configuration->encoders_scale[encoders] = scale;
+            } else {
+                configuration->encoders_scale[encoders] = NoEncoderScale;
+            }
+
             encoders++;
         } else {
             break;
@@ -973,22 +997,37 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
     sPoKeysDevice* device = componentInstance->device;
 
     for (int i = 0; i < config->encoders; i++) {
-        int encoder = config->encoders_map[i];
-        int8_t indexPin = config->encoders_index_pin[i];
+        *componentInstance->io_encoder_count[i] += componentInstance->internals->encoders_value_difference[i];
 
+        uint8_t pos = componentInstance->internals->encoders_position[i];
+        componentInstance->internals->encoders_values[i][pos] = componentInstance->internals->encoders_value_difference[i];
+        pos++
+
+        if (pos > EncoderBuffer) {
+            pos = 0;
+        }
+
+        componentInstance->internals->encoders_position[i] = pos;
+
+        int32_t sum = 0;
+        for (pos = 0; pos < EncoderBuffer; pos++) {
+            sum += componentInstance->internals->encoders_values[i][pos];
+        }
+
+        float avg = (sum / (float)EncoderBuffer) * (1000 / (EncoderBuffer * CycleTimeMs)) * config->encoders_scale[i];
+        // TODO Encoder, save to new pin
+
+        int8_t indexPin = config->encoders_index_pin[i];
         if (indexPin > NoEncoderIndex) {
             uint8_t pinState = device->Pins[indexPin].DigitalValueGet;
 
-            if (pinState == 0) {
-                // Basic encoders will not be updated, TODO document or implement workaround?
-                *componentInstance->io_encoder_count[i] = 0;
+            if (pinState > 0) {
                 *componentInstance->io_encoder_index[i] = true;
+                *componentInstance->io_encoder_count[i] = 0;
             } else {
                 *componentInstance->io_encoder_index[i] = false;
             }
         }
-
-        *componentInstance->io_encoder_count[i] += componentInstance->encoders_value_difference[encoder];
     }
 }
 
@@ -1257,10 +1296,18 @@ int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance) {
     int ret = PK_DigitalIOSetGet(device);
 
     if (ret == PK_OK) {
-        for (int i = 0; i < 25; i++) {
-            // encoderValues
-            int8_t previousValue = componentInstance->encoders_value_previous[i];
-            int8_t currentValue = device->response[25 + i];
+        component_configuration* config = componentInstance->configuration;
+        component_internals* internals = componentInstance->internals;
+        for (int i = 0; i < config->encoders; i++) {
+            int encoder = config->encoders_map[i];
+
+            // TODO Encoder, UltraFast
+            /*if (encoder == ) {
+                device->Encoders[25].encoderValue = *((unsigned int*)&device->response[58]);
+            }*/
+
+            int8_t previousValue = internals->encoders_value_previous[i];
+            int8_t currentValue = device->response[25 + encoder];
             int16_t difference = currentValue - previousValue;
 
 			// handle byte overflow
@@ -1270,12 +1317,9 @@ int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance) {
                 difference += 255;
             }
 
-            componentInstance->encoders_value_previous[i] = currentValue;
-            componentInstance->encoders_value_difference[i] = difference;
+            internals->encoders_value_previous[i] = currentValue;
+            internals->encoders_value_difference[i] = difference;
         }
-
-        // TODO Encoder, UltraFast
-        // device->Encoders[25].encoderValue = *((unsigned int*)&device->response[58]);
     }
 
 	return ret;
