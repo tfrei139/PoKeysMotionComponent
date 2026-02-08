@@ -29,7 +29,8 @@ MODULE_INFO(linuxcnc, "pin:io.open_collector.#:bit:4:in:Open collector digital o
 MODULE_INFO(linuxcnc, "pin:io.pwm_pin.#:float:6:in:PWM pins, valid values from 0.0 - 100.0 percent duty cycle:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.count:s32:25:out:Encoders, raw count:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.index:bit:25:out:Encoders, index triggered:None:None");
-MODULE_INFO(linuxcnc, "pin:io.encoder.#.cpm:float:25:out:Encoders, counts/sec:None:None");
+MODULE_INFO(linuxcnc, "pin:io.encoder.#.cps:float:25:out:Encoders, counts/second:None:None");
+MODULE_INFO(linuxcnc, "pin:io.encoder.#.vps:float:25:out:Encoders, velocity [(count/scale)/second]:None:None");
 MODULE_INFO(linuxcnc, "pin:motion.started:bit:0:in:Motion is being streamed:false:None");
 MODULE_INFO(linuxcnc, "pin:motion.override_limit.#:bit:6:in:Limit switch override. Any pin set overrides globally on PoKeys:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:8:out:Position in machine units:None:None");
@@ -87,7 +88,8 @@ struct __comp_state {
     hal_float_t* io_pwm_pin[6];
     hal_s32_t* io_encoder_count[NumberOfEncoders];
     hal_bit_t* io_encoder_index[NumberOfEncoders];
-    hal_float_t* io_encoder_cpm[NumberOfEncoders];
+    hal_float_t *io_encoder_cps[NumberOfEncoders];
+    hal_float_t *io_encoder_vps[NumberOfEncoders];
     hal_bit_t* motion_started;
     hal_bit_t* motion_override_limit[NumberOfOverridePins];
     hal_float_t* axis_position_feedback[8];
@@ -187,8 +189,13 @@ static int export(char *prefix, long extra_arg) {
         if(r != 0) return r;
     }
     for(j=0; j < (config->encoders); j++) {
-        r = hal_pin_float_newf(HAL_OUT, &(inst->io_encoder_cpm[j]), comp_id,
-            "%s.io.encoder.%01d.cpm", prefix, j);
+        r = hal_pin_float_newf(HAL_OUT, &(inst->io_encoder_cps[j]), comp_id,
+            "%s.io.encoder.%01d.cps", prefix, j);
+        if(r != 0) return r;
+    }
+    for(j=0; j < (config->encoders); j++) {
+        r = hal_pin_float_newf(HAL_OUT, &(inst->io_encoder_vps[j]), comp_id,
+            "%s.io.encoder.%01d.vps", prefix, j);
         if(r != 0) return r;
     }
     r = hal_pin_bit_newf(HAL_IN, &(inst->motion_started), comp_id,
@@ -1014,8 +1021,9 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
             sum += componentInstance->internals->encoders_values[i][pos];
         }
 
-        float avg = (sum / (float)EncoderBuffer) * (1000 / (EncoderBuffer * CycleTimeMs)) * config->encoders_scale[i];
-        // TODO Encoder, save to new pin
+        float avg = (sum / (float)EncoderBuffer) * (1000.0 / (EncoderBuffer * CycleTimeMs));
+        *componentInstance->io_encoder_cps[i] = avg;
+        *componentInstance->io_encoder_vps[i] = avg / config->encoders_scale[i];
 
         int8_t indexPin = config->encoders_index_pin[i];
         if (indexPin > NoEncoderIndex) {

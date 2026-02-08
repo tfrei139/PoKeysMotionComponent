@@ -22,8 +22,8 @@ MODULE_INFO(linuxcnc, "pin:io.open_collector.#:bit:4:in:Open collector digital o
 MODULE_INFO(linuxcnc, "pin:io.pwm_pin.#:float:6:in:PWM pins, valid values from 0.0 - 100.0 percent duty cycle:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.count:s32:25:out:Encoders, raw count:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.index:bit:25:out:Encoders, index triggered:None:None");
-MODULE_INFO(linuxcnc, "pin:io.encoder.#.cps:float:25:out:Encoders, counts/sec:None:None");
-MODULE_INFO(linuxcnc, "pin:io.encoder.#.vpm:float:25:out:Encoders, velocity [(count/scale)/minute]:None:None");
+MODULE_INFO(linuxcnc, "pin:io.encoder.#.cps:float:25:out:Encoders, counts/second:None:None");
+MODULE_INFO(linuxcnc, "pin:io.encoder.#.vps:float:25:out:Encoders, velocity [(count/scale)/second]:None:None");
 MODULE_INFO(linuxcnc, "pin:motion.started:bit:0:in:Motion is being streamed:false:None");
 MODULE_INFO(linuxcnc, "pin:motion.override_limit.#:bit:6:in:Limit switch override. Any pin set overrides globally on PoKeys:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:8:out:Position in machine units:None:None");
@@ -51,7 +51,7 @@ struct __comp_state {
     hal_s32_t *io_encoder_count[25];
     hal_bit_t *io_encoder_index[25];
     hal_float_t *io_encoder_cps[25];
-    hal_float_t *io_encoder_vpm[25];
+    hal_float_t *io_encoder_vps[25];
     hal_bit_t *motion_started;
     hal_bit_t *motion_override_limit[6];
     hal_float_t *axis_position_feedback[8];
@@ -134,8 +134,8 @@ static int export(char *prefix, long extra_arg) {
         if(r != 0) return r;
     }
     for(j=0; j < (25); j++) {
-        r = hal_pin_float_newf(HAL_OUT, &(inst->io_encoder_vpm[j]), comp_id,
-            "%s.io.encoder.%01d.vpm", prefix, j);
+        r = hal_pin_float_newf(HAL_OUT, &(inst->io_encoder_vps[j]), comp_id,
+            "%s.io.encoder.%01d.vps", prefix, j);
         if(r != 0) return r;
     }
     r = hal_pin_bit_newf(HAL_IN, &(inst->motion_started), comp_id,
@@ -316,8 +316,8 @@ int main(int argc_, char **argv_) {
 #define io_encoder_index(i) (*(__comp_inst->io_encoder_index[i]))
 #undef io_encoder_cps
 #define io_encoder_cps(i) (*(__comp_inst->io_encoder_cps[i]))
-#undef io_encoder_vpm
-#define io_encoder_vpm(i) (*(__comp_inst->io_encoder_vpm[i]))
+#undef io_encoder_vps
+#define io_encoder_vps(i) (*(__comp_inst->io_encoder_vps[i]))
 #undef motion_started
 #define motion_started (0+*__comp_inst->motion_started)
 #undef motion_override_limit
