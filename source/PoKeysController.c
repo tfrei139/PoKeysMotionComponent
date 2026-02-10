@@ -70,7 +70,7 @@ typedef struct {
 } component_configuration;
 
 typedef struct {
-    uint8_t encoders_position;
+    uint8_t encoders_position[NumberOfEncoders];
     int32_t encoders_values[NumberOfEncoders][EncoderBuffer];
     int8_t encoders_value_previous[NumberOfEncoders];
     int8_t encoders_value_difference[NumberOfEncoders];
@@ -1008,7 +1008,7 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
 
         uint8_t pos = componentInstance->internals->encoders_position[i];
         componentInstance->internals->encoders_values[i][pos] = componentInstance->internals->encoders_value_difference[i];
-        pos++
+        pos++;
 
         if (pos > EncoderBuffer) {
             pos = 0;
