@@ -844,7 +844,7 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             rtapi_print_msg(RTAPI_MSG_INFO, "Encoder pin %d => PoKeys encoder %d, ok\n", i, encoder + 1);
         } else {
             rtapi_print_msg(RTAPI_MSG_ERR, "Encoder pin %d => PoKeys encoder %d, not enabled\n", i, encoder + 1);
-            configurationOk = false;
+            //configurationOk = false;
         }
     }
 
@@ -1005,8 +1005,9 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
     sPoKeysDevice* device = componentInstance->device;
 
     for (int i = 0; i < config->encoders; i++) {
-        int32_t countDifference = device->Encoders[i].encoderValue - *componentInstance->io_encoder_count[i];
-        *componentInstance->io_encoder_count[i] = device->Encoders[i].encoderValue;
+		int encoder = config->encoders_map[i];
+        int32_t countDifference = device->Encoders[encoder].encoderValue - *componentInstance->io_encoder_count[i];
+        *componentInstance->io_encoder_count[i] = device->Encoders[encoder].encoderValue;
 
         uint8_t bufferPosition = componentInstance->internals->encoders_buffer_position[i];
         componentInstance->internals->encoders_buffer_values[i][bufferPosition] = countDifference;
@@ -1313,7 +1314,7 @@ int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance) {
 
             if (encoder == UfEncoder) {
                 // Ultra fast encoder delivers an absolute value
-                device->Encoders[UfEncoder].encoderValue = *((unsigned int*)&device->response[58]);
+                device->Encoders[UfEncoder].encoderValue = *((int32_t*)&device->response[58]);
                 continue;
             }
 
