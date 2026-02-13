@@ -23,10 +23,10 @@ There are two separate repositories for the same code:
 PoKeys supports up to 25 'normal' encoders, 1 kHz/1ms,  
 Pins are manually set to A+B channel. No indexing (resetting count) from PoKeys side.
 
-3 fast encoders, 100 kHz/100μs  
+3 fast encoders, 100 kHz/10μs  
 Pins 1+2 as encoder 1,  pins 5+6 as encoder 2,  pins 15+16 as encoder 3, index pins 9, 10, 11 respectively.
 
-One ultra fast encoder, from 25 kHz up to 5 MHz, 25μs to 0.2μs. Depending on settings.  
+One ultra fast encoder, from 25 kHz up to 5 MHz, 40μs to 0.2μs. Depending on settings.  
 Pins 8+12 as encoder 25, index pin 13.
 
 ## How to wire up an Estop

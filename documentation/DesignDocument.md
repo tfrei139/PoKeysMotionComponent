@@ -50,3 +50,18 @@ According to the documentation, the designated E-Stop connector and the pendant 
 I did not find out how to read the designated pin, so I read the pin 52 as E-Stop pin.
 
 Note: `PK_PEv2_AdditionalParametersGet()`, returned pin 62 for `device.PEv2.EmergencyInputPin`?!
+
+## Encoders
+Using the `PK_DigitalIOSetGet` command will return the current encoder counts as single byte. With the exception of the Ultra fast encoder, which is reported as an integer value.  
+Keeping track of the byte overflow is easily possible for the basic encoders, however fast encoders can easily wrap the byte multiple times in the refresh cycle time.
+
+Since the usage of the fast encoders is discouraged according to the manual and I observed slower response times. I choose not support the fast encoders specifically.  
+They can be used, but there is no guarantee for the correctness of the values.
+
+Basic encoder: with 5ms cycle time @ 1ms resolution => maximum of 5 counts of the encoder.  
+Even with 4x sampling, this equals at most 20 counts. Easily fits a byte.  
+
+Fast encoder: with 5ms cycle time @ 10μs resolution => maximum of 500 counts of the encoder. About twice what the byte can record.  
+Using 4x Sampling would break that even more (2000 Steps per cycle).
+
+Basic encoders do not support indexing on PoKeys side ... TODO

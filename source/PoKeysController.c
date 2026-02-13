@@ -70,10 +70,11 @@ typedef struct {
 } component_configuration;
 
 typedef struct {
-    uint8_t encoders_position[NumberOfEncoders];
-    int32_t encoders_values[NumberOfEncoders][EncoderBuffer];
+    // "Ring" buffer for velocity calculation
+    uint8_t encoders_buffer_position[NumberOfEncoders];
+    int32_t encoders_buffer_values[NumberOfEncoders][EncoderBuffer];
+    // comparative values for summing the encoder values
     int8_t encoders_value_previous[NumberOfEncoders];
-    int8_t encoders_value_difference[NumberOfEncoders];
 } component_internals;
 
 struct __comp_state {
@@ -357,6 +358,7 @@ static int __comp_get_data_size(void) { return 0; }
 #define CycleTimeMs 5.0f          // Target cycle time of uspace component (200Hz)
 #define SharedMemoryKey 57        // Arbitrary number
 #define EndOfMotionPacket 0x0101  // Arbitrary number > uint8
+#define UfEncoder 25              // Ultra fast encoder 0-based index
 
 // ------------------------------------
 // States of the component
@@ -700,7 +702,6 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
     }
     configuration->encoders = encoders;
 
-
     fclose(ini_file_ptr);
 
     return configuration;
@@ -1004,24 +1005,25 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
     sPoKeysDevice* device = componentInstance->device;
 
     for (int i = 0; i < config->encoders; i++) {
-        *componentInstance->io_encoder_count[i] += componentInstance->internals->encoders_value_difference[i];
+        int32_t countDifference = device->Encoders[i].encoderValue - *componentInstance->io_encoder_count[i];
+        *componentInstance->io_encoder_count[i] = device->Encoders[i].encoderValue;
 
-        uint8_t pos = componentInstance->internals->encoders_position[i];
-        componentInstance->internals->encoders_values[i][pos] = componentInstance->internals->encoders_value_difference[i];
-        pos++;
+        uint8_t bufferPosition = componentInstance->internals->encoders_buffer_position[i];
+        componentInstance->internals->encoders_buffer_values[i][bufferPosition] = countDifference;
+        bufferPosition++;
 
-        if (pos > EncoderBuffer) {
-            pos = 0;
+        if (bufferPosition > EncoderBuffer) {
+            bufferPosition = 0;
         }
 
-        componentInstance->internals->encoders_position[i] = pos;
+        componentInstance->internals->encoders_buffer_position[i] = bufferPosition;
 
-        int32_t sum = 0;
-        for (pos = 0; pos < EncoderBuffer; pos++) {
-            sum += componentInstance->internals->encoders_values[i][pos];
+        int32_t sumDifference = 0;
+        for (bufferPosition = 0; bufferPosition < EncoderBuffer; bufferPosition++) {
+            sumDifference += componentInstance->internals->encoders_buffer_values[i][bufferPosition];
         }
 
-        float avg = (sum / (float)EncoderBuffer) * (1000.0 / (EncoderBuffer * CycleTimeMs));
+        float avg = (sumDifference / (float)EncoderBuffer) * (1000.0 / (EncoderBuffer * CycleTimeMs));
         *componentInstance->io_encoder_cps[i] = avg;
         *componentInstance->io_encoder_vps[i] = avg / config->encoders_scale[i];
 
@@ -1309,10 +1311,11 @@ int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance) {
         for (int i = 0; i < config->encoders; i++) {
             int encoder = config->encoders_map[i];
 
-            // TODO Encoder, UltraFast
-            /*if (encoder == ) {
-                device->Encoders[25].encoderValue = *((unsigned int*)&device->response[58]);
-            }*/
+            if (encoder == UfEncoder) {
+                // Ultra fast encoder delivers an absolute value
+                device->Encoders[UfEncoder].encoderValue = *((unsigned int*)&device->response[58]);
+                continue;
+            }
 
             int8_t previousValue = internals->encoders_value_previous[i];
             int8_t currentValue = device->response[25 + encoder];
@@ -1326,7 +1329,7 @@ int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance) {
             }
 
             internals->encoders_value_previous[i] = currentValue;
-            internals->encoders_value_difference[i] = difference;
+            device->Encoders[encoder].encoderValue += difference;
         }
     }
 
