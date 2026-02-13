@@ -48,8 +48,7 @@ MODULE_LICENSE("GPL");
 #define NumberOfOverridePins 6    // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
 #define NumberOfDigitalPins 10    // Applies to both input and output pins. Could be raised as necessary
 #define NumberOfEncoders 10       // Up to 25+1 encoders. Could be raised as necessary
-#define NoEncoderIndex -1
-#define NoEncoderScale -1.0
+#define NoEncoderIndex -127
 #define EncoderBuffer 20
 
 typedef struct {
@@ -65,7 +64,7 @@ typedef struct {
     uint8_t pwm_pin_map[6]; // initially contains 1-based pin#, then 0-based channel#
     uint8_t encoders;
     uint8_t encoders_map[NumberOfEncoders];
-    int8_t encoders_index_pin[NumberOfEncoders];
+    int8_t encoders_index_pin[NumberOfEncoders]; // contains both pin index and if the pin is inverted (negative number)
     float encoders_scale[NumberOfEncoders];
 } component_configuration;
 
@@ -679,11 +678,16 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
                 // OPTIONAL check if index pin is already used as IO pin?
                 // OPTIONAL check if index pin is supplied for (ultra-) fast encoders?
                 configuration->encoders_index_pin[encoders] = indexPin - 1;
+
+                rtapi_snprintf(encoderTagFormat, 30, "ENCODER_PIN_%d_INDEX_PIN_INVERT", i);
+                char* invert = iniFind(ini_file_ptr, encoderTagFormat, instanceName);
+
+                if (strcasecmp("true", invert) == 0) {
+                    configuration->encoders_index_pin[encoders] = configuration->encoders_index_pin[encoders] * -1;
+                }
             } else {
                 configuration->encoders_index_pin[encoders] = NoEncoderIndex;
             }
-
-            // TODO Encoder, invert pin?
 
             rtapi_snprintf(encoderTagFormat, 30, "ENCODER_PIN_%d_SCALE", i);
             double scale = 0;
@@ -692,7 +696,7 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
             if (iniRead == 0) {
                 configuration->encoders_scale[encoders] = scale;
             } else {
-                configuration->encoders_scale[encoders] = NoEncoderScale;
+                configuration->encoders_scale[encoders] = 1;
             }
 
             encoders++;
@@ -835,7 +839,9 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         device->Encoders[2].encoderOptions = 1;
     }
 
-    // TODO if UltraFastEncoder apply to device->Encoders[25]
+    if ((device->UltraFastEncoderConfiguration & 1) == 1) {
+        device->Encoders[UfEncoder].encoderOptions = 1;
+    }
 
     for (int i = 0; i < configuration->encoders; i++) {
         int encoder = configuration->encoders_map[i];
@@ -844,7 +850,7 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             rtapi_print_msg(RTAPI_MSG_INFO, "Encoder pin %d => PoKeys encoder %d, ok\n", i, encoder + 1);
         } else {
             rtapi_print_msg(RTAPI_MSG_ERR, "Encoder pin %d => PoKeys encoder %d, not enabled\n", i, encoder + 1);
-            //configurationOk = false;
+            configurationOk = false;
         }
     }
 
@@ -1006,8 +1012,17 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
 
     for (int i = 0; i < config->encoders; i++) {
 		int encoder = config->encoders_map[i];
-        int32_t countDifference = device->Encoders[encoder].encoderValue - *componentInstance->io_encoder_count[i];
-        *componentInstance->io_encoder_count[i] = device->Encoders[encoder].encoderValue;
+        int64_t currentValue = device->Encoders[encoder].encoderValue;
+        int64_t countDifference = currentValue - *componentInstance->io_encoder_count[i];
+
+        // handle int32 wrap-around
+        if (countDifference > INT32_MAX) {
+            countDifference += ((int64_t)INT32_MIN*2);
+        } else if (countDifference < INT32_MIN) {
+            countDifference -= ((int64_t)INT32_MIN*2);
+        }
+
+        *componentInstance->io_encoder_count[i] = currentValue;
 
         uint8_t bufferPosition = componentInstance->internals->encoders_buffer_position[i];
         componentInstance->internals->encoders_buffer_values[i][bufferPosition] = countDifference;
@@ -1028,11 +1043,11 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
         *componentInstance->io_encoder_cps[i] = avg;
         *componentInstance->io_encoder_vps[i] = avg / config->encoders_scale[i];
 
-        int8_t indexPin = config->encoders_index_pin[i];
-        if (indexPin > NoEncoderIndex) {
-            uint8_t pinState = device->Pins[indexPin].DigitalValueGet;
+        int8_t indexPinConfig = config->encoders_index_pin[i];
+        if (indexPinConfig > NoEncoderIndex) {
+            uint8_t pinState = device->Pins[abs(indexPinConfig)].DigitalValueGet;
 
-            if (pinState > 0) {
+            if (pinState > 0 && indexPinConfig >= 0) {
                 *componentInstance->io_encoder_index[i] = true;
                 *componentInstance->io_encoder_count[i] = 0;
             } else {
@@ -1322,7 +1337,7 @@ int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance) {
             int8_t currentValue = device->response[25 + encoder];
             int16_t difference = currentValue - previousValue;
 
-			// handle byte overflow
+			// handle byte wrap-around
             if (difference > 127) {
                 difference -= 255;
             } else if (difference < -127) {

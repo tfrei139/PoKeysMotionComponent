@@ -64,4 +64,4 @@ Even with 4x sampling, this equals at most 20 counts. Easily fits a byte.
 Fast encoder: with 5ms cycle time @ 10μs resolution => maximum of 500 counts of the encoder. About twice what the byte can record.  
 Using 4x Sampling would break that even more (2000 Steps per cycle).
 
-Basic encoders do not support indexing on PoKeys side ... TODO
+Basic encoders do not support indexing on PoKeys side ... TODO Encoder
