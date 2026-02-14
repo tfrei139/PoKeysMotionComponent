@@ -49,7 +49,9 @@ MODULE_LICENSE("GPL");
 #define NumberOfDigitalPins 10    // Applies to both input and output pins. Could be raised as necessary
 #define NumberOfEncoders 10       // Up to 25+1 encoders. Could be raised as necessary
 #define NoEncoderIndex -127
-#define EncoderBuffer 20
+#define EncoderBuffer 30          // 20 last values + 10 last averages
+#define EncoderLastValues 20
+#define EncoderLastAverages 10
 
 typedef struct {
     uint32_t device_serial;
@@ -70,8 +72,8 @@ typedef struct {
 
 typedef struct {
     // "Ring" buffer for velocity calculation
-    uint8_t encoders_buffer_position[NumberOfEncoders];
-    int32_t encoders_buffer_values[NumberOfEncoders][EncoderBuffer];
+    uint8_t encoders_buffer_position[NumberOfEncoders][2];
+    int32_t* encoders_buffer_values[NumberOfEncoders];
     // comparative values for summing the encoder values
     int8_t encoders_value_previous[NumberOfEncoders];
 } component_internals;
@@ -852,6 +854,10 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             rtapi_print_msg(RTAPI_MSG_ERR, "Encoder pin %d => PoKeys encoder %d, not enabled\n", i, encoder + 1);
             configurationOk = false;
         }
+
+        int8_t bufferSize = sizeof(int32_t[EncoderBuffer]);
+        componentInstance->internals->encoders_buffer_values[encoders] = hal_malloc(bufferSize);
+        memset(componentInstance->internals->encoders_buffer_values[encoders], 0, bufferSize);
     }
 
     return configurationOk;
@@ -1024,22 +1030,44 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
 
         *componentInstance->io_encoder_count[i] = currentValue;
 
-        uint8_t bufferPosition = componentInstance->internals->encoders_buffer_position[i];
+        uint8_t bufferPosition = componentInstance->internals->encoders_buffer_position[i][0];
+        uint8_t averagePosition = componentInstance->internals->encoders_buffer_position[i][1];
+        bool bufferFull = false;
+
         componentInstance->internals->encoders_buffer_values[i][bufferPosition] = countDifference;
         bufferPosition++;
 
-        if (bufferPosition > EncoderBuffer) {
+        if (bufferPosition > EncoderLastValues) {
             bufferPosition = 0;
+            bufferFull = true;
         }
 
         componentInstance->internals->encoders_buffer_position[i] = bufferPosition;
 
         int32_t sumDifference = 0;
-        for (bufferPosition = 0; bufferPosition < EncoderBuffer; bufferPosition++) {
-            sumDifference += componentInstance->internals->encoders_buffer_values[i][bufferPosition];
+        for (int j = 0; j < EncoderLastValues; j++) {
+            sumDifference += componentInstance->internals->encoders_buffer_values[i][j];
         }
 
-        float avg = (sumDifference / (float)EncoderBuffer) * (1000.0 / (EncoderBuffer * CycleTimeMs));
+        componentInstance->internals->encoders_buffer_values[i][EncoderLastValues + averagePosition] = sumDifference;
+
+        if (bufferFull == true) {
+            averagePosition++;
+
+            if (bufferPosition > EncoderLastAverages) {
+                bufferPosition = 0;
+            }
+
+            componentInstance->internals->encoders_buffer_position[i][1] = averagePosition;
+        }
+
+        float sumAverages = 0;
+        for (int j = 0; j < EncoderLastAverages; j++) {
+            sumAverages += componentInstance->internals->encoders_buffer_values[i][EncoderLastValues + j] / (float)EncoderLastValues;
+        }
+
+        float avg = (sumAverages / EncoderLastAverages); // 20 last entries => 20 * 5ms = 100ms => 10 last averages = 1 s
+
         *componentInstance->io_encoder_cps[i] = avg;
         *componentInstance->io_encoder_vps[i] = avg / config->encoders_scale[i];
 
