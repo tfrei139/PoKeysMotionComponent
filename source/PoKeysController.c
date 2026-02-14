@@ -662,8 +662,8 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
     uint8_t encoders = 0;
     for (int i = 0; i < NumberOfEncoders; i++)
     {
-        char encoderTagFormat[30];
-        rtapi_snprintf(encoderTagFormat, 30, "ENCODER_PIN_%d", i);
+        char encoderTagFormat[32];
+        rtapi_snprintf(encoderTagFormat, 32, "ENCODER_PIN_%d", i);
 
         int encoder = 0;
         iniRead = iniFindInt(ini_file_ptr, encoderTagFormat, instanceName, &encoder);
@@ -672,7 +672,7 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
             configuration->encoders_map[encoders] = encoder - 1;
             rtapi_print_msg(RTAPI_MSG_DBG, "Encoder '%d' on HAL pin '%d'\n", encoder, i);
 
-            rtapi_snprintf(encoderTagFormat, 30, "ENCODER_PIN_%d_INDEX_PIN", i);
+            rtapi_snprintf(encoderTagFormat, 32, "ENCODER_PIN_%d_INDEX_PIN", i);
             int indexPin = 0;
             iniRead = iniFindInt(ini_file_ptr, encoderTagFormat, instanceName, &indexPin);
 
@@ -681,7 +681,7 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
                 // OPTIONAL check if index pin is supplied for (ultra-) fast encoders?
                 configuration->encoders_index_pin[encoders] = indexPin - 1;
 
-                rtapi_snprintf(encoderTagFormat, 30, "ENCODER_PIN_%d_INDEX_PIN_INVERT", i);
+                rtapi_snprintf(encoderTagFormat, 32, "ENCODER_PIN_%d_INDEX_PIN_INVERT", i);
                 const char* invert = iniFind(ini_file_ptr, encoderTagFormat, instanceName);
 
                 if (strcasecmp("true", invert) == 0) {
@@ -691,7 +691,7 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
                 configuration->encoders_index_pin[encoders] = NoEncoderIndex;
             }
 
-            rtapi_snprintf(encoderTagFormat, 30, "ENCODER_PIN_%d_SCALE", i);
+            rtapi_snprintf(encoderTagFormat, 32, "ENCODER_PIN_%d_SCALE", i);
             double scale = 0;
             iniRead = iniFindDouble(ini_file_ptr, encoderTagFormat, instanceName, &scale);
 
@@ -856,7 +856,7 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         }
 
         int8_t bufferSize = sizeof(int32_t[EncoderBuffer]);
-        componentInstance->internals->encoders_buffer_values[i] = hal_malloc(bufferSize);
+        componentInstance->internals->encoders_buffer_values[i] = malloc(bufferSize);
         memset(componentInstance->internals->encoders_buffer_values[i], 0, bufferSize);
     }
 
@@ -1054,8 +1054,8 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
         if (bufferFull == true) {
             averagePosition++;
 
-            if (bufferPosition > EncoderLastAverages) {
-                bufferPosition = 0;
+            if (averagePosition > EncoderLastAverages) {
+                averagePosition = 0;
             }
 
             componentInstance->internals->encoders_buffer_position[i][1] = averagePosition;
@@ -1066,16 +1066,17 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
             sumAverages += componentInstance->internals->encoders_buffer_values[i][EncoderLastValues + j] / (float)EncoderLastValues;
         }
 
-        float avg = (sumAverages / EncoderLastAverages); // 20 last entries => 20 * 5ms = 100ms => 10 last averages = 1 s
+        float avg = (sumAverages / (float)EncoderLastAverages) * 100; // 20 last entries => 20 * 5ms = 100ms => 10 last averages = 1 s
 
         *componentInstance->io_encoder_cps[i] = avg;
         *componentInstance->io_encoder_vps[i] = avg / config->encoders_scale[i];
 
         int8_t indexPinConfig = config->encoders_index_pin[i];
+
         if (indexPinConfig > NoEncoderIndex) {
             uint8_t pinState = device->Pins[abs(indexPinConfig)].DigitalValueGet;
 
-            if (pinState > 0 && indexPinConfig >= 0) {
+            if ((pinState > 0 && indexPinConfig >= 0) || (pinState == 0 && indexPinConfig < 0)) {
                 *componentInstance->io_encoder_index[i] = true;
                 *componentInstance->io_encoder_count[i] = 0;
             } else {
