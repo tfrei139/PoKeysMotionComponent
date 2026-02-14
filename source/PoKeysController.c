@@ -682,7 +682,7 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
                 configuration->encoders_index_pin[encoders] = indexPin - 1;
 
                 rtapi_snprintf(encoderTagFormat, 30, "ENCODER_PIN_%d_INDEX_PIN_INVERT", i);
-                char* invert = iniFind(ini_file_ptr, encoderTagFormat, instanceName);
+                const char* invert = iniFind(ini_file_ptr, encoderTagFormat, instanceName);
 
                 if (strcasecmp("true", invert) == 0) {
                     configuration->encoders_index_pin[encoders] = configuration->encoders_index_pin[encoders] * -1;
@@ -856,8 +856,8 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         }
 
         int8_t bufferSize = sizeof(int32_t[EncoderBuffer]);
-        componentInstance->internals->encoders_buffer_values[encoders] = hal_malloc(bufferSize);
-        memset(componentInstance->internals->encoders_buffer_values[encoders], 0, bufferSize);
+        componentInstance->internals->encoders_buffer_values[i] = hal_malloc(bufferSize);
+        memset(componentInstance->internals->encoders_buffer_values[i], 0, bufferSize);
     }
 
     return configurationOk;
@@ -1042,7 +1042,7 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
             bufferFull = true;
         }
 
-        componentInstance->internals->encoders_buffer_position[i] = bufferPosition;
+        componentInstance->internals->encoders_buffer_position[i][0] = bufferPosition;
 
         int32_t sumDifference = 0;
         for (int j = 0; j < EncoderLastValues; j++) {
