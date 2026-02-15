@@ -1038,7 +1038,7 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
         componentInstance->internals->encoders_buffer_values[i][bufferPosition] = countDifference;
         bufferPosition++;
 
-        if (bufferPosition > EncoderLastValues) {
+        if (bufferPosition == EncoderLastValues) {
             bufferPosition = 0;
             bufferFull = true;
         }
@@ -1056,7 +1056,7 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
         if (bufferFull == true) {
             averagePosition++;
 
-            if (averagePosition > EncoderLastAverages) {
+            if (averagePosition == EncoderLastAverages) {
                 averagePosition = 0;
             }
 
