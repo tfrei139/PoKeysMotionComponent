@@ -1032,7 +1032,6 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
 
         uint8_t bufferPosition = componentInstance->internals->encoders_buffer_position[i][0];
         uint8_t averagePosition = componentInstance->internals->encoders_buffer_position[i][1];
-        rtapi_print_msg(RTAPI_MSG_WARN, "Buffer pos:%d, Avg pos: %d; Buffers:", bufferPosition, averagePosition);
         bool bufferFull = false;
 
         componentInstance->internals->encoders_buffer_values[i][bufferPosition] = countDifference;
@@ -1047,7 +1046,6 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
 
         int32_t sumDifference = 0;
         for (int j = 0; j < EncoderLastValues; j++) {
-            rtapi_print_msg(RTAPI_MSG_WARN, "%d,", componentInstance->internals->encoders_buffer_values[i][j]);
             sumDifference += componentInstance->internals->encoders_buffer_values[i][j];
         }
 
@@ -1063,17 +1061,12 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
             componentInstance->internals->encoders_buffer_position[i][1] = averagePosition;
         }
 
-        rtapi_print_msg(RTAPI_MSG_WARN, "; Avgs: ");
-
         float sumAverages = 0;
         for (int j = 0; j < EncoderLastAverages; j++) {
-            rtapi_print_msg(RTAPI_MSG_WARN, "%f,", componentInstance->internals->encoders_buffer_values[i][EncoderLastValues + j] / (float)EncoderLastValues);
             sumAverages += componentInstance->internals->encoders_buffer_values[i][EncoderLastValues + j] / (float)EncoderLastValues;
         }
 
-        float avg = (sumAverages / (float)EncoderLastAverages) * 100; // 20 last entries => 20 * 5ms = 100ms => 10 last averages = 1 s
-
-        rtapi_print_msg(RTAPI_MSG_WARN, "; final: %f\n", avg);
+        float avg = (sumAverages / EncoderLastAverages) * 200; // 200 = 1'000ms / 5ms Cycle time
 
         *componentInstance->io_encoder_cps[i] = avg;
         *componentInstance->io_encoder_vps[i] = avg / config->encoders_scale[i];
