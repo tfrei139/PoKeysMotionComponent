@@ -53,15 +53,20 @@ Note: `PK_PEv2_AdditionalParametersGet()`, returned pin 62 for `device.PEv2.Emer
 
 ## Encoders
 Using the `PK_DigitalIOSetGet` command will return the current encoder counts as single byte. With the exception of the Ultra fast encoder, which is reported as an integer value.  
-Keeping track of the byte overflow is easily possible for the basic encoders, however fast encoders can easily wrap the byte multiple times in the refresh cycle time.
+Keeping track of the byte overflow is easily possible for the basic encoders, however fast encoders can wrap the byte multiple times in the refresh cycle time.
 
-Since the usage of the fast encoders is discouraged according to the manual and I observed slower response times. I choose not support the fast encoders specifically.  
-They can be used, but there is no guarantee for the correctness of the values.
+Since the usage of the fast encoders is discouraged according to the manual. And I observed slower response times. I choose not support the fast encoders specifically.  
+They can be used, but there is **no guarantee** for the correctness of the values.
 
 Basic encoder: with 5ms cycle time @ 1ms resolution => maximum of 5 counts of the encoder.  
-Even with 4x sampling, this equals at most 20 counts. Easily fits a byte.  
+Even with 4x sampling, this equals at most 20 counts. Fits a byte.  
 
 Fast encoder: with 5ms cycle time @ 10μs resolution => maximum of 500 counts of the encoder. About twice what the byte can record.  
 Using 4x Sampling would break that even more (2000 Steps per cycle).
 
-Basic encoders do not support indexing on PoKeys side ... TODO Encoder
+Basic encoders do not support indexing on PoKeys, only fast and ultra fast. However with the expected velocity of the ultra fast encoder, I expect that the slow component could miss index signals.  
+Due to that concern, I do not reflect a reset on index on the component side.
+
+The pin `io.encoder.D.count` will wrap around if the maximum value of integer is reached. The "count/velocity per second" pins are stable during this wrap around.
+
+The pin `io.encoder.0.cps` is calculated from the last 10 averages consisting of 20 values each, resulting in the average count of one second. No further filtering/stabilizing is done.

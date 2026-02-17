@@ -47,7 +47,7 @@ MODULE_LICENSE("GPL");
 // Component extra configuration
 #define NumberOfOverridePins 6    // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
 #define NumberOfDigitalPins 10    // Applies to both input and output pins. Could be raised as necessary
-#define NumberOfEncoders 10       // Up to 25+1 encoders. Could be raised as necessary
+#define NumberOfEncoders 5        // Up to 25+1 encoders. Could be raised as necessary
 #define NoEncoderIndex -127
 #define EncoderBuffer 30          // 20 last values + 10 last averages
 #define EncoderLastValues 20
@@ -119,28 +119,32 @@ static int __comp_get_data_size(void);
 #define false (0)
 
 // Component configuration
-static component_configuration* PMC_ReadConfiguration(const char *instanceName);
+static bool PMC_ReadConfiguration(const char *instanceName, struct ComponentStruct* componentInstance);
 
 static int export(char *prefix, long extra_arg) {
     int r = 0;
     int j = 0;
 
-    component_configuration* config = PMC_ReadConfiguration(prefix);
-
-    if (config == NULL) {
-        return -321; // arbitrary number
-    }
 
     int sz = sizeof(struct __comp_state) + __comp_get_data_size();
     struct __comp_state *inst = hal_malloc(sz);
     memset(inst, 0, sz);
 
-    inst->configuration = config;
+    int configSize = sizeof(component_configuration);
+    component_configuration* configuration = hal_malloc(configSize);
+    memset(configuration, 0, sizeof(configSize));
+    inst->configuration = configuration;
 
     int internalsSize = sizeof(component_internals);
     component_internals* internals = hal_malloc(internalsSize);
     memset(internals, 0, sizeof(internalsSize));
     inst->internals = internals;
+
+    bool configOk = PMC_ReadConfiguration(prefix, inst);
+
+    if (configOk == false) {
+        return -321; // arbitrary number
+    }
 
     r = hal_pin_bit_newf(HAL_OUT, &(inst->machine_estop), comp_id,
         "%s.machine-estop", prefix);
@@ -541,13 +545,13 @@ void user_mainloop(void) {
 // ------------------------------------
 // Reads the configuration from the INI file.
 // ------------------------------------
-component_configuration* PMC_ReadConfiguration(const char *instanceName) {
+bool PMC_ReadConfiguration(const char *instanceName, struct ComponentStruct* componentInstance) {
     const char* ini_path = getenv("INI_FILE_NAME");
     FILE* ini_file_ptr = fopen(ini_path, "r");
 
     if (ini_file_ptr == NULL) {
         rtapi_print_msg(RTAPI_MSG_ERR, "FAILED to read INI '%s'\n", ini_path);
-        return NULL;
+        return false;
     }
 
     const char* levelTag = "LOG_LEVEL";
@@ -558,9 +562,7 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
         rtapi_set_msg_level(logLevel);
     }
 
-    int configSize = sizeof(component_configuration);
-    component_configuration* configuration = hal_malloc(configSize);
-    memset(configuration, 0, sizeof(configSize));
+    component_configuration* configuration = componentInstance->configuration;
 
     // Read device serial
     const char* serialTag = "DEVICE_SERIAL";
@@ -570,7 +572,7 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
     if (iniRead != 0 || deviceSerial == 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "No device serial in INI set! '%d'\n", iniRead);
         fclose(ini_file_ptr);
-        return NULL;
+        return false;
     }
 
     configuration->device_serial = deviceSerial;
@@ -583,13 +585,13 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
     if (iniRead != 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "Number of axes not set in INI! '%d'\n", iniRead);
         fclose(ini_file_ptr);
-        return NULL;
+        return false;
     }
 
     if (numberOfAxes < 1 || numberOfAxes > 8) {
         rtapi_print_msg(RTAPI_MSG_ERR, "Number of axes invalid (1..8) '%d'\n", numberOfAxes);
         fclose(ini_file_ptr);
-        return NULL;
+        return false;
     }
 
     configuration->number_axes = numberOfAxes;
@@ -677,8 +679,6 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
             iniRead = iniFindInt(ini_file_ptr, encoderTagFormat, instanceName, &indexPin);
 
             if (iniRead == 0) {
-                // OPTIONAL check if index pin is already used as IO pin?
-                // OPTIONAL check if index pin is supplied for (ultra-) fast encoders?
                 configuration->encoders_index_pin[encoders] = indexPin - 1;
 
                 rtapi_snprintf(encoderTagFormat, 32, "ENCODER_PIN_%d_INDEX_PIN_INVERT", i);
@@ -701,6 +701,11 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
                 configuration->encoders_scale[encoders] = 1;
             }
 
+            // Allocate buffer only if encoders are actually used.
+            int8_t bufferSize = sizeof(int32_t[EncoderBuffer]);
+            componentInstance->internals->encoders_buffer_values[encoders] = hal_malloc(bufferSize);
+            memset(componentInstance->internals->encoders_buffer_values[encoders], 0, bufferSize);
+
             encoders++;
         } else {
             break;
@@ -710,7 +715,7 @@ component_configuration* PMC_ReadConfiguration(const char *instanceName) {
 
     fclose(ini_file_ptr);
 
-    return configuration;
+    return true;
 }
 
 // ------------------------------------
@@ -842,6 +847,7 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
     }
 
     if ((device->UltraFastEncoderConfiguration & 1) == 1) {
+        rtapi_print_msg(RTAPI_MSG_DBG, "Ultra fast encoder is enabled\n");
         device->Encoders[UfEncoder].encoderOptions = 1;
     }
 
@@ -854,10 +860,6 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
             rtapi_print_msg(RTAPI_MSG_ERR, "Encoder pin %d => PoKeys encoder %d, not enabled\n", i, encoder + 1);
             configurationOk = false;
         }
-
-        int8_t bufferSize = sizeof(int32_t[EncoderBuffer]);
-        componentInstance->internals->encoders_buffer_values[i] = malloc(bufferSize);
-        memset(componentInstance->internals->encoders_buffer_values[i], 0, bufferSize);
     }
 
     return configurationOk;
@@ -1078,7 +1080,6 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
 
             if ((pinState > 0 && indexPinConfig >= 0) || (pinState == 0 && indexPinConfig < 0)) {
                 *componentInstance->io_encoder_index[i] = true;
-                *componentInstance->io_encoder_count[i] = 0;
             } else {
                 *componentInstance->io_encoder_index[i] = false;
             }
