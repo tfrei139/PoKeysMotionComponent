@@ -45,6 +45,7 @@ MODULE_LICENSE("GPL");
 #endif // MODULE_INFO
 
 // Component extra configuration
+#define ComponentStruct __comp_state    // Internal struct of component
 #define NumberOfOverridePins 6    // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
 #define NumberOfDigitalPins 10    // Applies to both input and output pins. Could be raised as necessary
 #define NumberOfEncoders 5        // Up to 25+1 encoders. Could be raised as necessary
@@ -125,7 +126,6 @@ static int export(char *prefix, long extra_arg) {
     int r = 0;
     int j = 0;
 
-
     int sz = sizeof(struct __comp_state) + __comp_get_data_size();
     struct __comp_state *inst = hal_malloc(sz);
     memset(inst, 0, sz);
@@ -154,12 +154,12 @@ static int export(char *prefix, long extra_arg) {
         "%s.machine-is-on", prefix);
     if(r != 0) return r;
     *(inst->machine_is_on) = false;
-    for(j=0; j < (config->input_pins); j++) {
+    for(j=0; j < (configuration->input_pins); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->io_input_pin[j]), comp_id,
             "%s.io.input-pin.%01d", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->output_pins); j++) {
+    for(j=0; j < (configuration->output_pins); j++) {
         r = hal_pin_bit_newf(HAL_IN, &(inst->io_output_pin[j]), comp_id,
             "%s.io.output-pin.%01d", prefix, j);
         if(r != 0) return r;
@@ -179,27 +179,27 @@ static int export(char *prefix, long extra_arg) {
             "%s.io.open-collector.%01d", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->pwm_pins); j++) {
+    for(j=0; j < (configuration->pwm_pins); j++) {
         r = hal_pin_float_newf(HAL_IN, &(inst->io_pwm_pin[j]), comp_id,
             "%s.io.pwm-pin.%01d", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->encoders); j++) {
+    for(j=0; j < (configuration->encoders); j++) {
         r = hal_pin_s32_newf(HAL_OUT, &(inst->io_encoder_count[j]), comp_id,
             "%s.io.encoder.%01d.count", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->encoders); j++) {
+    for(j=0; j < (configuration->encoders); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->io_encoder_index[j]), comp_id,
             "%s.io.encoder.%01d.index", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->encoders); j++) {
+    for(j=0; j < (configuration->encoders); j++) {
         r = hal_pin_float_newf(HAL_OUT, &(inst->io_encoder_cps[j]), comp_id,
             "%s.io.encoder.%01d.cps", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->encoders); j++) {
+    for(j=0; j < (configuration->encoders); j++) {
         r = hal_pin_float_newf(HAL_OUT, &(inst->io_encoder_vps[j]), comp_id,
             "%s.io.encoder.%01d.vps", prefix, j);
         if(r != 0) return r;
@@ -213,22 +213,22 @@ static int export(char *prefix, long extra_arg) {
             "%s.motion.override-limit.%01d", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->number_axes); j++) {
+    for(j=0; j < (configuration->number_axes); j++) {
         r = hal_pin_float_newf(HAL_OUT, &(inst->axis_position_feedback[j]), comp_id,
             "%s.axis.%01d.position-feedback", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->number_axes); j++) {
+    for(j=0; j < (configuration->number_axes); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->axis_limit_positive[j]), comp_id,
             "%s.axis.%01d.limit-positive", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->number_axes); j++) {
+    for(j=0; j < (configuration->number_axes); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->axis_limit_negative[j]), comp_id,
             "%s.axis.%01d.limit-negative", prefix, j);
         if(r != 0) return r;
     }
-    for(j=0; j < (config->number_axes); j++) {
+    for(j=0; j < (configuration->number_axes); j++) {
         r = hal_pin_bit_newf(HAL_OUT, &(inst->axis_home[j]), comp_id,
             "%s.axis.%01d.home", prefix, j);
         if(r != 0) return r;
@@ -237,7 +237,7 @@ static int export(char *prefix, long extra_arg) {
         "%s.internal-state", prefix);
     inst->internal_state = 0;
     if(r != 0) return r;
-    for(j=0; j < (config->number_axes); j++) {
+    for(j=0; j < (configuration->number_axes); j++) {
         r = hal_param_float_newf(HAL_RW, &(inst->axis_step_scale[j]), comp_id,
             "%s.axis.%01d.step-scale", prefix, j);
         if(r != 0) return r;
@@ -357,8 +357,6 @@ static int __comp_get_data_size(void) { return 0; }
 // ------------------------------------
 // Component code starts here
 // ------------------------------------
-#define ComponentStruct __comp_state    // Internal struct of component
-
 #define EstopPinNumber 51         // 0-based pin 52
 #define CycleTimeMs 5.0f          // Target cycle time of uspace component (200Hz)
 #define SharedMemoryKey 57        // Arbitrary number
