@@ -25,15 +25,19 @@ The controller will read the buffer and forward it to the PoKeys pulse engine. T
     - All relays (example spindle on/off)
     - Configurable digital input/output pins
     - PWM pins (example spindle speed control)
-    - Basic, fast and ultrafast Encoders
+    - Basic, fast and ultra fast encoders (example MPG jogging)
 
 ### Backlog
-- Test motion buffer in error situation
-- Test probing
-- Test soft limits
-- Technical: Benchmark component
+- Testing
+    - motion buffer in error situations
+    - probing
+    - soft limits
+- Technical
+    - Benchmark component
+    - Split up code base
+    - Merge components using `hal_export_funct`?
 - Provide more example configurations
-- Merge components using `hal_export_funct`?
+    - Complete MPG example
 
 ## Setup
 A walkthrough to set this component up is available here [Setup](documentation/Setup.md)
