@@ -46,10 +46,10 @@ In this case I prefer to err on the side of caution and allow a mismatch.
 The other option would be to put this responsibilty to LinuxCNC and only forward the E-Stop pin, otherwise behaving normal.
 
 ## E-Stop pin
-According to the documentation, the designated E-Stop connector and the pendant E-Stop (Pin 52) are wired in series.
-I did not find out how to read the designated pin, so I read the pin 52 as E-Stop pin.
-
-Note: `PK_PEv2_AdditionalParametersGet()`, returned pin 62 for `device.PEv2.EmergencyInputPin`?!
+In the documentation on the PoKeys57CNC, the designated E-Stop connector and the pendant E-Stop (Pin 52) are wired in series.
+The older Pulse Engine documentation (v6/3/2016) with both CNCaddon and integrated pulse generator also define pin 52 as fixed.
+Though according to the protocol definition, the pin may be "disabled", "default" or a designated pin.
+Since the standard use case is unlikely using another pin, the component reads pin 52 as E-Stop pin.
 
 ## Encoders
 Using the `PK_DigitalIOSetGet` command will return the current encoder counts as single byte. With the exception of the Ultra fast encoder, which is reported as an integer value.  
