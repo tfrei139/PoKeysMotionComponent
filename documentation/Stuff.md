@@ -19,6 +19,16 @@ There are two separate repositories for the same code:
 [Protocol specification](https://www.poscope.com/wp-content/uploads/downloads/Pokeys/Manuals/PoKeys%20-%20protocol%20specification.pdf)  
 [Pin layout explained](https://blog.poscope.com/pokeys57cnc-pinout-explained/)
 
+### Encoder
+PoKeys supports up to 25 'normal' encoders, 1 kHz/1ms,  
+Pins are manually set to A+B channel. No indexing (resetting count) from PoKeys side.
+
+3 fast encoders, 100 kHz/10μs  
+Pins 1+2 as encoder 1,  pins 5+6 as encoder 2,  pins 15+16 as encoder 3, index pins 9, 10, 11 respectively.
+
+One ultra fast encoder, from 25 kHz up to 5 MHz, 40μs to 0.2μs. Depending on settings.  
+Pins 8+12 as encoder 25, index pin 13.
+
 ## How to wire up an Estop
 https://forum.linuxcnc.org/24-hal-components/37906-an-e-stop-hal-and-an-overall-how-things-work-series  
 https://forum.linuxcnc.org/39-pncconf/25862-configuring-estop-latch  

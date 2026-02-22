@@ -11,6 +11,10 @@ pin in bit io.solid_state_relay.# [2] "Solid state relays";
 pin in bit io.relay.# [2] "Relays";
 pin in bit io.open_collector.# [4] "Open collector digital outputs";
 pin in float io.pwm_pin.# [6] "PWM pins, valid values from 0.0 - 100.0 percent duty cycle";
+pin out signed io.encoder.#.count [5] "Encoders, raw count";
+pin out bit io.encoder.#.index [5] "Encoders, index triggered";
+pin out float io.encoder.#.cps [5] "Encoders, counts/second";
+pin out float io.encoder.#.vps [5] "Encoders, velocity [(count/scale)/second]";
 
 pin in bit motion.started = false "Motion is being streamed";
 pin in bit motion.override_limit.# [6] "Limit switch override. Any pin set overrides globally on PoKeys";

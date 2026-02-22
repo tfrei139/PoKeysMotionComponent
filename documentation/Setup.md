@@ -105,8 +105,8 @@ net spindle-enable => PoKeysController.0.io.solid-state-relay.0
 Note: PoKeys57CNCpro4x25 uses a slightly different order. See protocol definition.
 
 ### Setting up PWM pins
-For each PWM channel/pin you want to use, add the "PWM_PIN_D" parameter.  
-PoKeys puts the 6 PWM pins into channels numbered 0-5. With the pin number I verify that the configurations matches the setup on the device.
+For each PWM channel/pin you want to use, add the `PWM_PIN_D` parameter.  
+PoKeys puts the 6 PWM pins into channels numbered 0-5. With the pin number it is verified that the configurations matches the setup on the device.
 ```INI
 PWM_PIN_0 = 17
 ```
@@ -114,3 +114,32 @@ PWM_PIN_0 = 17
 net pwm-value => PoKeysController.0.io.pwm-pin.0
 ```
 The "io.pwm-pin.D" accepts a floating point value from 0% to 100% duty cycle.
+
+
+### Setting up Encoder pins
+The PoKeys device offers up to 26 encoders. By default up to 5 can be configured in the ini file.  
+ini options:
+```INI
+ENCODER_PIN_0 = 1
+ENCODER_PIN_0_SCALE = 20.0
+ENCODER_PIN_0_INDEX_PIN = 9
+ENCODER_PIN_0_INDEX_PIN_INVERT = true
+```
+hal pins:
+```
+io.encoder.0.count
+io.encoder.0.index
+io.encoder.0.cps
+io.encoder.0.vps
+```
+
+`ENCODER_PIN_0 = 1` defines that PoKeys encoder 1 is used.  
+`io.encoder.0.count` returns the current encoder count.  
+`io.encoder.0.cps` stands for "counts per second".  
+`io.encoder.0.vps` stands for "velocity per second", where velocity is calculated from counts divided by scale factor. If you have a rotary encoder with 20 steps per revolution, `ENCODER_PIN_0_SCALE = 20.0` defines that 20 steps per second equal one revolution per second. The `ENCODER_PIN_0_SCALE` is optional, if left out `cps` and `vps` will be equal.  
+`ENCODER_PIN_0_INDEX_PIN = 9` is optional and defines the pin used as index position. `ENCODER_PIN_0_INDEX_PIN_INVERT = true` and will invert the signal whether high or low is considered indexed.  
+`io.encoder.0.index` returns the current index signal.
+
+Note on indexing: The component will not handle the index high in any special way. The PoKeys device may be set up to reset the count, which may lead to undefined behavior of the hal pins.  
+
+Note on implementation: The different types of encoders supported by PoKeys are abstracted away. See also the [Design document -> Encoders](DesignDocument.md).
