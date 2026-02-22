@@ -33,7 +33,6 @@ The controller will read the buffer and forward it to the PoKeys pulse engine. T
     - probing
     - soft limits
 - Technical
-    - Benchmark component
     - Split up code base
     - Merge components using `hal_export_funct`?
 - Provide more example configurations
