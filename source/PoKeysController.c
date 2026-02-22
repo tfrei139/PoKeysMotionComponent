@@ -27,10 +27,10 @@ MODULE_INFO(linuxcnc, "pin:io.solid_state_relay.#:bit:2:in:Solid state relays:No
 MODULE_INFO(linuxcnc, "pin:io.relay.#:bit:2:in:Relays:None:None");
 MODULE_INFO(linuxcnc, "pin:io.open_collector.#:bit:4:in:Open collector digital outputs:None:None");
 MODULE_INFO(linuxcnc, "pin:io.pwm_pin.#:float:6:in:PWM pins, valid values from 0.0 - 100.0 percent duty cycle:None:None");
-MODULE_INFO(linuxcnc, "pin:io.encoder.#.count:s32:25:out:Encoders, raw count:None:None");
-MODULE_INFO(linuxcnc, "pin:io.encoder.#.index:bit:25:out:Encoders, index triggered:None:None");
-MODULE_INFO(linuxcnc, "pin:io.encoder.#.cps:float:25:out:Encoders, counts/second:None:None");
-MODULE_INFO(linuxcnc, "pin:io.encoder.#.vps:float:25:out:Encoders, velocity [(count/scale)/second]:None:None");
+MODULE_INFO(linuxcnc, "pin:io.encoder.#.count:s32:5:out:Encoders, raw count:None:None");
+MODULE_INFO(linuxcnc, "pin:io.encoder.#.index:bit:5:out:Encoders, index triggered:None:None");
+MODULE_INFO(linuxcnc, "pin:io.encoder.#.cps:float:5:out:Encoders, counts/second:None:None");
+MODULE_INFO(linuxcnc, "pin:io.encoder.#.vps:float:5:out:Encoders, velocity [(count/scale)/second]:None:None");
 MODULE_INFO(linuxcnc, "pin:motion.started:bit:0:in:Motion is being streamed:false:None");
 MODULE_INFO(linuxcnc, "pin:motion.override_limit.#:bit:6:in:Limit switch override. Any pin set overrides globally on PoKeys:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:8:out:Position in machine units:None:None");
@@ -46,13 +46,18 @@ MODULE_LICENSE("GPL");
 
 // Component extra configuration
 #define ComponentStruct __comp_state    // Internal struct of component
-#define NumberOfOverridePins 6    // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
-#define NumberOfDigitalPins 10    // Applies to both input and output pins. Could be raised as necessary
-#define NumberOfEncoders 5        // Up to 25+1 encoders. Could be raised as necessary
+#define NumberOfOverridePins 6          // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
+#define NumberOfDigitalPins 10          // Applies to both input and output pins. Could be raised as necessary
+#define NumberOfEncoders 5              // Up to 25+1 encoders. Could be raised as necessary
 #define NoEncoderIndex -127
-#define EncoderBuffer 30          // 20 last values + 10 last averages
+#define EncoderBuffer 30                // 20 last values + 10 last averages
 #define EncoderLastValues 20
+#define UfEncoder 25                    // Ultra fast encoder 0-based index
 #define EncoderLastAverages 10
+#define EstopPinNumber 51               // 0-based pin 52
+#define CycleTimeMs 5.0f                // Target cycle time of uspace component (200Hz)
+#define SharedMemoryKey 57              // Arbitrary number
+#define EndOfMotionPacket 0x0101        // Arbitrary number > uint8
 
 typedef struct {
     uint32_t device_serial;
@@ -357,11 +362,6 @@ static int __comp_get_data_size(void) { return 0; }
 // ------------------------------------
 // Component code starts here
 // ------------------------------------
-#define EstopPinNumber 51         // 0-based pin 52
-#define CycleTimeMs 5.0f          // Target cycle time of uspace component (200Hz)
-#define SharedMemoryKey 57        // Arbitrary number
-#define EndOfMotionPacket 0x0101  // Arbitrary number > uint8
-#define UfEncoder 25              // Ultra fast encoder 0-based index
 
 // ------------------------------------
 // States of the component
