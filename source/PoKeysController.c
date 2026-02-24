@@ -9,7 +9,7 @@
 #include "rtapi_math64.h"
 
 // Component imports
-#include "rtapi_math.h"		// For floor()
+#include "rtapi_math.h"		// For floor() and fabs()
 #include <PoKeysLib.h>      // For PoKeys communication
 #include <time.h>           // For clock_gettime()
 #include <unistd.h>         // For struct useconds_t
@@ -82,6 +82,10 @@ typedef struct {
     int32_t* encoders_buffer_values[NumberOfEncoders];
     // comparative values for summing the encoder values
     int8_t encoders_value_previous[NumberOfEncoders];
+    // motion buffer tracking
+    uint32_t motion_buffer_entries;
+    struct timespec* motion_first_send;
+
 } component_internals;
 
 struct __comp_state {
@@ -478,7 +482,6 @@ void user_mainloop(void) {
                         // OPTIONAL introduce "Buffering" state.
                         usleep(20000);
                         overrideCycleTime = true;
-                        rtapi_print_msg(RTAPI_MSG_DBG, "Going to motion\n");
                         currentInstance->internal_state = MOVING;
                         break;
                     }
@@ -486,6 +489,9 @@ void user_mainloop(void) {
                     break;
                 case MOVING:
                     if (!PMC_ProcessMoveCommand(currentInstance)) {
+                        free(currentInstance->internals->motion_first_send);
+                        currentInstance->internals->motion_first_send = null;
+                        currentInstance->internals->motion_buffer_entries = 0;
                         currentInstance->internal_state = ENABLED;
                     }
 
@@ -494,6 +500,9 @@ void user_mainloop(void) {
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
+                        free(currentInstance->internals->motion_first_send);
+                        currentInstance->internals->motion_first_send = null;
+                        currentInstance->internals->motion_buffer_entries = 0;
                         currentInstance->internal_state = ESTOP;
                         break;
                     }
@@ -502,6 +511,9 @@ void user_mainloop(void) {
                     if (0 + *currentInstance->machine_is_on == false) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
+                        free(currentInstance->internals->motion_first_send);
+                        currentInstance->internals->motion_first_send = null;
+                        currentInstance->internals->motion_buffer_entries = 0;
                         currentInstance->internal_state = IDLE;
                         break;
                     }
@@ -1096,86 +1108,102 @@ bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
     hal_stream_t stream;
     int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
 
-    if (ret >= 0) {
-        bool streamReadable = hal_stream_readable(&stream);
-
-        if (!streamReadable) {
-            // if the last cycle was slow (>5ms), we do not wait and "almost immediately" process the next motion state.
-            // since the servo thread may not have updated yet, we delay here to get at least one value here.
-            rtapi_print_msg(RTAPI_MSG_WARN, "Potential Buffer underrun? EndOfMotion Packet missing? Try sleep\n");
-            usleep(1000); // the time of the servo period (1ms).
-            streamReadable = hal_stream_readable(&stream);
-        }
-
-        if (streamReadable) {
-            sPoKeysDevice* device = componentInstance->device;
-            device->PEv2.motionBufferEntriesAccepted = 0;
-            device->PEv2.newMotionBufferEntries = 0;
-
-            int motionEntries = 0;
-            uint8_t numberOfAxes = componentInstance->configuration->number_axes;
-            uint8_t maxMotionPackets = componentInstance->configuration->max_motion_packets;
-
-            //struct timespec* streamStart = PMC_GetStartTime();
-            do
-            {
-                union hal_stream_data dataToReceive[numberOfAxes];
-
-                ret = hal_stream_read(&stream, dataToReceive, NULL);
-
-                if (ret != 0) {
-                    rtapi_print_msg(RTAPI_MSG_ERR, "Error reading stream:%d\n", ret);
-                    continueMove = false;
-                    break;
-                }
-
-                if (dataToReceive[0].s == EndOfMotionPacket) {
-                    rtapi_print_msg(RTAPI_MSG_DBG, "End of motion\n");
-                    continueMove = false;
-                    break;
-                }
-
-                for (int i = 0; i < numberOfAxes; i++) {
-                    uint8_t motion = dataToReceive[i].s;
-                    //rtapi_print_msg(RTAPI_MSG_ERR, "%d,", motion);
-                    device->PEv2.MotionBuffer[(motionEntries * numberOfAxes) + i] = motion;
-                }
-
-                //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
-
-                motionEntries++;
-
-                streamReadable = hal_stream_readable(&stream);
-
-                if (streamReadable == false || motionEntries == maxMotionPackets) {
-                    device->PEv2.newMotionBufferEntries = motionEntries;
-
-                    struct timespec* requestStart = PMC_GetStartTime();
-                    ret = PK_PEv2_BufferFill(device);
-                    PMC_PrintElapsedTime(requestStart, "Request: BufferFill");
-
-                    if (device->PEv2.motionBufferEntriesAccepted != motionEntries) {
-                        // TODO handle if not all buffer entries are accepted
-                        rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes NOT ALL BUFFER ENTRIES ACCEPTED (%d, accepted %d)%d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
-                    }
-
-                    motionEntries = 0;
-                    //rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes (%d, accepted %d), Move commanded:%d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
-                }
-            }
-            while (streamReadable);
-
-            //PMC_PrintElapsedTime(streamStart, "StreamRead");
-        } else {
-            rtapi_print_msg(RTAPI_MSG_ERR, "Buffer underrun? EndOfMotion Packet missing?\n");
-            continueMove = false;
-        }
-
-        hal_stream_detach(&stream);
-    } else {
+    if (ret < 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error=%d\n", ret);
+        return false;
+    }
+
+    bool streamReadable = hal_stream_readable(&stream);
+
+    if (!streamReadable) {
+        // if the last cycle was slow (>5ms), we do not wait and "almost immediately" process the next motion state.
+        // since the servo thread may not have updated yet, we delay here to get at least one value here.
+        rtapi_print_msg(RTAPI_MSG_WARN, "Potential Buffer underrun? EndOfMotion Packet missing? Try sleep\n");
+        usleep(1000); // the time of the servo period (1ms).
+        streamReadable = hal_stream_readable(&stream);
+    }
+
+    if (streamReadable) {
+        sPoKeysDevice* device = componentInstance->device;
+        device->PEv2.motionBufferEntriesAccepted = 0;
+        device->PEv2.newMotionBufferEntries = 0;
+
+        int motionEntries = 0;
+        uint8_t numberOfAxes = componentInstance->configuration->number_axes;
+        uint8_t maxMotionPackets = componentInstance->configuration->max_motion_packets;
+
+        //struct timespec* streamStart = PMC_GetStartTime();
+        do
+        {
+            union hal_stream_data dataToReceive[numberOfAxes];
+
+            ret = hal_stream_read(&stream, dataToReceive, NULL);
+
+            if (ret != 0) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "Error reading stream:%d\n", ret);
+                continueMove = false;
+                break;
+            }
+
+            if (dataToReceive[0].s == EndOfMotionPacket) {
+                rtapi_print_msg(RTAPI_MSG_DBG, "End of motion\n");
+                continueMove = false;
+                break;
+            }
+
+            for (int i = 0; i < numberOfAxes; i++) {
+                uint8_t motion = dataToReceive[i].s;
+                //rtapi_print_msg(RTAPI_MSG_ERR, "%d,", motion);
+                device->PEv2.MotionBuffer[(motionEntries * numberOfAxes) + i] = motion;
+            }
+
+            //rtapi_print_msg(RTAPI_MSG_ERR, "\n");
+
+            motionEntries++;
+
+            streamReadable = hal_stream_readable(&stream);
+
+            if (streamReadable == false || motionEntries == maxMotionPackets) {
+
+                if (componentInstance->internals->motion_first_send != NULL) {
+                    struct timespec* currentTime = PMC_GetStartTime();
+                    struct timespec* firstSend = componentInstance->internals->motion_first_send;
+
+                    int milisSinceStart = fabs(((float)(currentTime.tv_sec - firstSend->tv_sec) * 1.0e9 + (float)(currentTime.tv_nsec - firstSend->tv_nsec)) / 1.0e6);
+
+                    int currentBufferEntries = componentInstance->internals->motion_buffer_entries - milisSinceStart;
+                    rtapi_print_msg(RTAPI_MSG_ERR, "Calculated entries in Buffer: %d\n", currentBufferEntries);
+                }
+
+                device->PEv2.newMotionBufferEntries = motionEntries;
+
+                struct timespec* requestStart = PMC_GetStartTime();
+                ret = PK_PEv2_BufferFill(device);
+                PMC_PrintElapsedTime(requestStart, "Request: BufferFill");
+
+                if (device->PEv2.motionBufferEntriesAccepted != motionEntries) {
+                    // TODO handle if not all buffer entries are accepted
+                    rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes NOT ALL BUFFER ENTRIES ACCEPTED (%d, accepted %d)%d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
+                }
+
+                componentInstance->internals->motion_buffer_entries += motionEntries;
+                if (componentInstance->internals->motion_first_send == NULL) {
+                    componentInstance->internals->motion_first_send = PMC_GetStartTime();
+                }
+
+                motionEntries = 0;
+                //rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes (%d, accepted %d), Move commanded:%d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
+            }
+        }
+        while (streamReadable);
+
+        //PMC_PrintElapsedTime(streamStart, "StreamRead");
+    } else {
+        rtapi_print_msg(RTAPI_MSG_ERR, "Buffer underrun? EndOfMotion Packet missing?\n");
         continueMove = false;
     }
+
+    hal_stream_detach(&stream);
 
     return continueMove;
 }
