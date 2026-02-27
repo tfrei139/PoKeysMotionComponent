@@ -493,7 +493,7 @@ void user_mainloop(void) {
                 case MOVING:
                     if (!PMC_ProcessMoveCommand(currentInstance)) {
                         free(currentInstance->internals->motion_first_send);
-                        currentInstance->internals->motion_first_send = null;
+                        currentInstance->internals->motion_first_send = NULL;
                         currentInstance->internals->motion_buffer_entries = 0;
                         currentInstance->internal_state = ENABLED;
                     }
@@ -504,7 +504,7 @@ void user_mainloop(void) {
                     if (*currentInstance->machine_estop == true) {
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
                         free(currentInstance->internals->motion_first_send);
-                        currentInstance->internals->motion_first_send = null;
+                        currentInstance->internals->motion_first_send = NULL;
                         currentInstance->internals->motion_buffer_entries = 0;
                         currentInstance->internal_state = ESTOP;
                         break;
@@ -515,7 +515,7 @@ void user_mainloop(void) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
                         free(currentInstance->internals->motion_first_send);
-                        currentInstance->internals->motion_first_send = null;
+                        currentInstance->internals->motion_first_send = NULL;
                         currentInstance->internals->motion_buffer_entries = 0;
                         currentInstance->internal_state = IDLE;
                         break;
@@ -1172,7 +1172,7 @@ bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                     struct timespec* currentTime = PMC_GetStartTime();
                     struct timespec* firstSend = componentInstance->internals->motion_first_send;
 
-                    int milisSinceStart = fabs(((float)(currentTime.tv_sec - firstSend->tv_sec) * 1.0e9 + (float)(currentTime.tv_nsec - firstSend->tv_nsec)) / 1.0e6);
+                    int milisSinceStart = fabs(((float)(currentTime->tv_sec - firstSend->tv_sec) * 1.0e9 + (float)(currentTime->tv_nsec - firstSend->tv_nsec)) / 1.0e6);
 
                     int currentBufferEntries = componentInstance->internals->motion_buffer_entries - milisSinceStart;
                     rtapi_print_msg(RTAPI_MSG_ERR, "Calculated entries in Buffer: %d\n", currentBufferEntries);
