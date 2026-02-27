@@ -82,6 +82,9 @@ typedef struct {
     int32_t* encoders_buffer_values[NumberOfEncoders];
     // comparative values for summing the encoder values
     int8_t encoders_value_previous[NumberOfEncoders];
+    // benchmarking
+    uint32_t cycles;
+    float times[10];
     // motion buffer tracking
     uint32_t motion_buffer_entries;
     struct timespec* motion_first_send;
@@ -396,9 +399,9 @@ void PMC_ProcessRelays(struct ComponentStruct* componentInstance);
 bool PMC_CompareRelayState(sPoKeysDevice* device, bool state, int offset);
 void PMC_SetActiveOutputsOff(struct ComponentStruct* componentInstance);
 struct timespec* PMC_GetStartTime();
-void PMC_ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, enum State currentState, enum State nextState);
+void PMC_ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, enum State currentState, struct ComponentStruct* componentInstance);
 const char* PMC_GetStateName(enum State state);
-void PMC_PrintElapsedTime(struct timespec* startTime, const char* log);
+float PMC_PrintElapsedTime(struct timespec* startTime, const char* log);
 
 int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance);
 
@@ -547,7 +550,7 @@ void user_mainloop(void) {
                     return;
             }
 
-            PMC_ProcessCycleTime(cycleStart, overrideCycleTime, originState, currentInstance->internal_state);
+            PMC_ProcessCycleTime(cycleStart, overrideCycleTime, originState, currentInstance);
         }
     }
 }
@@ -882,7 +885,7 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
 void PMC_ReadPulseEngineStatus(struct ComponentStruct* componentInstance) {
     struct timespec* requestStart = PMC_GetStartTime();
     int ret = PK_PEv2_StatusGet(componentInstance->device);
-    PMC_PrintElapsedTime(requestStart, "Request: StatusGet");
+    componentInstance->internals->times[0] = PMC_PrintElapsedTime(requestStart, "Request: StatusGet");
     rtapi_print_msg(RTAPI_MSG_DBG, "Getting status:%d, state=%d, limitOverride=%d\n", ret, componentInstance->device->PEv2.PulseEngineState, componentInstance->device->PEv2.LimitOverride);
 }
 
@@ -967,7 +970,7 @@ void PMC_ProcessDigitalPins(struct ComponentStruct* componentInstance) {
 
     struct timespec* requestIoStart = PMC_GetStartTime();
     int ret = PMC_DigitalIOSetGet(componentInstance);
-    PMC_PrintElapsedTime(requestIoStart, "Request: DigitalIOSetGet");
+    componentInstance->internals->times[1] = PMC_PrintElapsedTime(requestIoStart, "Request: DigitalIOSetGet");
     //rtapi_print_msg(RTAPI_MSG_DBG, "Update all digital pins:%d\n", ret);
 
     for (int i = 0; i < componentInstance->configuration->input_pins; i++) {
@@ -1018,7 +1021,7 @@ void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance) {
     if (setNecessary) {
         struct timespec* requestStart = PMC_GetStartTime();
         int ret = PK_PWMUpdate(device);
-        PMC_PrintElapsedTime(requestStart, "Request: PWMUpdate");
+        componentInstance->internals->times[2] = PMC_PrintElapsedTime(requestStart, "Request: PWMUpdate");
         rtapi_print_msg(RTAPI_MSG_DBG, "Update PWM:%d\n", ret);
     }
 }
@@ -1179,7 +1182,7 @@ bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
                 struct timespec* requestStart = PMC_GetStartTime();
                 ret = PK_PEv2_BufferFill(device);
-                PMC_PrintElapsedTime(requestStart, "Request: BufferFill");
+                componentInstance->internals->times[3] = PMC_PrintElapsedTime(requestStart, "Request: BufferFill");
 
                 if (device->PEv2.motionBufferEntriesAccepted != motionEntries) {
                     // TODO handle if not all buffer entries are accepted
@@ -1234,7 +1237,7 @@ void PMC_ProcessRelays(struct ComponentStruct* componentInstance) {
 
     struct timespec* requestStart = PMC_GetStartTime();
     int ret = PK_PEv2_ExternalOutputsGet(device);
-    PMC_PrintElapsedTime(requestStart, "Request: ExternalOutputsGet");
+    componentInstance->internals->times[4] = PMC_PrintElapsedTime(requestStart, "Request: ExternalOutputsGet");
     //rtapi_print_msg(RTAPI_MSG_DBG, "Getting Relay status:%d, %d\n", ret, device->PEv2.ExternalOCOutputs);
 
     bool ssr1on = 0 + *componentInstance->io_solid_state_relay[0];
@@ -1259,7 +1262,7 @@ void PMC_ProcessRelays(struct ComponentStruct* componentInstance) {
     if (setNecessary) {
         struct timespec* setRequestStart = PMC_GetStartTime();
         ret = PK_PEv2_ExternalOutputsSet(device);
-        PMC_PrintElapsedTime(setRequestStart, "Request: ExternalOutputsSet");
+        componentInstance->internals->times[5] = PMC_PrintElapsedTime(setRequestStart, "Request: ExternalOutputsSet");
         rtapi_print_msg(RTAPI_MSG_INFO, "Change relays:%d\n", ret);
     }
 }
@@ -1320,7 +1323,8 @@ struct timespec* PMC_GetStartTime() {
 // ------------------------------------
 // Try to keep the cycle time within defined limits.
 // ------------------------------------
-void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum State currentState, enum State nextState) {
+void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum State currentState, struct ComponentStruct* componentInstance) {
+    enum State nextState = componentInstance->internal_state;
     struct timespec cycleEnd;
     clock_gettime(CLOCK_REALTIME, &cycleEnd);
     float t_ms = ((float)(cycleEnd.tv_sec - cycleStart->tv_sec) * 1.0e9 + (float)(cycleEnd.tv_nsec - cycleStart->tv_nsec)) / 1.0e6;
@@ -1336,13 +1340,22 @@ void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, e
             const char* currentStateName = PMC_GetStateName(currentState);
             const char* nextStateName = PMC_GetStateName(nextState);
 
+            rtapi_print_msg(RTAPI_MSG_WARN, "Request: StatusGet %fms", componentInstance->internals->times[0]);
+            rtapi_print_msg(RTAPI_MSG_WARN, "Request: DigitalIOSetGet %fms", componentInstance->internals->times[1]);
+            rtapi_print_msg(RTAPI_MSG_WARN, "Request: PWMUpdate %fms", componentInstance->internals->times[2]);
+            rtapi_print_msg(RTAPI_MSG_WARN, "Request: BufferFill %fms", componentInstance->internals->times[3]);
+            rtapi_print_msg(RTAPI_MSG_WARN, "Request: ExternalOutputsGet %fms", componentInstance->internals->times[4]);
+            rtapi_print_msg(RTAPI_MSG_WARN, "Request: ExternalOutputsSet %fms\n", componentInstance->internals->times[5]);
+
             if (t_ms <= CycleTimeMs + 3.0) {
-                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle greater than %fms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
+                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, greater than %fms elapsed %f ms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, t_ms, currentStateName, nextStateName);
             } else {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle greater than %f!ms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d,  greater than %f!ms elapsed %f ms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, t_ms, currentStateName, nextStateName);
             }
         }
     }
+
+    componentInstance->internals->cycles++;
 }
 
 // ------------------------------------
@@ -1363,13 +1376,13 @@ inline const char* PMC_GetStateName(enum State state) {
 // ------------------------------------
 // Logs the difference of the timestamp and current time.
 // ------------------------------------
-void PMC_PrintElapsedTime(struct timespec* startTime, const char* log) {
+float PMC_PrintElapsedTime(struct timespec* startTime, const char* log) {
     struct timespec endTime;
     clock_gettime(CLOCK_REALTIME, &endTime);
     float t_ms = ((float)(endTime.tv_sec - startTime->tv_sec) * 1.0e9 + (float)(endTime.tv_nsec - startTime->tv_nsec)) / 1.0e6;
     free(startTime);
 
-    if (t_ms < 0.5) {
+    /*if (t_ms < 0.5) {
         rtapi_print_msg(RTAPI_MSG_DBG, "%s took %f ms\n", log, t_ms);
     } else if (t_ms < 1.0) {
         rtapi_print_msg(RTAPI_MSG_INFO, "%s took %f ms\n", log, t_ms);
@@ -1377,7 +1390,9 @@ void PMC_PrintElapsedTime(struct timespec* startTime, const char* log) {
         rtapi_print_msg(RTAPI_MSG_WARN, "%s took %f ms\n", log, t_ms);
     } else {
         rtapi_print_msg(RTAPI_MSG_ERR, "%s took %f ms\n", log, t_ms);
-    }
+    }*/
+
+    return t_ms;
 }
 
 // ------------------------------------
