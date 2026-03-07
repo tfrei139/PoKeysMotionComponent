@@ -1175,7 +1175,10 @@ bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                     int milisSinceStart = fabs(((float)(currentTime->tv_sec - firstSend->tv_sec) * 1.0e9 + (float)(currentTime->tv_nsec - firstSend->tv_nsec)) / 1.0e6);
 
                     int currentBufferEntries = componentInstance->internals->motion_buffer_entries - milisSinceStart;
-                    rtapi_print_msg(RTAPI_MSG_ERR, "Calculated entries in Buffer: %d\n", currentBufferEntries);
+                    
+                    if (currentBufferEntries < 20) {
+                        rtapi_print_msg(RTAPI_MSG_ERR, "Calculated entries in Buffer: %d\n", currentBufferEntries);
+				    }
                 }
 
                 device->PEv2.newMotionBufferEntries = motionEntries;
@@ -1340,13 +1343,14 @@ void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, e
             const char* currentStateName = PMC_GetStateName(currentState);
             const char* nextStateName = PMC_GetStateName(nextState);
 
-            rtapi_print_msg(RTAPI_MSG_WARN, "Request: StatusGet %fms", componentInstance->internals->times[0]);
-            rtapi_print_msg(RTAPI_MSG_WARN, "Request: DigitalIOSetGet %fms", componentInstance->internals->times[1]);
-            rtapi_print_msg(RTAPI_MSG_WARN, "Request: PWMUpdate %fms", componentInstance->internals->times[2]);
-            rtapi_print_msg(RTAPI_MSG_WARN, "Request: BufferFill %fms", componentInstance->internals->times[3]);
-            rtapi_print_msg(RTAPI_MSG_WARN, "Request: ExternalOutputsGet %fms", componentInstance->internals->times[4]);
-            rtapi_print_msg(RTAPI_MSG_WARN, "Request: ExternalOutputsSet %fms\n", componentInstance->internals->times[5]);
-
+            rtapi_print_msg(RTAPI_MSG_WARN, "Requests: StatusGet %fms", componentInstance->internals->times[0]);
+            rtapi_print_msg(RTAPI_MSG_WARN, ", DigitalIOSetGet %fms", componentInstance->internals->times[1]);
+            rtapi_print_msg(RTAPI_MSG_WARN, ", PWMUpdate %fms", componentInstance->internals->times[2]);
+            rtapi_print_msg(RTAPI_MSG_WARN, ", BufferFill %fms", componentInstance->internals->times[3]);
+            rtapi_print_msg(RTAPI_MSG_WARN, ", ExternalOutputsGet %fms", componentInstance->internals->times[4]);
+            //rtapi_print_msg(RTAPI_MSG_WARN, "Request: ExternalOutputsSet %fms\n", componentInstance->internals->times[5]);
+			rtapi_print_msg(RTAPI_MSG_WARN, "\n");
+			
             if (t_ms <= CycleTimeMs + 3.0) {
                 rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, greater than %fms elapsed %f ms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, t_ms, currentStateName, nextStateName);
             } else {
@@ -1382,6 +1386,8 @@ float PMC_PrintElapsedTime(struct timespec* startTime, const char* log) {
     float t_ms = ((float)(endTime.tv_sec - startTime->tv_sec) * 1.0e9 + (float)(endTime.tv_nsec - startTime->tv_nsec)) / 1.0e6;
     free(startTime);
 
+	// Test delay between requests: The requests are not the issue. Hang also happens while sleep
+	// usleep(200);
     /*if (t_ms < 0.5) {
         rtapi_print_msg(RTAPI_MSG_DBG, "%s took %f ms\n", log, t_ms);
     } else if (t_ms < 1.0) {
