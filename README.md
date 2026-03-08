@@ -32,10 +32,12 @@ The controller will read the buffer and forward it to the PoKeys pulse engine. T
     - motion buffer in error situations
     - probing
     - soft limits
+- IO
+    - Matrix-Keyboard
 - Technical
     - Benchmark component
-    - Split up code base
-    - Merge components using `hal_export_funct`?
+    - Split up code base & Merge components using `hal_export_funct`?
+    - Velocity mode
 - Provide more example configurations
     - Complete MPG example
 
