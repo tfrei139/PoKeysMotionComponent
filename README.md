@@ -2,7 +2,7 @@
 LinuxCNC component to use a PoKeys controller for motion and simple IO
 
 ### State of the component
-**Experimental**. Tested on a Pokeys57CNC with 5'000 line gcode file, ~20 minutes run time, with the given example configuration.
+**Prototype**. Tested LinuxCNC 2.9.4 and 2.9.8 on a Pokeys57CNC with 5'000 line gcode file, ~20 minutes run time, with the given example configuration.
 
 ## Introduction
 This component aims to provide a simple integration of a PoKeys IO/CNC controller into LinuxCNC.  
@@ -26,20 +26,6 @@ The controller will read the buffer and forward it to the PoKeys pulse engine. T
     - Configurable digital input/output pins
     - PWM pins (example spindle speed control)
     - Basic, fast and ultra fast encoders (example MPG jogging)
-
-### Backlog
-- Testing
-    - motion buffer in error situations
-    - probing
-    - soft limits
-- IO
-    - Matrix-Keyboard
-- Technical
-    - Benchmark component
-    - Split up code base & Merge components using `hal_export_funct`?
-    - Velocity mode
-- Provide more example configurations
-    - Complete MPG example
 
 ## Setup
 A walkthrough to set this component up is available here [Setup](documentation/Setup.md)
