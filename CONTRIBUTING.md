@@ -20,7 +20,6 @@ This list is mainly intended as a reminder for myself.
 - IO
     - Matrix-Keyboard (up to 8x8 should be basically free with `PK_DigitalIOSetGet`)
 - Technical
-    - Benchmark component
     - Split up code base & Merge components using `hal_export_funct`?
     - Velocity mode
 - Provide more example configurations
