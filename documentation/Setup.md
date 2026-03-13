@@ -1,8 +1,9 @@
 # Setup
-This walkthrough should help you setup this component on a clean installation of LinuxCNC.
+This walkthrough should help you setup this component on a clean installation of LinuxCNC.  
+For installation of LinuxCNC, see the [its own documentation](https://linuxcnc.org/docs/stable/html/getting-started/getting-linuxcnc.html)
 
 ## Prerequisite
-- An installation of LinuxCNC > 2.9 (2.9.4 at the time of this writing) (*TODO* would this work with live-linuxCNC too?)
+- An installation of LinuxCNC > 2.9 (2.9.8 at the time of this writing) (*TODO* would this work with live-linuxCNC too?)
 - The PoKeys device and motors are set up with the PoKeys configuration application. (*TODO* specify minimum)
 
 ## Getting the component
@@ -27,16 +28,24 @@ git clone https://github.com/PoLabsEE/PoKeysLib
 
 ### Getting the dependencies
 ```bash
-sudo apt install build-essential libusb-1.0-0 libusb-1.0-0-dev
+sudo apt install libusb-1.0-0-dev
 ```
+> Dependencies "build-essential" and "libusb-1.0-0" should already be available with a LinuxCNC installation
 
 ### Enabling FastUSB support
-> *TODO* find out why this step is necessary. The make file contains "-DPOKEYSLIB_USE_LIBUSB"?
+> By default the PoKeysLib is not built with FastUsb support.  
+> I assume the original library uses a different compiler or local settings, that do not match a default LinuxCNC/debian installation.
 
-Add the following snippet to each file: `PoKeysLib.h`, `PoKeysLibCore.c`, `PoKeysLibFastUSB.c`
+In the `Makefile.noqmake` add the `-DPOKEYSLIB_USE_LIBUSB` parameter
+```makefile
+CFLAGS=-fPIC -DPOKEYSLIB_USE_LIBUSB
+```
+
+Add `libusb-1.0/` to the include in both files: `PoKeysLib.h`, `PoKeysLibFastUSB.c`
 ```C
-#ifndef POKEYSLIB_USE_LIBUSB
-    #define POKEYSLIB_USE_LIBUSB
+//#define POKEYSLIB_USE_LIBUSB
+#ifdef POKEYSLIB_USE_LIBUSB
+    #include "libusb-1.0/libusb.h"
 #endif
 ```
 
@@ -48,8 +57,10 @@ sudo make -f Makefile.noqmake install
 
 ## Enabling USB support
 If you want to use a (Fast-)USB connection, you need to ensure that Linux gives you ReadWrite permissions to the device.  
-Create a new file `/etc/udev/rules.d/90-usb-pokeys.rules`  
-Add the content `SUBSYSTEM=="usb", ATTRS{idVendor}=="1dc3", ATTRS{idProduct}=="1001", GROUP="plugdev", MODE="664"`  
+Create a new file `/etc/udev/rules.d/90-usb-pokeys.rules`, add the content
+```
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1dc3", ATTRS{idProduct}=="1001", GROUP="plugdev", MODE="664"
+```
 Ensure your user is in the `plugdev` group
 ```bash
 sudo usermod -a -G plugdev <username>
