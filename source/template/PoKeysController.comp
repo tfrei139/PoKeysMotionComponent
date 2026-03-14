@@ -16,6 +16,7 @@ pin out bit io.encoder.#.index [5] "Encoders, index triggered";
 pin out float io.encoder.#.cps [5] "Encoders, counts/second";
 pin out float io.encoder.#.vps [5] "Encoders, velocity [(count/scale)/second]";
 
+pin out bit motion.is_ready = false "Indicates that the component is ready to accept motion commands";
 pin in bit motion.override_limit.# [16] "Limit switch override. Any pin set overrides globally on PoKeys";
 
 pin out float axis.#.position_feedback [8] "Position in machine units";
