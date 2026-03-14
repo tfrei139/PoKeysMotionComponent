@@ -1161,7 +1161,6 @@ bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
     hal_stream_detach(&stream);
 
-
     return continueMove;
 }
 
