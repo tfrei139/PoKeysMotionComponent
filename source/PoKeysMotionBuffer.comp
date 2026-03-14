@@ -27,7 +27,7 @@ author "T.Frei";
 #define SharedMemoryKey 57       // Arbitrary number
 #define BufferDepth 128          // Buffer on PoKeys side would be 128
 #define EndOfMotionPacket 0x0101 // Arbitrary number > uint8
-//#define MeasureTime
+//#define MeasureTime            // Debug information how long the methods take
 
 hal_stream_t* MotionStream;
 bool IsInit = false;

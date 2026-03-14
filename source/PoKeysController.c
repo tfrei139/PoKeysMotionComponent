@@ -1075,14 +1075,17 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
 // TODO
 // ------------------------------------
 bool PMC_StreamAvailable(struct ComponentStruct* componentInstance) {
+    hal_stream_t stream;
     int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
 
     if (ret < 0) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error=%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error: %d\n", ret);
         return false;
     }
 
-    return hal_stream_readable(&stream);
+    bool readable = hal_stream_readable(&stream);
+    hal_stream_detach(&stream);
+    return readable;
 }
 
 // ------------------------------------
@@ -1095,7 +1098,7 @@ bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
     int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
 
     if (ret < 0) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error=%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error: %d\n", ret);
         return false;
     }
 
@@ -1125,28 +1128,33 @@ bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
             ret = hal_stream_read(&stream, dataToReceive, NULL);
 
             if (ret != 0) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Error reading stream:%d\n", ret);
+                rtapi_print_msg(RTAPI_MSG_ERR, "Error reading stream: %d\n", ret);
                 continueMove = false;
                 break;
             }
 
             if (dataToReceive[0].s == EndOfMotionPacket) {
-                rtapi_print_msg(RTAPI_MSG_DBG, "End of motion\n");
+                //rtapi_print_msg(RTAPI_MSG_DBG, "End of motion\n");
                 continueMove = false;
-                break;
+                streamReadable = false;
+            } else {
+                for (int i = 0; i < numberOfAxes; i++) {
+                    if (dataToReceive[i].s > 256) {
+                        // TODO document
+                        rtapi_print_msg(RTAPI_MSG_ERR, "Motion commanded exceeds limit: %d\n", dataToReceive[i].s);
+                    }
+
+                    uint8_t motion = dataToReceive[i].s;
+                    //rtapi_print_msg(RTAPI_MSG_DBG, "%d,", motion);
+                    device->PEv2.MotionBuffer[(motionEntries * numberOfAxes) + i] = motion;
+                }
+
+                //rtapi_print_msg(RTAPI_MSG_DBG, "\n");
+
+                motionEntries++;
+
+                streamReadable = hal_stream_readable(&stream);
             }
-
-            for (int i = 0; i < numberOfAxes; i++) {
-                uint8_t motion = dataToReceive[i].s;
-                //rtapi_print_msg(RTAPI_MSG_DBG, "%d,", motion);
-                device->PEv2.MotionBuffer[(motionEntries * numberOfAxes) + i] = motion;
-            }
-
-            //rtapi_print_msg(RTAPI_MSG_DBG, "\n");
-
-            motionEntries++;
-
-            streamReadable = hal_stream_readable(&stream);
 
             if (streamReadable == false || motionEntries == maxMotionPackets) {
                 device->PEv2.newMotionBufferEntries = motionEntries;
@@ -1155,7 +1163,7 @@ bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
                 if (device->PEv2.motionBufferEntriesAccepted != motionEntries) {
                     // TODO handle if not all buffer entries are accepted
-                    rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes NOT ALL BUFFER ENTRIES ACCEPTED (%d, accepted %d)%d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
+                    rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes NOT ALL BUFFER ENTRIES ACCEPTED (%d, accepted %d) %d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
                 }
 
                 motionEntries = 0;
