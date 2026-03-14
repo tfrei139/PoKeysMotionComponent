@@ -3,6 +3,7 @@ component PoKeysMotionBuffer;
 pin in bit machine_is_on = false "HALUI: Only when the machine is enabled, motion can happend";
 
 pin out bit in_motion = false "Indicates that in the last cycle we were streaming (DEBUG)";
+pin out signed motion_period = 0 "TODO (DEBUG)";
 pin out bit stream_error = false "Indicates that the stream has an error (DEBUG)";
 
 pin in float axis.#.position_command [8 : personality] "Commanded position by the motion controller";
@@ -95,6 +96,7 @@ FUNCTION(_) {
     if (!machine_is_on && IsInit) {
         IsInit = false;
         in_motion = false;
+        motion_period = 0;
         return;
     }
 
@@ -114,7 +116,16 @@ FUNCTION(_) {
 
         if (fabs(differenceInPosition) >= axis_following_error(i)) {
             motionCommanded = true;
+            motion_period = 0;
             break;
+        }
+    }
+
+    if (in_motion == true && motionCommanded == false) {
+        motion_period++;
+
+        if (motion_period < 5) {
+            motionCommanded = true;
         }
     }
 
