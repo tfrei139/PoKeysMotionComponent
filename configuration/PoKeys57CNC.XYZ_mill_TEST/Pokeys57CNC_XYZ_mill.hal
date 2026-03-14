@@ -18,6 +18,9 @@ loadrt PoKeysMotionBuffer personality=[PoKeysController.0]NUMBER_AXES
 setp PoKeysMotionBuffer.0.axis.0.step-scale [PoKeysController.0]AXIS0_STEP_SCALE
 setp PoKeysMotionBuffer.0.axis.1.step-scale [PoKeysController.0]AXIS1_STEP_SCALE
 setp PoKeysMotionBuffer.0.axis.2.step-scale [PoKeysController.0]AXIS2_STEP_SCALE
+setp PoKeysMotionBuffer.0.axis.0.following-error 0.05
+setp PoKeysMotionBuffer.0.axis.1.following-error 0.05
+setp PoKeysMotionBuffer.0.axis.2.following-error 0.05
 
 # external output signals
 net machine-is-on <= halui.machine.is-on
@@ -27,12 +30,6 @@ net machine-is-on => PoKeysController.0.machine-is-on
 # buffer detects motion
 net buffer-in-motion <= PoKeysMotionBuffer.0.in-motion
 net buffer-in-motion => PoKeysController.0.motion.started
-
-# Indicators that motion should happen
-net motion-jog-is-active <= motion.jog-is-active
-net motion-jog-is-active => PoKeysMotionBuffer.0.motion-jog-is-active
-net motion-in-position <= motion.in-position
-net motion-in-position => PoKeysMotionBuffer.0.motion-in-position
 
 #*******************
 # E-Stop latch component

@@ -1,16 +1,16 @@
 component PoKeysMotionBuffer;
 
 pin in bit machine_is_on = false "HALUI: Only when the machine is enabled, motion can happend";
-pin in bit motion_in_position = true "When the motion planner is not in position, we stream the commanded position";
-pin in bit motion_jog_is_active = false "When the motion planner is jogging, in position remains true. We stream the commanded position";
 
 pin out bit in_motion = false "Indicates that the stream is open";
+pin out bit stream_error = false "Indicates that the stream has an error (DEBUG)";
 
 pin in float axis.#.position_command [8 : personality] "Commanded position by the motion controller";
 pin out float axis.#.last_position [8 : personality] "Internal tracking of last commanded position (DEBUG)";
 pin out float axis.#.pulses_leftover [8 : personality] "Internal tracking of partial pulses (DEBUG)";
 
 param rw float axis.#.step_scale [8 : personality] "1 machine unit equals x pulses";
+param rw float axis.#.following_error [8 : personality] "Allowed difference between commanded and actual position, must be bigger than step_width";
 param r float axis.#.step_width [8 : personality] "1 pulse equals x units (DEBUG)";
 
 function _;
@@ -108,62 +108,71 @@ FUNCTION(_) {
         return;
     }
 
-	if (motion_in_position == false || motion_jog_is_active == true) {
-		for (int i = 0; i < personality; i++) {
-#ifdef MeasureTime
-            long long startTime = rtapi_get_time();
-#endif
-			union hal_stream_data dataToSend[personality];
+    bool motionCommanded = false;
+    for (int i = 0; i < personality; i++) {
+        float differenceInPosition = axis_position_command(i) - axis_last_position(i);
 
-            for (int i = 0; i < personality; i++) {
-                float differenceInPosition = axis_position_command(i) - axis_last_position(i);
-
-                if (fabs(differenceInPosition) < axis_step_width(i)) {
-                    dataToSend[i].s = 0;
-                } else {
-					axis_last_position(i) = axis_position_command(i);
-
-                    float pulsesDifference = differenceInPosition * axis_step_scale(i);
-                    int32_t pulses = floor(pulsesDifference);
-                    axis_pulses_leftover(i) += (pulsesDifference - pulses);
-
-                    if (axis_pulses_leftover(i) >= 1.0f) {
-                        pulses++;
-                        axis_pulses_leftover(i) -= 1.0f;
-                    }
-                    else if (axis_pulses_leftover(i) <= -1.0f) {
-                        pulses--;
-                        axis_pulses_leftover(i) += 1.0f;
-                    }
-
-                    int32_t motion = abs(pulses) & 127;
-
-                    if (pulses < 0) {
-                        motion |= (1<<7);
-                    }
-
-                    dataToSend[i].s = motion;
-                }
-            }
-
-            int writeRes = hal_stream_write(MotionStream, dataToSend);
-            if (writeRes != 0) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun: %d\n", writeRes);
-            }
-
-            in_motion = true;
-
-#ifdef MeasureTime
-            long long endTime = rtapi_get_time();
-            long int deltaTime = (long int)(endTime - startTime) / 1000;
-
-            if (deltaTime >= 50) {
-				rtapi_print_msg(RTAPI_MSG_WARN, "BUFFER SEND took: %dus\n", deltaTime);
-			}
-#endif
-
-            return;
+        if (differenceInPosition >= axis_following_error(i)) {
+            motionCommanded = true;
+            break;
         }
+    }
+
+	if (motionCommanded) {
+#ifdef MeasureTime
+        long long startTime = rtapi_get_time();
+#endif
+        union hal_stream_data dataToSend[personality];
+
+        for (int i = 0; i < personality; i++) {
+            float differenceInPosition = axis_position_command(i) - axis_last_position(i);
+
+            if (fabs(differenceInPosition) < axis_step_width(i)) {
+                dataToSend[i].s = 0;
+            } else {
+                axis_last_position(i) = axis_position_command(i);
+
+                float pulsesDifference = differenceInPosition * axis_step_scale(i);
+                int32_t pulses = floor(pulsesDifference);
+                axis_pulses_leftover(i) += (pulsesDifference - pulses);
+
+                if (axis_pulses_leftover(i) >= 1.0f) {
+                    pulses++;
+                    axis_pulses_leftover(i) -= 1.0f;
+                }
+                else if (axis_pulses_leftover(i) <= -1.0f) {
+                    pulses--;
+                    axis_pulses_leftover(i) += 1.0f;
+                }
+
+                int32_t motion = abs(pulses) & 127;
+
+                if (pulses < 0) {
+                    motion |= (1<<7);
+                }
+
+                dataToSend[i].s = motion;
+            }
+        }
+
+        int writeRes = hal_stream_write(MotionStream, dataToSend);
+        if (writeRes != 0 && stream_error == false) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun: %d\n", writeRes);
+            stream_error = true;
+        }
+
+        in_motion = true;
+
+#ifdef MeasureTime
+        long long endTime = rtapi_get_time();
+        long int deltaTime = (long int)(endTime - startTime) / 1000;
+
+        if (deltaTime >= 50) {
+            rtapi_print_msg(RTAPI_MSG_WARN, "BUFFER SEND took: %dus\n", deltaTime);
+        }
+#endif
+
+        return;
 	}
 
     if (in_motion == true) {
@@ -173,8 +182,11 @@ FUNCTION(_) {
         dataToSend[0].s = EndOfMotionPacket;
         int writeRes = hal_stream_write(MotionStream, dataToSend);
 
-        if (writeRes != 0) {
+        if (writeRes != 0 && stream_error == false) {
             rtapi_print_msg(RTAPI_MSG_ERR, "End of Motion BUFFER overrun: %d\n", writeRes);
         }
+
+        // reset stream error at the end of one motion.
+        stream_error = false;
     }
 }
