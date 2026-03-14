@@ -18,9 +18,6 @@ loadrt PoKeysMotionBuffer personality=[PoKeysController.0]NUMBER_AXES
 setp PoKeysMotionBuffer.0.axis.0.step-scale [PoKeysController.0]AXIS0_STEP_SCALE
 setp PoKeysMotionBuffer.0.axis.1.step-scale [PoKeysController.0]AXIS1_STEP_SCALE
 setp PoKeysMotionBuffer.0.axis.2.step-scale [PoKeysController.0]AXIS2_STEP_SCALE
-setp PoKeysMotionBuffer.0.axis.0.following-error 0.0125
-setp PoKeysMotionBuffer.0.axis.1.following-error 0.0125
-setp PoKeysMotionBuffer.0.axis.2.following-error 0.00625
 
 # external output signals
 net machine-is-on <= halui.machine.is-on
