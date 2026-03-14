@@ -31,8 +31,7 @@ MODULE_INFO(linuxcnc, "pin:io.encoder.#.count:s32:5:out:Encoders, raw count:None
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.index:bit:5:out:Encoders, index triggered:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.cps:float:5:out:Encoders, counts/second:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.vps:float:5:out:Encoders, velocity [(count/scale)/second]:None:None");
-MODULE_INFO(linuxcnc, "pin:motion.started:bit:0:in:Motion is being streamed:false:None");
-MODULE_INFO(linuxcnc, "pin:motion.override_limit.#:bit:6:in:Limit switch override. Any pin set overrides globally on PoKeys:None:None");
+MODULE_INFO(linuxcnc, "pin:motion.override_limit.#:bit:16:in:Limit switch override. Any pin set overrides globally on PoKeys:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:8:out:Position in machine units:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.limit_positive:bit:8:out:Positive limit switches:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.limit_negative:bit:8:out:Negative limit switches:None:None");
@@ -46,7 +45,7 @@ MODULE_LICENSE("GPL");
 
 // Component extra configuration
 #define ComponentStruct __comp_state    // Internal struct of component
-#define NumberOfOverridePins 6          // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
+#define NumberOfOverridePins 16         // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
 #define NumberOfDigitalPins 10          // Applies to both input and output pins. Could be raised as necessary
 #define NumberOfEncoders 5              // Up to 25+1 encoders. Could be raised as necessary
 #define NoEncoderIndex -127
@@ -98,7 +97,6 @@ struct __comp_state {
     hal_bit_t* io_encoder_index[NumberOfEncoders];
     hal_float_t *io_encoder_cps[NumberOfEncoders];
     hal_float_t *io_encoder_vps[NumberOfEncoders];
-    hal_bit_t* motion_started;
     hal_bit_t* motion_override_limit[NumberOfOverridePins];
     hal_float_t* axis_position_feedback[8];
     hal_bit_t* axis_limit_positive[8];
@@ -209,10 +207,6 @@ static int export(char *prefix, long extra_arg) {
             "%s.io.encoder.%01d.vps", prefix, j);
         if(r != 0) return r;
     }
-    r = hal_pin_bit_newf(HAL_IN, &(inst->motion_started), comp_id,
-        "%s.motion.started", prefix);
-    if(r != 0) return r;
-    *(inst->motion_started) = false;
     for(j=0; j < (NumberOfOverridePins); j++) {
         r = hal_pin_bit_newf(HAL_IN, &(inst->motion_override_limit[j]), comp_id,
             "%s.motion.override-limit.%01d", prefix, j);
@@ -386,6 +380,7 @@ void PMC_ProcessEStop(struct ComponentStruct* componentInstance);
 void PMC_ProcessDigitalPins(struct ComponentStruct* componentInstance);
 void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance);
 void PMC_ProcessEncoders(struct ComponentStruct* componentInstance);
+bool PMC_StreamAvailable(struct ComponentStruct* componentInstance);
 bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance);
 void PMC_ProcessPositions(struct ComponentStruct* componentInstance);
 void PMC_ProcessRelays(struct ComponentStruct* componentInstance);
@@ -471,7 +466,7 @@ void user_mainloop(void) {
                     PMC_ProcessLimitOverride(currentInstance);
 
                     // Check if motion is commanded
-                    if (0 + *currentInstance->motion_started == true) {
+                    if (PMC_StreamAvailable(currentInstance)) {
                         // switching states gives us at most "CycleTimeMs" of buffer.
                         // sleep specific time to give the buffer extra time (20ms) to fill up.
                         // OPTIONAL introduce "Buffering" state.
@@ -1074,6 +1069,20 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
             }
         }
     }
+}
+
+// ------------------------------------
+// TODO
+// ------------------------------------
+bool PMC_StreamAvailable(struct ComponentStruct* componentInstance) {
+    int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
+
+    if (ret < 0) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error=%d\n", ret);
+        return false;
+    }
+
+    return hal_stream_readable(&stream);
 }
 
 // ------------------------------------

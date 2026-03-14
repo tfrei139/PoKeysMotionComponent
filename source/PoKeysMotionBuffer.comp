@@ -2,7 +2,7 @@ component PoKeysMotionBuffer;
 
 pin in bit machine_is_on = false "HALUI: Only when the machine is enabled, motion can happend";
 
-pin out bit in_motion = false "Indicates that the stream is open";
+pin out bit in_motion = false "Indicates that in the last cycle we were streaming (DEBUG)";
 pin out bit stream_error = false "Indicates that the stream has an error (DEBUG)";
 
 pin in float axis.#.position_command [8 : personality] "Commanded position by the motion controller";

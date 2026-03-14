@@ -27,10 +27,6 @@ net machine-is-on <= halui.machine.is-on
 net machine-is-on => PoKeysMotionBuffer.0.machine-is-on
 net machine-is-on => PoKeysController.0.machine-is-on
 
-# buffer detects motion
-net buffer-in-motion <= PoKeysMotionBuffer.0.in-motion
-net buffer-in-motion => PoKeysController.0.motion.started
-
 #*******************
 # E-Stop latch component
 #*******************
