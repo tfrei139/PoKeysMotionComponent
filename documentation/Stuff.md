@@ -43,11 +43,29 @@ When the rt component logs an error it will also show up in gmoccapy. The gmocca
 TODO What is LinuxCNCs component logging concept?  
 [Semi-relevant forum entry](https://forum.linuxcnc.org/38-general-linuxcnc-questions/35916-where-are-the-f-ng-rtapi-print-msg-rtapi-msg-info-messages)
 
-## Original test system specs
+## Test system specs
+### Original development system
 ASUS all-in-one V161, BIOS V308, Intel Celeron N4000 1.1 GHz up to 2.6 GHz, 2 cores.  
 PoKeys57CNC, V1.3, Firmware V4.4.19  
 LinuxCNC 2.9.4 PREEMPT-RT  
 Latency Test, Max Jitter: Servo Thread 53'936ns, Base Thread 79'713ns
 
+### Raspberry Pi system
+Raspberry Pi 5, 8GB, 32GB SanDisk Ultra MicroSD
+PoKeys57CNC, V1.3, Firmware V4.4.19  
+Raspios-lcnc-2.9.8-trixie  
+Latency Test, Max Jitter: Servo Thread 43'123ns, Base Thread 38'017ns
+
 ## Userspace components do not support personality
 [LinuxCNC Issue 1089](https://github.com/LinuxCNC/linuxcnc/issues/1089)
+
+## Performance tuning
+### Disable Bluetooth
+> sudo touch /etc/modprobe.d/bluetooth-blacklist.conf
+
+Edit, add
+```
+blacklist btusb
+blacklist bluetooth
+```
+> sudo update-grub
