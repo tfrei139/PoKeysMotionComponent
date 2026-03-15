@@ -372,7 +372,10 @@ enum State {
     IDLE = 1,               // Connected and PE stopped state
     ENABLED = 2,            // Connected and PE running state (not moving)
     MOVING = 3,             // Connected and PE running state (moving)
-    ESTOP = 4,              // ESTOP toggled
+    MOTIONERROR = 4,        // Stop motion due to error
+    MOTIONDISABLE = 5,      // Stop motion due to disabled machine
+    MOTIONESTOP = 6,        // Stop motion due to emergency stop
+    ESTOP = 7,              // Emergency stop toggled
 };
 
 // ------------------------------------
@@ -387,7 +390,8 @@ void PMC_ProcessDigitalPins(struct ComponentStruct* componentInstance);
 void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance);
 void PMC_ProcessEncoders(struct ComponentStruct* componentInstance);
 bool PMC_StreamAvailable(struct ComponentStruct* componentInstance);
-bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance);
+void PMC_FinishStream(struct ComponentStruct* componentInstance);
+enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance);
 void PMC_ProcessPositions(struct ComponentStruct* componentInstance);
 void PMC_ProcessRelays(struct ComponentStruct* componentInstance);
 bool PMC_CompareRelayState(sPoKeysDevice* device, bool state, int offset);
@@ -488,26 +492,22 @@ void user_mainloop(void) {
 
                     break;
                 case MOVING:
-                    if (!PMC_ProcessMoveCommand(currentInstance)) {
-                        currentInstance->internal_state = ENABLED;
-                    }
+                    currentInstance->internal_state = PMC_ProcessMoveCommand(currentInstance);
 
                     PMC_ProcessEStop(currentInstance);
 
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
-                        // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
                         currentInstance->motion_is_ready = false;
-                        currentInstance->internal_state = ESTOP;
+                        currentInstance->internal_state = MOTIONESTOP;
                         break;
                     }
 
                     // Machine is disabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == false) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
-                        // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
                         currentInstance->motion_is_ready = false;
-                        currentInstance->internal_state = IDLE;
+                        currentInstance->internal_state = MOTIONDISABLE;
                         break;
                     }
 
@@ -517,6 +517,24 @@ void user_mainloop(void) {
                     PMC_ProcessPwmPins(currentInstance);
                     PMC_ProcessEncoders(currentInstance);
 
+                    break;
+                case MOTIONERROR:
+                    // Most likely error, buffer underrun. Return to enabled state and retry?
+                    currentInstance->internal_state = ENABLED;
+                    break;
+                case MOTIONDISABLE:
+                    // sleep to give the buffer a little time (2ms) to process the stop and send EOM.
+                    usleep(2000);
+                    PMC_FinishStream();
+                    overrideCycleTime = true;
+                    currentInstance->internal_state = IDLE;
+                    break;
+                case MOTIONESTOP:
+                    // sleep to give the buffer a little time (2ms) to process the stop and send EOM.
+                    usleep(2000);
+                    PMC_FinishStream();
+                    overrideCycleTime = true;
+                    currentInstance->internal_state = ESTOP;
                     break;
                 case ESTOP:
                     PMC_ReadPulseEngineStatus(currentInstance);
@@ -1100,17 +1118,60 @@ bool PMC_StreamAvailable(struct ComponentStruct* componentInstance) {
 }
 
 // ------------------------------------
+// TODO
+// ------------------------------------
+void PMC_FinishStream(struct ComponentStruct* componentInstance) {
+    hal_stream_t stream;
+    int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
+
+    if (ret < 0) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "Finishing stream, error attaching: %d\n", ret);
+        return;
+    }
+
+    bool readable = hal_stream_readable(&stream);
+    bool lastDataWasEOM = false;
+
+    do
+    {
+        union hal_stream_data dataToReceive[numberOfAxes];
+        ret = hal_stream_read(&stream, dataToReceive, NULL);
+
+        if (ret != 0) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "Finishing stream, error reading: %d\n", ret);
+            return;
+        }
+
+        if (dataToReceive[0].s == EndOfMotionPacket) {
+            rtapi_print_msg(RTAPI_MSG_INFO, "Finishing stream, end of motion received\n"); // TODO DEBUG?
+            lastDataWasEOM = true;
+        } else {
+            lastDataWasEOM = false;
+        }
+
+        readable = hal_stream_readable(&stream);
+    }
+    while (readable);
+
+    hal_stream_detach(&stream);
+
+    if (!lastDataWasEOM) {
+        rtapi_print_msg(RTAPI_MSG_WARN, "Finishing stream, did not finish with EOM\n");
+    }
+}
+
+// ------------------------------------
 // Process streamed move command and implicitly update PE status information.
 // Returns false when movement stops.
 // ------------------------------------
-bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
-    bool continueMove = true;
+enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
+    enum State nextState = MOVING;
     hal_stream_t stream;
     int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
 
     if (ret < 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error: %d\n", ret);
-        return false;
+        return MOTIONERROR;
     }
 
     bool streamReadable = hal_stream_readable(&stream);
@@ -1140,13 +1201,13 @@ bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
             if (ret != 0) {
                 rtapi_print_msg(RTAPI_MSG_ERR, "Error reading stream: %d\n", ret);
-                continueMove = false;
+                nextState = MOTIONERROR;
                 break;
             }
 
             if (dataToReceive[0].s == EndOfMotionPacket) {
                 //rtapi_print_msg(RTAPI_MSG_DBG, "End of motion\n");
-                continueMove = false;
+                nextState = ENABLED;
                 streamReadable = false;
             } else {
                 for (int i = 0; i < numberOfAxes; i++) {
@@ -1184,12 +1245,12 @@ bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
         while (streamReadable);
     } else {
         rtapi_print_msg(RTAPI_MSG_ERR, "Buffer underrun? EndOfMotion Packet missing?\n");
-        continueMove = false;
+        nextState = MOTIONERROR;
     }
 
     hal_stream_detach(&stream);
 
-    return continueMove;
+    return nextState;
 }
 
 // ------------------------------------
@@ -1335,6 +1396,9 @@ inline const char* PMC_GetStateName(enum State state) {
         case IDLE: return "IDLE";
         case ENABLED: return "ENABLED";
         case MOVING: return "MOVING";
+        case MOTIONERROR: return "MOTIONERROR";
+        case MOTIONDISABLE: return "MOTIONDISABLE";
+        case MOTIONESTOP: return "MOTIONESTOP";
         case ESTOP: return "ESTOP";
         default: return "UNDEFINED";
     }
