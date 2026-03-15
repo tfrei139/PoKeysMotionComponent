@@ -1,7 +1,7 @@
 component PoKeysMotionBuffer;
 
 pin in bit motion.is_ready = false "Only when the receiving component is ready, motion can happen";
-pin out bit motion.is_init = false "TODO";
+pin out bit motion.is_init = false "Flag whether the internal position is synchTODO";
 pin out bit motion.is_streaming = false "TODO";
 pin out unsigned motion.idle_count = 0 "TODO";
 pin out bit motion.has_error = false "Indicates that the stream had an error, to prevent spamming from RT thread, only show error once (DEBUG)";
@@ -27,7 +27,7 @@ author "T.Frei";
 #define SharedMemoryKey 57       // Arbitrary number
 #define BufferDepth 128          // Buffer on PoKeys side would be 128
 #define EndOfMotionPacket 0x0101 // Arbitrary number > uint8
-#define IdleBuffer 10             // Interrupting streaming because we aren't moving for a milisecond is preventing smooth operation
+#define IdleBuffer 10            // Interrupting streaming because we aren't moving for a milisecond is preventing smooth operation
 //#define MeasureTime            // Debug information how long the methods take
 
 hal_stream_t* MotionStream;      // Streaming exchange to the uspace component
@@ -93,20 +93,35 @@ EXTRA_CLEANUP() {
 // ------------------------------------
 FUNCTION(_) {
     if (!motion_is_ready && motion_is_init) {
-        motion_is_init = false;
-        motion_is_streaming = false;
-        motion_idle_count = 0;
+        if (motion_is_streaming) {
+            union hal_stream_data dataToSend[personality];
+            dataToSend[0].s = EndOfMotionPacket;
+            int writeRes = hal_stream_write(MotionStream, dataToSend);
+
+            if (writeRes != 0 && motion_has_error == false) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "End of Motion BUFFER overrun: %d\n", writeRes);
+            }
+
+            motion_has_error = false
+            motion_is_streaming = false;
+        }
+
+        if (motion_is_init) {
+            motion_is_init = false;
+            motion_idle_count = 0;
+        }
+
         return;
     }
 
-    if (motion_is_ready && !motion_is_init) {
+    if (!motion_is_init) {
         for (int i = 0; i < personality; i++) {
             axis_last_position(i) = axis_position_command(i);
             axis_pulses_leftover(i) = 0.0f;
             axis_step_width(i) = 1 / fabs(axis_step_scale(i));
         }
+
         motion_is_init = true;
-        return;
     }
 
     bool motionCommanded = false;
@@ -120,7 +135,7 @@ FUNCTION(_) {
         }
     }
 
-    if (motion_is_streaming && motionCommanded == false) {
+    if (motion_is_streaming && !motionCommanded) {
         motion_idle_count++;
 
         if (motion_idle_count < IdleBuffer) {

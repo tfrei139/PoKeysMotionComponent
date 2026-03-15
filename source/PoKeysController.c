@@ -31,6 +31,7 @@ MODULE_INFO(linuxcnc, "pin:io.encoder.#.count:s32:5:out:Encoders, raw count:None
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.index:bit:5:out:Encoders, index triggered:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.cps:float:5:out:Encoders, counts/second:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.vps:float:5:out:Encoders, velocity [(count/scale)/second]:None:None");
+MODULE_INFO(linuxcnc, "pin:motion.is_ready:bit:0:out:Indicates that the component is ready to accept motion commands:false:None");
 MODULE_INFO(linuxcnc, "pin:motion.override_limit.#:bit:16:in:Limit switch override. Any pin set overrides globally on PoKeys:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:8:out:Position in machine units:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.limit_positive:bit:8:out:Positive limit switches:None:None");
@@ -97,6 +98,7 @@ struct __comp_state {
     hal_bit_t* io_encoder_index[NumberOfEncoders];
     hal_float_t *io_encoder_cps[NumberOfEncoders];
     hal_float_t *io_encoder_vps[NumberOfEncoders];
+    hal_bit_t *motion_is_ready;
     hal_bit_t* motion_override_limit[NumberOfOverridePins];
     hal_float_t* axis_position_feedback[8];
     hal_bit_t* axis_limit_positive[8];
@@ -207,6 +209,10 @@ static int export(char *prefix, long extra_arg) {
             "%s.io.encoder.%01d.vps", prefix, j);
         if(r != 0) return r;
     }
+    r = hal_pin_bit_newf(HAL_OUT, &(inst->motion_is_ready), comp_id,
+        "%s.motion.is-ready", prefix);
+    if(r != 0) return r;
+    *(inst->motion_is_ready) = false;
     for(j=0; j < (NumberOfOverridePins); j++) {
         r = hal_pin_bit_newf(HAL_IN, &(inst->motion_override_limit[j]), comp_id,
             "%s.motion.override-limit.%01d", prefix, j);
@@ -428,6 +434,7 @@ void user_mainloop(void) {
                     // Machine is enabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == true) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peRUNNING, "Set PE Running from IDLE");
+                        currentInstance->motion_is_ready = true;
                         currentInstance->internal_state = ENABLED;
                         break;
                     }
@@ -447,6 +454,7 @@ void user_mainloop(void) {
 
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
+                        currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = ESTOP;
                         break;
                     }
@@ -454,6 +462,7 @@ void user_mainloop(void) {
                     // Machine is disabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == false) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
+                        currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = IDLE;
                         break;
                     }
@@ -488,6 +497,7 @@ void user_mainloop(void) {
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
+                        currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = ESTOP;
                         break;
                     }
@@ -496,6 +506,7 @@ void user_mainloop(void) {
                     if (0 + *currentInstance->machine_is_on == false) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
+                        currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = IDLE;
                         break;
                     }
