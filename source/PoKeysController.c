@@ -438,7 +438,7 @@ void user_mainloop(void) {
                     // Machine is enabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == true) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peRUNNING, "Set PE Running from IDLE");
-                        currentInstance->motion_is_ready = true;
+                        *currentInstance->motion_is_ready = true;
                         currentInstance->internal_state = ENABLED;
                         break;
                     }
@@ -458,7 +458,7 @@ void user_mainloop(void) {
 
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
-                        currentInstance->motion_is_ready = false;
+                        *currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = ESTOP;
                         break;
                     }
@@ -466,7 +466,7 @@ void user_mainloop(void) {
                     // Machine is disabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == false) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
-                        currentInstance->motion_is_ready = false;
+                        *currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = IDLE;
                         break;
                     }
@@ -498,7 +498,7 @@ void user_mainloop(void) {
 
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
-                        currentInstance->motion_is_ready = false;
+                        *currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = MOTIONESTOP;
                         break;
                     }
@@ -506,7 +506,7 @@ void user_mainloop(void) {
                     // Machine is disabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == false) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
-                        currentInstance->motion_is_ready = false;
+                        *currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = MOTIONDISABLE;
                         break;
                     }
@@ -525,14 +525,14 @@ void user_mainloop(void) {
                 case MOTIONDISABLE:
                     // sleep to give the buffer a little time (2ms) to process the stop and send EOM.
                     usleep(2000);
-                    PMC_FinishStream();
+                    PMC_FinishStream(currentInstance);
                     overrideCycleTime = true;
                     currentInstance->internal_state = IDLE;
                     break;
                 case MOTIONESTOP:
                     // sleep to give the buffer a little time (2ms) to process the stop and send EOM.
                     usleep(2000);
-                    PMC_FinishStream();
+                    PMC_FinishStream(currentInstance);
                     overrideCycleTime = true;
                     currentInstance->internal_state = ESTOP;
                     break;
@@ -1129,6 +1129,7 @@ void PMC_FinishStream(struct ComponentStruct* componentInstance) {
         return;
     }
 
+    uint8_t numberOfAxes = componentInstance->configuration->number_axes;
     bool readable = hal_stream_readable(&stream);
     bool lastDataWasEOM = false;
 

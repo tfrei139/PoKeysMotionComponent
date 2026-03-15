@@ -102,7 +102,7 @@ FUNCTION(_) {
                 rtapi_print_msg(RTAPI_MSG_ERR, "End of Motion BUFFER overrun: %d\n", writeRes);
             }
 
-            motion_has_error = false
+            motion_has_error = false;
             motion_is_streaming = false;
         }
 

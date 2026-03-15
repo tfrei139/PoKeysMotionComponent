@@ -25,7 +25,6 @@ net motion-ready => PoKeysMotionBuffer.0.motion.is-ready
 
 # external output signals
 net machine-is-on <= halui.machine.is-on
-net machine-is-on => PoKeysMotionBuffer.0.machine-is-on
 net machine-is-on => PoKeysController.0.machine-is-on
 
 #*******************
