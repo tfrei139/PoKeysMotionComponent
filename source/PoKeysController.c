@@ -390,7 +390,7 @@ void PMC_ProcessDigitalPins(struct ComponentStruct* componentInstance);
 void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance);
 void PMC_ProcessEncoders(struct ComponentStruct* componentInstance);
 bool PMC_StreamAvailable(struct ComponentStruct* componentInstance);
-void PMC_FinishStream(struct ComponentStruct* componentInstance);
+bool PMC_FinishStream(struct ComponentStruct* componentInstance);
 enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance);
 void PMC_ProcessPositions(struct ComponentStruct* componentInstance);
 void PMC_ProcessRelays(struct ComponentStruct* componentInstance);
@@ -524,14 +524,22 @@ void user_mainloop(void) {
                     currentInstance->internal_state = ENABLED;
                     break;
                 case MOTIONDISABLE:
-                    PMC_FinishStream(currentInstance);
-                    overrideCycleTime = true;
-                    currentInstance->internal_state = IDLE;
+                    if (PMC_FinishStream(currentInstance)) {
+                        overrideCycleTime = true;
+                        currentInstance->internal_state = IDLE;
+                    }
+
+                    // TODO Process other pins?
+
                     break;
                 case MOTIONESTOP:
-                    PMC_FinishStream(currentInstance);
-                    overrideCycleTime = true;
-                    currentInstance->internal_state = ESTOP;
+                    if (PMC_FinishStream(currentInstance)) {
+                        overrideCycleTime = true;
+                        currentInstance->internal_state = ESTOP;
+                    }
+
+                    // TODO Process other pins?
+
                     break;
                 case ESTOP:
                     PMC_ReadPulseEngineStatus(currentInstance);
@@ -1116,57 +1124,40 @@ bool PMC_StreamAvailable(struct ComponentStruct* componentInstance) {
 
 // ------------------------------------
 // If the motion was interrupted, there may still be data in the buffer.
-// Read and discard the buffer.
+// Read and discard the buffer until we get the EOM signal.
 // ------------------------------------
-void PMC_FinishStream(struct ComponentStruct* componentInstance) {
+bool PMC_FinishStream(struct ComponentStruct* componentInstance) {
     hal_stream_t stream;
     int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
 
     if (ret < 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "Finishing stream, error attaching: %d\n", ret);
-        return;
+        return true;
     }
 
-    // sleep to give the buffer a little time (2ms) to process the stop and send EOM.
-    usleep(2000);
     bool readable = hal_stream_readable(&stream);
 
-    if (!readable) {
-        // If after 2ms there is nothing to read from the buffer, assume that the buffer was empty exactly as the stop came.
-        rtapi_print_msg(RTAPI_MSG_INFO, "Finishing stream, no motion to read\n");
-        hal_stream_detach(&stream);
-        return;
-    }
-
     uint8_t numberOfAxes = componentInstance->configuration->number_axes;
+    while (readable) {
+        union hal_stream_data dataToReceive[numberOfAxes];
+        ret = hal_stream_read(&stream, dataToReceive, NULL);
 
-    for (int retry = 0; retry < 3; retry++) {
-        while (readable) {
-            union hal_stream_data dataToReceive[numberOfAxes];
-            ret = hal_stream_read(&stream, dataToReceive, NULL);
-
-            if (ret != 0) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Finishing stream, error reading: %d\n", ret);
-                hal_stream_detach(&stream);
-                return;
-            }
-
-            if (dataToReceive[0].s == EndOfMotionPacket) {
-                rtapi_print_msg(RTAPI_MSG_INFO, "Finishing stream, end of motion received\n"); // TODO DEBUG?
-                hal_stream_detach(&stream);
-                return;
-            }
-
-            readable = hal_stream_readable(&stream);
+        if (ret != 0) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "Finishing stream, error reading: %d\n", ret);
+            break;
         }
 
-        // sleep to give the buffer yet again a little time (2ms) to process the stop and send EOM.
-        usleep(2000);
+        if (dataToReceive[0].s == EndOfMotionPacket) {
+            rtapi_print_msg(RTAPI_MSG_INFO, "Finishing stream, end of motion received\n"); // TODO DEBUG?
+            hal_stream_detach(&stream);
+            return true;
+        }
+
         readable = hal_stream_readable(&stream);
     }
 
     hal_stream_detach(&stream);
-    rtapi_print_msg(RTAPI_MSG_WARN, "Finishing stream, did not finish with EOM\n");
+    return false;
 }
 
 // ------------------------------------

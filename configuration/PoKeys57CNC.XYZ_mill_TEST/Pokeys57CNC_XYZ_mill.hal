@@ -20,8 +20,8 @@ setp PoKeysMotionBuffer.0.axis.1.step-scale [PoKeysController.0]AXIS1_STEP_SCALE
 setp PoKeysMotionBuffer.0.axis.2.step-scale [PoKeysController.0]AXIS2_STEP_SCALE
 
 # link motion buffer
-#net motion-ready <= PoKeysController.0.motion.is-ready
-#net motion-ready => PoKeysMotionBuffer.0.motion.is-ready
+net motion-ready <= PoKeysController.0.motion.is-ready
+net motion-ready => PoKeysMotionBuffer.0.component_is_ready
 
 # external output signals
 #net machine-is-on <= halui.machine.is-on # try "Motion" component? rename pins?

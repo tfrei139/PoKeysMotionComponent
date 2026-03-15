@@ -1,11 +1,12 @@
 component PoKeysMotionBuffer;
 
 pin in bit machine_is_on = false "Only when the machine is enabled, motion can happend";
-pin in bit motion.is_ready = false "Only when the receiving component is ready, motion can happen (TODO Remove after testing)";
-pin out bit motion.is_init = false "Flag whether the internal position is synchTODO";
-pin out bit motion.is_streaming = false "TODO";
-pin out unsigned motion.idle_count = 0 "TODO";
-pin out bit motion.has_error = false "Indicates that the stream had an error, to prevent spamming from RT thread, only show error once (DEBUG)";
+pin in bit component_is_ready = false "Only when the receiving component is ready, motion can happen";
+
+pin out bit motion.is_init = false "Flag whether the internal position is synchronised with the input pins (DEBUG)";
+pin out bit motion.is_streaming = false "Flag whether the motion is being streamed (DEBUG)";
+pin out unsigned motion.idle_count = 0 "Internal tracking for how long motion is idle before stopping to stream (DEBUG)";
+pin out bit motion.has_error = false "Indicates that the stream had an error. Prevents spamming from RT thread, only show error once (DEBUG)";
 
 pin in float axis.#.position_command [8 : personality] "Commanded position by the motion controller";
 pin out float axis.#.last_position [8 : personality] "Internal tracking of last commanded position (DEBUG)";
@@ -93,7 +94,7 @@ EXTRA_CLEANUP() {
 // Main Function
 // ------------------------------------
 FUNCTION(_) {
-    if (!machine_is_on) {
+    if (!(machine_is_on && component_is_ready)) {
         if (motion_is_streaming) {
             union hal_stream_data dataToSend[personality];
             dataToSend[0].s = EndOfMotionPacket;
