@@ -1,6 +1,7 @@
 component PoKeysMotionBuffer;
 
-pin in bit motion.is_ready = false "Only when the receiving component is ready, motion can happen";
+pin in bit machine_is_on = false "Only when the machine is enabled, motion can happend";
+pin in bit motion.is_ready = false "Only when the receiving component is ready, motion can happen (TODO Remove after testing)";
 pin out bit motion.is_init = false "Flag whether the internal position is synchTODO";
 pin out bit motion.is_streaming = false "TODO";
 pin out unsigned motion.idle_count = 0 "TODO";
@@ -27,7 +28,7 @@ author "T.Frei";
 #define SharedMemoryKey 57       // Arbitrary number
 #define BufferDepth 128          // Buffer on PoKeys side would be 128
 #define EndOfMotionPacket 0x0101 // Arbitrary number > uint8
-#define IdleBuffer 10            // Interrupting streaming because we aren't moving for a milisecond is preventing smooth operation
+#define IdleBuffer 6             // Interrupting streaming because we aren't moving for a milisecond is preventing smooth operation
 //#define MeasureTime            // Debug information how long the methods take
 
 hal_stream_t* MotionStream;      // Streaming exchange to the uspace component
@@ -92,7 +93,7 @@ EXTRA_CLEANUP() {
 // Main Function
 // ------------------------------------
 FUNCTION(_) {
-    if (!motion_is_ready) {
+    if (!machine_is_on) {
         if (motion_is_streaming) {
             union hal_stream_data dataToSend[personality];
             dataToSend[0].s = EndOfMotionPacket;

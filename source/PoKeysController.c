@@ -1102,7 +1102,7 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
 }
 
 // ------------------------------------
-// TODO
+// Checks whether there is motion being streamed.
 // ------------------------------------
 bool PMC_StreamAvailable(struct ComponentStruct* componentInstance) {
     hal_stream_t stream;
@@ -1119,7 +1119,8 @@ bool PMC_StreamAvailable(struct ComponentStruct* componentInstance) {
 }
 
 // ------------------------------------
-// TODO
+// If the motion was interrupted, there may still be data in the buffer.
+// Read and discard the buffer.
 // ------------------------------------
 void PMC_FinishStream(struct ComponentStruct* componentInstance) {
     hal_stream_t stream;
