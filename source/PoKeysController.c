@@ -524,15 +524,11 @@ void user_mainloop(void) {
                     currentInstance->internal_state = ENABLED;
                     break;
                 case MOTIONDISABLE:
-                    // sleep to give the buffer a little time (2ms) to process the stop and send EOM.
-                    usleep(2000);
                     PMC_FinishStream(currentInstance);
                     overrideCycleTime = true;
                     currentInstance->internal_state = IDLE;
                     break;
                 case MOTIONESTOP:
-                    // sleep to give the buffer a little time (2ms) to process the stop and send EOM.
-                    usleep(2000);
                     PMC_FinishStream(currentInstance);
                     overrideCycleTime = true;
                     currentInstance->internal_state = ESTOP;
@@ -1131,35 +1127,46 @@ void PMC_FinishStream(struct ComponentStruct* componentInstance) {
         return;
     }
 
-    uint8_t numberOfAxes = componentInstance->configuration->number_axes;
+    // sleep to give the buffer a little time (2ms) to process the stop and send EOM.
+    usleep(2000);
     bool readable = hal_stream_readable(&stream);
-    bool lastDataWasEOM = true; // if none can be read, assume it was already finished.
 
-    while (readable)
-    {
-        union hal_stream_data dataToReceive[numberOfAxes];
-        ret = hal_stream_read(&stream, dataToReceive, NULL);
+    if (!readable) {
+        // If after 2ms there is nothing to read from the buffer, assume that the buffer was empty exactly as the stop came.
+        rtapi_print_msg(RTAPI_MSG_INFO, "Finishing stream, no motion to read\n");
+        hal_stream_detach(&stream);
+        return;
+    }
 
-        if (ret != 0) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "Finishing stream, error reading: %d\n", ret);
-            return;
+    uint8_t numberOfAxes = componentInstance->configuration->number_axes;
+
+    for (int retry = 0; retry < 3; retry++) {
+        while (readable) {
+            union hal_stream_data dataToReceive[numberOfAxes];
+            ret = hal_stream_read(&stream, dataToReceive, NULL);
+
+            if (ret != 0) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "Finishing stream, error reading: %d\n", ret);
+                hal_stream_detach(&stream);
+                return;
+            }
+
+            if (dataToReceive[0].s == EndOfMotionPacket) {
+                rtapi_print_msg(RTAPI_MSG_INFO, "Finishing stream, end of motion received\n"); // TODO DEBUG?
+                hal_stream_detach(&stream);
+                return;
+            }
+
+            readable = hal_stream_readable(&stream);
         }
 
-        if (dataToReceive[0].s == EndOfMotionPacket) {
-            rtapi_print_msg(RTAPI_MSG_INFO, "Finishing stream, end of motion received\n"); // TODO DEBUG?
-            lastDataWasEOM = true;
-        } else {
-            lastDataWasEOM = false;
-        }
-
+        // sleep to give the buffer yet again a little time (2ms) to process the stop and send EOM.
+        usleep(2000);
         readable = hal_stream_readable(&stream);
     }
 
     hal_stream_detach(&stream);
-
-    if (!lastDataWasEOM) {
-        rtapi_print_msg(RTAPI_MSG_WARN, "Finishing stream, did not finish with EOM\n");
-    }
+    rtapi_print_msg(RTAPI_MSG_WARN, "Finishing stream, did not finish with EOM\n");
 }
 
 // ------------------------------------
