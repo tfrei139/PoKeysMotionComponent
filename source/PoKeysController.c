@@ -507,6 +507,7 @@ void user_mainloop(void) {
                     if (0 + *currentInstance->machine_is_on == false) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         *currentInstance->motion_is_ready = false;
+                        rtapi_print_msg(RTAPI_MSG_INFO, "MOTION DISABLE\n");
                         currentInstance->internal_state = MOTIONDISABLE;
                         break;
                     }
@@ -1131,9 +1132,9 @@ void PMC_FinishStream(struct ComponentStruct* componentInstance) {
 
     uint8_t numberOfAxes = componentInstance->configuration->number_axes;
     bool readable = hal_stream_readable(&stream);
-    bool lastDataWasEOM = false;
+    bool lastDataWasEOM = true; // if none can be read, assume it was already finished.
 
-    do
+    while (readable)
     {
         union hal_stream_data dataToReceive[numberOfAxes];
         ret = hal_stream_read(&stream, dataToReceive, NULL);
@@ -1152,7 +1153,6 @@ void PMC_FinishStream(struct ComponentStruct* componentInstance) {
 
         readable = hal_stream_readable(&stream);
     }
-    while (readable);
 
     hal_stream_detach(&stream);
 
@@ -1207,7 +1207,7 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
             }
 
             if (dataToReceive[0].s == EndOfMotionPacket) {
-                //rtapi_print_msg(RTAPI_MSG_DBG, "End of motion\n");
+                rtapi_print_msg(RTAPI_MSG_INFO, "End of motion received\n");
                 nextState = ENABLED;
                 streamReadable = false;
             } else {
@@ -1218,11 +1218,11 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                     }
 
                     uint8_t motion = dataToReceive[i].s;
-                    //rtapi_print_msg(RTAPI_MSG_DBG, "%d,", motion);
+                    rtapi_print_msg(RTAPI_MSG_INFO, "%d,", motion);
                     device->PEv2.MotionBuffer[(motionEntries * numberOfAxes) + i] = motion;
                 }
 
-                //rtapi_print_msg(RTAPI_MSG_DBG, "\n");
+                rtapi_print_msg(RTAPI_MSG_INFO, "\n");
 
                 motionEntries++;
 

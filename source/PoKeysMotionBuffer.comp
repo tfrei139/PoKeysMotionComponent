@@ -92,7 +92,7 @@ EXTRA_CLEANUP() {
 // Main Function
 // ------------------------------------
 FUNCTION(_) {
-    if (!motion_is_ready && motion_is_init) {
+    if (!motion_is_ready) {
         if (motion_is_streaming) {
             union hal_stream_data dataToSend[personality];
             dataToSend[0].s = EndOfMotionPacket;
