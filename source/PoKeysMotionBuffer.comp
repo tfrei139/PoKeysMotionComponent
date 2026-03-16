@@ -1,11 +1,13 @@
 component PoKeysMotionBuffer;
 
-pin in bit machine_is_on = false "Only when the machine is enabled, motion can happend";
-pin in bit component_is_ready = false "Only when the receiving component is ready, motion can happen";
+pin in bit component_is_ready = false "Only when the receiving component is ready, motion should be streamed";
+
+pin in bit motion.is_enabled = false "When the motion planner is enabled, motion can happen. Conversely if disabled motion mus stop immediately.";
+pin in bit motion.in_position = true "When the motion planner is not in position, start streaming the commanded position";
+pin in bit motion.jog_is_active = false "When the motion planner is jogging, \"in position\" remains true, start streaming the commanded position";
 
 pin out bit motion.is_init = false "Flag whether the internal position is synchronised with the input pins (DEBUG)";
 pin out bit motion.is_streaming = false "Flag whether the motion is being streamed (DEBUG)";
-pin out unsigned motion.idle_count = 0 "Internal tracking for how long motion is idle before stopping to stream (DEBUG)";
 pin out bit motion.has_error = false "Indicates that the stream had an error. Prevents spamming from RT thread, only show error once (DEBUG)";
 
 pin in float axis.#.position_command [8 : personality] "Commanded position by the motion controller";
@@ -29,7 +31,6 @@ author "T.Frei";
 #define SharedMemoryKey 57       // Arbitrary number
 #define BufferDepth 128          // Buffer on PoKeys side would be 128
 #define EndOfMotionPacket 0x0101 // Arbitrary number > uint8
-#define IdleBuffer 6             // Interrupting streaming because we aren't moving for a milisecond is preventing smooth operation
 //#define MeasureTime            // Debug information how long the methods take
 
 hal_stream_t* MotionStream;      // Streaming exchange to the uspace component
@@ -94,7 +95,8 @@ EXTRA_CLEANUP() {
 // Main Function
 // ------------------------------------
 FUNCTION(_) {
-    if (!(machine_is_on && component_is_ready)) {
+    // if either the motion planner or the controller component is inactive we must immediately stop and idle.
+    if (!(motion_is_enabled && component_is_ready)) {
         if (motion_is_streaming) {
             union hal_stream_data dataToSend[personality];
             dataToSend[0].s = EndOfMotionPacket;
@@ -110,7 +112,6 @@ FUNCTION(_) {
 
         if (motion_is_init) {
             motion_is_init = false;
-            motion_idle_count = 0;
         }
 
         return;
@@ -126,22 +127,19 @@ FUNCTION(_) {
         motion_is_init = true;
     }
 
+    // if either we are not in position or jogging is active we must start streaming.
+    // if neither applies, but we were streaming, check if we have reached the final commanded position.
     bool motionCommanded = false;
-    for (int i = 0; i < personality; i++) {
-        float differenceInPosition = axis_position_command(i) - axis_last_position(i);
+    if (motion_in_position == false || motion_jog_is_active == true) {
+        motionCommanded = true;
+    } else if (motion_is_streaming) {
+        for (int i = 0; i < personality; i++) {
+            float differenceInPosition = axis_position_command(i) - axis_last_position(i);
 
-        if (fabs(differenceInPosition) >= axis_step_width(i)) {
-            motionCommanded = true;
-            motion_idle_count = 0;
-            break;
-        }
-    }
-
-    if (motion_is_streaming && !motionCommanded) {
-        motion_idle_count++;
-
-        if (motion_idle_count < IdleBuffer) {
-            motionCommanded = true;
+            if (fabs(differenceInPosition) >= axis_step_width(i)) {
+                motionCommanded = true;
+                break;
+            }
         }
     }
 

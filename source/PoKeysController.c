@@ -520,7 +520,7 @@ void user_mainloop(void) {
 
                     break;
                 case MOTIONERROR:
-                    // Most likely error, buffer underrun. Return to enabled state and retry?
+                    // Most likely error, buffer underrun. Return to enabled state and retry.
                     currentInstance->internal_state = ENABLED;
                     break;
                 case MOTIONDISABLE:
