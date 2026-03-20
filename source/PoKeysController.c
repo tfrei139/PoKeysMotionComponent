@@ -487,8 +487,8 @@ void user_mainloop(void) {
                     if (PMC_StreamAvailable(currentInstance)) {
                         // switching states gives us at most "CycleTimeMs" of buffer.
                         // "Buffering" state will provide extra time (20ms) to fill up.
-                        currentInstance->internals->cycleStartBuffer = currentInstance->internals->cycles
-                        rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Going to motion\n", componentInstance->internals->cycles);
+                        currentInstance->internals->cycleStartBuffer = currentInstance->internals->cycles;
+                        rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Going to motion\n", currentInstance->internals->cycles);
                         currentInstance->internal_state = MOTIONBUFFERING;
                         break;
                     }
@@ -1255,7 +1255,7 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                 nextState = ENABLED;
                 streamReadable = false;
             } else {
-                rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, pulses: ", componentInstance->internals->cycles); // TODO comment out
+                //rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, pulses: ", componentInstance->internals->cycles);
 
                 for (int i = 0; i < numberOfAxes; i++) {
                     if (dataToReceive[i].s > 256) {
@@ -1264,11 +1264,11 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                     }
 
                     uint8_t motion = dataToReceive[i].s;
-                    rtapi_print_msg(RTAPI_MSG_INFO, "%d,", motion); // TODO comment out
+                    //rtapi_print_msg(RTAPI_MSG_INFO, "%d,", motion);
                     device->PEv2.MotionBuffer[(motionEntries * numberOfAxes) + i] = motion;
                 }
 
-                rtapi_print_msg(RTAPI_MSG_INFO, "\n"); // TODO comment out
+                //rtapi_print_msg(RTAPI_MSG_INFO, "\n");
 
                 motionEntries++;
 

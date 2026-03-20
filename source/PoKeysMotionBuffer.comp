@@ -4,7 +4,7 @@ pin in bit component_is_ready = false "Only when the receiving component is read
 
 pin in bit motion.is_enabled = false "When the motion planner is enabled, motion can happen. Conversely if disabled motion mus stop immediately.";
 pin in bit motion.in_position = true "When the motion planner is not in position, start streaming the commanded position";
-pin in bit motion.jog_is_active = false "When the motion planner is jogging, \"in position\" remains true, start streaming the commanded position";
+pin in bit motion.jog_is_active = false "When the motion planner is jogging, 'in position' remains true, start streaming the commanded position";
 
 pin out bit motion.is_init = false "Flag whether the internal position is synchronised with the input pins (DEBUG)";
 pin out bit motion.is_streaming = false "Flag whether the motion is being streamed (DEBUG)";
