@@ -77,6 +77,8 @@ typedef struct {
 } component_configuration;
 
 typedef struct {
+    // elapsed cycles
+    uint32_t cycles;
     // "Ring" buffer for velocity calculation
     uint8_t encoders_buffer_position[NumberOfEncoders][2];
     int32_t* encoders_buffer_values[NumberOfEncoders];
@@ -397,7 +399,7 @@ void PMC_ProcessRelays(struct ComponentStruct* componentInstance);
 bool PMC_CompareRelayState(sPoKeysDevice* device, bool state, int offset);
 void PMC_SetActiveOutputsOff(struct ComponentStruct* componentInstance);
 struct timespec* PMC_GetStartTime();
-void PMC_ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, enum State currentState, enum State nextState);
+void PMC_ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, enum State currentState, struct ComponentStruct* componentInstance);
 const char* PMC_GetStateName(enum State state);
 
 int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance);
@@ -527,18 +529,28 @@ void user_mainloop(void) {
                     if (PMC_FinishStream(currentInstance)) {
                         overrideCycleTime = true;
                         currentInstance->internal_state = IDLE;
+                        break;
                     }
 
-                    // TODO Process other pins?
+                    PMC_ProcessDigitalPins(currentInstance);
+                    PMC_ProcessPositions(currentInstance);
+                    PMC_ProcessRelays(currentInstance);
+                    PMC_ProcessPwmPins(currentInstance);
+                    PMC_ProcessEncoders(currentInstance);
 
                     break;
                 case MOTIONESTOP:
                     if (PMC_FinishStream(currentInstance)) {
                         overrideCycleTime = true;
                         currentInstance->internal_state = ESTOP;
+                        break;
                     }
 
-                    // TODO Process other pins?
+                    PMC_ProcessDigitalPins(currentInstance);
+                    PMC_ProcessPositions(currentInstance);
+                    PMC_ProcessRelays(currentInstance);
+                    PMC_ProcessPwmPins(currentInstance);
+                    PMC_ProcessEncoders(currentInstance);
 
                     break;
                 case ESTOP:
@@ -563,7 +575,7 @@ void user_mainloop(void) {
                     return;
             }
 
-            PMC_ProcessCycleTime(cycleStart, overrideCycleTime, originState, currentInstance->internal_state);
+            PMC_ProcessCycleTime(cycleStart, overrideCycleTime, originState, currentInstance);
         }
     }
 }
@@ -938,7 +950,7 @@ void PMC_ProcessLimitOverride(struct ComponentStruct* componentInstance) {
 // ------------------------------------
 void PMC_ProcessEStop(struct ComponentStruct* componentInstance) {
     if (componentInstance->device->PEv2.PulseEngineState == PK_PEState_peSTOP_EMERGENCY) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop due to PulseEngine\n");
+        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, E-Stop due to PulseEngine\n", componentInstance->internals->cycles);
 
         *componentInstance->machine_estop = true;
 
@@ -948,14 +960,14 @@ void PMC_ProcessEStop(struct ComponentStruct* componentInstance) {
 		bool currentEstop = 0 + *componentInstance->machine_estop;
 
         uint8_t eStopPin = componentInstance->device->Pins[EstopPinNumber].DigitalValueGet;
-		rtapi_print_msg(RTAPI_MSG_DBG, "Getting E-Stop:%d\n", eStopPin);
+		rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Getting E-Stop:%d\n", componentInstance->internals->cycles, eStopPin);
 
 		if (currentEstop == 1 && eStopPin == 0) {
-			rtapi_print_msg(RTAPI_MSG_WARN, "E-Stop is Reset (by pin)\n");
+			rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, E-Stop is Reset (by pin)\n", componentInstance->internals->cycles);
 
 			*componentInstance->machine_estop = false;
 		} else if (currentEstop == 0 && eStopPin > 0) {
-			rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop due to pin!\n");
+			rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, E-Stop due to pin!\n", componentInstance->internals->cycles);
 
 			*componentInstance->machine_estop = true;
 
@@ -976,7 +988,7 @@ void PMC_ProcessDigitalPins(struct ComponentStruct* componentInstance) {
     }
 
     int ret = PMC_DigitalIOSetGet(componentInstance);
-    //rtapi_print_msg(RTAPI_MSG_DBG, "Update all digital pins:%d\n", ret);
+    //rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Update all digital pins:%d\n", componentInstance->internals->cycles, ret);
 
     for (int i = 0; i < componentInstance->configuration->input_pins; i++) {
         int pinNumber = componentInstance->configuration->input_pin_map[i];
@@ -1003,7 +1015,7 @@ void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance) {
         float pinValue = *componentInstance->io_pwm_pin[i];
 
         if (pinValue < 0.0f || pinValue > 100.0f) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, exceeds range of 0.0 - 100.0!\n", channel);
+            rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, PWM channel %d, exceeds range of 0.0 - 100.0!\n", componentInstance->internals->cycles, channel);
 
             if (device->PWM.PWMduty[channel] > 0) {
                 // something wrong, let's stop here.
@@ -1016,7 +1028,7 @@ void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance) {
             uint32_t dutyCycle = ((pinValue / 100.0f) * (float)device->PWM.PWMperiod);
 
             if (device->PWM.PWMduty[channel] - dutyCycle != 0) {
-                rtapi_print_msg(RTAPI_MSG_DBG, "PWM channel %d, set from %d to %d\n", channel, device->PWM.PWMduty[channel], dutyCycle);
+                rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, PWM channel %d, set from %d to %d\n", componentInstance->internals->cycles, channel, device->PWM.PWMduty[channel], dutyCycle);
                 device->PWM.PWMduty[channel] = dutyCycle;
                 setNecessary = true;
             }
@@ -1025,7 +1037,7 @@ void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance) {
 
     if (setNecessary) {
         int ret = PK_PWMUpdate(device);
-        rtapi_print_msg(RTAPI_MSG_DBG, "Update PWM:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Update PWM:%d\n", componentInstance->internals->cycles, ret);
     }
 }
 
@@ -1113,7 +1125,7 @@ bool PMC_StreamAvailable(struct ComponentStruct* componentInstance) {
     int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
 
     if (ret < 0) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error: %d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Shared Buffer error: %d\n", componentInstance->internals->cycles, ret);
         return false;
     }
 
@@ -1131,7 +1143,7 @@ bool PMC_FinishStream(struct ComponentStruct* componentInstance) {
     int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
 
     if (ret < 0) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "Finishing stream, error attaching: %d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Finishing stream, error attaching: %d\n", componentInstance->internals->cycles, ret);
         return true;
     }
 
@@ -1143,12 +1155,12 @@ bool PMC_FinishStream(struct ComponentStruct* componentInstance) {
         ret = hal_stream_read(&stream, dataToReceive, NULL);
 
         if (ret != 0) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "Finishing stream, error reading: %d\n", ret);
+            rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Finishing stream, error reading: %d\n", componentInstance->internals->cycles, ret);
             break;
         }
 
         if (dataToReceive[0].s == EndOfMotionPacket) {
-            rtapi_print_msg(RTAPI_MSG_INFO, "Finishing stream, end of motion received\n"); // TODO DEBUG?
+            rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, Finishing stream, end of motion received\n", componentInstance->internals->cycles); // TODO DEBUG?
             hal_stream_detach(&stream);
             return true;
         }
@@ -1170,7 +1182,7 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
     int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
 
     if (ret < 0) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error: %d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Shared Buffer error: %d\n", componentInstance->internals->cycles, ret);
         return MOTIONERROR;
     }
 
@@ -1179,7 +1191,7 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
     if (!streamReadable) {
         // if the last cycle was slow (>5ms), we do not wait and "almost immediately" process the next motion state.
         // since the servo thread may not have updated yet, we delay here to get at least one value here.
-        rtapi_print_msg(RTAPI_MSG_WARN, "Potential Buffer underrun? EndOfMotion Packet missing? Try sleep\n");
+        rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, Potential Buffer underrun? EndOfMotion Packet missing? Try sleep\n", componentInstance->internals->cycles);
         usleep(1000); // the time of the servo period (1ms).
         streamReadable = hal_stream_readable(&stream);
     }
@@ -1200,28 +1212,30 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
             ret = hal_stream_read(&stream, dataToReceive, NULL);
 
             if (ret != 0) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Error reading stream: %d\n", ret);
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Error reading stream: %d\n", componentInstance->internals->cycles, ret);
                 nextState = MOTIONERROR;
                 break;
             }
 
             if (dataToReceive[0].s == EndOfMotionPacket) {
-                rtapi_print_msg(RTAPI_MSG_INFO, "End of motion received\n");
+                rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, End of motion received\n", componentInstance->internals->cycles);
                 nextState = ENABLED;
                 streamReadable = false;
             } else {
+                rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, pulses: ", componentInstance->internals->cycles); // TODO comment out
+
                 for (int i = 0; i < numberOfAxes; i++) {
                     if (dataToReceive[i].s > 256) {
                         // TODO document
-                        rtapi_print_msg(RTAPI_MSG_ERR, "Motion commanded exceeds limit: %d\n", dataToReceive[i].s);
+                        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Motion commanded exceeds limit: %d\n", componentInstance->internals->cycles, dataToReceive[i].s);
                     }
 
                     uint8_t motion = dataToReceive[i].s;
-                    rtapi_print_msg(RTAPI_MSG_INFO, "%d,", motion);
+                    rtapi_print_msg(RTAPI_MSG_INFO, "%d,", motion); // TODO comment out
                     device->PEv2.MotionBuffer[(motionEntries * numberOfAxes) + i] = motion;
                 }
 
-                rtapi_print_msg(RTAPI_MSG_INFO, "\n");
+                rtapi_print_msg(RTAPI_MSG_INFO, "\n"); // TODO comment out
 
                 motionEntries++;
 
@@ -1235,16 +1249,16 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
                 if (device->PEv2.motionBufferEntriesAccepted != motionEntries) {
                     // TODO handle if not all buffer entries are accepted
-                    rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes NOT ALL BUFFER ENTRIES ACCEPTED (%d, accepted %d) %d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
+                    rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, PE Axes not all buffer entries accepted (%d, accepted %d) %d\n", componentInstance->internals->cycles, motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
                 }
 
                 motionEntries = 0;
-                //rtapi_print_msg(RTAPI_MSG_DBG, "PE Axes (%d, accepted %d), Move commanded:%d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
+                //rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, PE Axes (%d, accepted %d), Move commanded:%d\n", componentInstance->internals->cycles, motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
             }
         }
         while (streamReadable);
     } else {
-        rtapi_print_msg(RTAPI_MSG_ERR, "Buffer underrun? EndOfMotion Packet missing?\n");
+        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Buffer underrun? EndOfMotion Packet missing?\n", componentInstance->internals->cycles);
         nextState = MOTIONERROR;
     }
 
@@ -1278,7 +1292,7 @@ void PMC_ProcessRelays(struct ComponentStruct* componentInstance) {
     sPoKeysDevice* device = componentInstance->device;
 
     int ret = PK_PEv2_ExternalOutputsGet(device);
-    //rtapi_print_msg(RTAPI_MSG_DBG, "Getting Relay status:%d, %d\n", ret, device->PEv2.ExternalOCOutputs);
+    //rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Getting Relay status:%d, %d\n", componentInstance->internals->cycles, ret, device->PEv2.ExternalOCOutputs);
 
     bool ssr1on = 0 + *componentInstance->io_solid_state_relay[0];
     bool ssr2on = 0 + *componentInstance->io_solid_state_relay[1];
@@ -1301,7 +1315,7 @@ void PMC_ProcessRelays(struct ComponentStruct* componentInstance) {
 
     if (setNecessary) {
         ret = PK_PEv2_ExternalOutputsSet(device);
-        rtapi_print_msg(RTAPI_MSG_INFO, "Change relays:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, Change relays:%d\n", componentInstance->internals->cycles, ret);
     }
 }
 
@@ -1361,29 +1375,32 @@ struct timespec* PMC_GetStartTime() {
 // ------------------------------------
 // Try to keep the cycle time within defined limits.
 // ------------------------------------
-void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum State currentState, enum State nextState) {
+void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum State currentState, struct ComponentStruct* componentInstance) {
+    enum State nextState = componentInstance->internal_state;
     struct timespec cycleEnd;
     clock_gettime(CLOCK_REALTIME, &cycleEnd);
-    float t_ms = ((float)(cycleEnd.tv_sec - cycleStart->tv_sec) * 1.0e9 + (float)(cycleEnd.tv_nsec - cycleStart->tv_nsec)) / 1.0e6;
+    float cycleTimeMs = ((float)(cycleEnd.tv_sec - cycleStart->tv_sec) * 1.0e9 + (float)(cycleEnd.tv_nsec - cycleStart->tv_nsec)) / 1.0e6;
     free(cycleStart);
 
-    rtapi_print_msg(RTAPI_MSG_DBG, "Time elapsed %f ms\n", t_ms);
+    rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Time elapsed %0.2f ms\n", componentInstance->internals->cycles, cycleTimeMs);
 
     if (!overrideCycleTime) {
-        if (t_ms <= CycleTimeMs) {
-            useconds_t sleepTimeUs = (CycleTimeMs - t_ms) * 1000;
+        if (cycleTimeMs <= CycleTimeMs) {
+            useconds_t sleepTimeUs = (CycleTimeMs - cycleTimeMs) * 1000;
             usleep(sleepTimeUs);
         } else {
             const char* currentStateName = PMC_GetStateName(currentState);
             const char* nextStateName = PMC_GetStateName(nextState);
 
-            if (t_ms <= CycleTimeMs + 3.0) {
-                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle greater than %fms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
+            if (cycleTimeMs <= CycleTimeMs + 3.0) {
+                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, greater than %0.1fms elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
             } else {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle greater than %f!ms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, greater than %0.1f!ms elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
             }
         }
     }
+
+    componentInstance->internals->cycles++;
 }
 
 // ------------------------------------
