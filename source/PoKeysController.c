@@ -79,6 +79,8 @@ typedef struct {
 typedef struct {
     // elapsed cycles
     uint32_t cycles;
+    // cycle when buffering started
+    uint32_t cycleStartBuffer;
     // "Ring" buffer for velocity calculation
     uint8_t encoders_buffer_position[NumberOfEncoders][2];
     int32_t* encoders_buffer_values[NumberOfEncoders];
@@ -373,11 +375,12 @@ enum State {
     INIT = 0,               // Component created
     IDLE = 1,               // Connected and PE stopped state
     ENABLED = 2,            // Connected and PE running state (not moving)
-    MOVING = 3,             // Connected and PE running state (moving)
-    MOTIONERROR = 4,        // Stop motion due to error
-    MOTIONDISABLE = 5,      // Stop motion due to disabled machine
-    MOTIONESTOP = 6,        // Stop motion due to emergency stop
-    ESTOP = 7,              // Emergency stop toggled
+    MOTIONBUFFERING = 3,    // Connected and PE running state (buffer started streaming)
+    MOVING = 4,             // Connected and PE running state (moving)
+    MOTIONERROR = 5,        // Stop motion due to error
+    MOTIONDISABLE = 6,      // Stop motion due to disabled machine
+    MOTIONESTOP = 7,        // Stop motion due to emergency stop
+    ESTOP = 8,              // Emergency stop toggled
 };
 
 // ------------------------------------
@@ -483,14 +486,44 @@ void user_mainloop(void) {
                     // Check if motion is commanded
                     if (PMC_StreamAvailable(currentInstance)) {
                         // switching states gives us at most "CycleTimeMs" of buffer.
-                        // sleep specific time to give the buffer extra time (20ms) to fill up.
-                        // OPTIONAL introduce "Buffering" state.
-                        usleep(20000);
-                        overrideCycleTime = true;
-                        rtapi_print_msg(RTAPI_MSG_DBG, "Going to motion\n");
+                        // "Buffering" state will provide extra time (20ms) to fill up.
+                        currentInstance->internals->cycleStartBuffer = currentInstance->internals->cycles
+                        rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Going to motion\n", componentInstance->internals->cycles);
+                        currentInstance->internal_state = MOTIONBUFFERING;
+                        break;
+                    }
+
+                    break;
+                case MOTIONBUFFERING:
+                    if (currentInstance->internals->cycles - currentInstance->internals->cycleStartBuffer >= 4) {
                         currentInstance->internal_state = MOVING;
                         break;
                     }
+
+                    PMC_ReadPulseEngineStatus(currentInstance);
+                    PMC_ProcessEStop(currentInstance);
+
+                    // Set Estop from PoKeys
+                    if (*currentInstance->machine_estop == true) {
+                        *currentInstance->motion_is_ready = false;
+                        currentInstance->internal_state = MOTIONESTOP;
+                        break;
+                    }
+
+                    // Machine is disabled from LinuxCNC
+                    if (0 + *currentInstance->machine_is_on == false) {
+                        PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
+                        *currentInstance->motion_is_ready = false;
+                        currentInstance->internal_state = MOTIONDISABLE;
+                        break;
+                    }
+
+                    PMC_ProcessDigitalPins(currentInstance);
+                    PMC_ProcessPositions(currentInstance);
+                    PMC_ProcessRelays(currentInstance);
+                    PMC_ProcessPwmPins(currentInstance);
+                    PMC_ProcessEncoders(currentInstance);
+                    PMC_ProcessLimitOverride(currentInstance);
 
                     break;
                 case MOVING:
@@ -1384,6 +1417,13 @@ void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, e
 
     rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Time elapsed %0.2f ms\n", componentInstance->internals->cycles, cycleTimeMs);
 
+    if (currentState != nextState) {
+        const char* currentStateName = PMC_GetStateName(currentState);
+        const char* nextStateName = PMC_GetStateName(nextState);
+
+        rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, change state from %s to %s\n", componentInstance->internals->cycles, currentStateName, nextStateName); // TODO DBG?
+    }
+
     if (!overrideCycleTime) {
         if (cycleTimeMs <= CycleTimeMs) {
             useconds_t sleepTimeUs = (CycleTimeMs - cycleTimeMs) * 1000;
@@ -1412,6 +1452,7 @@ inline const char* PMC_GetStateName(enum State state) {
         case INIT: return "INIT";
         case IDLE: return "IDLE";
         case ENABLED: return "ENABLED";
+        case MOTIONBUFFERING: return "MOTIONBUFFERING";
         case MOVING: return "MOVING";
         case MOTIONERROR: return "MOTIONERROR";
         case MOTIONDISABLE: return "MOTIONDISABLE";
