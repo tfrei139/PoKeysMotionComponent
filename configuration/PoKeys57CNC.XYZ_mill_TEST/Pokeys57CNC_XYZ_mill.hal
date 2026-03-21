@@ -39,10 +39,10 @@ net motion-in-position   => PoKeysMotionBuffer.0.motion.in-position
 
 loadrt estop_latch
 
-net estop-loopout estop-latch.0.ok-out => iocontrol.0.emc-enable-in
-net estop-loopin iocontrol.0.user-enable-out => estop-latch.0.ok-in
+net estop-loopout estop-latch.0.ok-out          => iocontrol.0.emc-enable-in
+net estop-loopin iocontrol.0.user-enable-out    => estop-latch.0.ok-in
 net estop-reset iocontrol.0.user-request-enable => estop-latch.0.reset
-net remote-estop estop-latch.0.fault-in <= PoKeysController.0.machine-estop
+net remote-estop estop-latch.0.fault-in         <= PoKeysController.0.machine-estop
 
 #*******************
 # Assign RT functions

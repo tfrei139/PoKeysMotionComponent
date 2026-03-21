@@ -488,7 +488,6 @@ void user_mainloop(void) {
                         // switching states gives us at most "CycleTimeMs" of buffer.
                         // "Buffering" state will provide extra time (20ms) to fill up.
                         currentInstance->internals->cycleStartBuffer = currentInstance->internals->cycles;
-                        rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Going to motion\n", currentInstance->internals->cycles);
                         currentInstance->internal_state = MOTIONBUFFERING;
                         break;
                     }
@@ -542,7 +541,6 @@ void user_mainloop(void) {
                     if (0 + *currentInstance->machine_is_on == false) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         *currentInstance->motion_is_ready = false;
-                        rtapi_print_msg(RTAPI_MSG_INFO, "MOTION DISABLE\n");
                         currentInstance->internal_state = MOTIONDISABLE;
                         break;
                     }
@@ -830,7 +828,6 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         ret = PK_PEv2_PulseEngineReboot(device);
         rtapi_print_msg(RTAPI_MSG_DBG, "PE Reboot:%d\n", ret);
         // In theory we should sleep, but it'l highly unlikely you'll start a motion 1 second after opening LCNC.
-        // TODO or is the device communication down during this time?
     }
 
     // Set up axis configuration
@@ -969,11 +966,11 @@ void PMC_ProcessLimitOverride(struct ComponentStruct* componentInstance) {
     if (limitOverride == true && device->PEv2.LimitOverride == 0) {
         device->PEv2.LimitOverrideSetup = 1;
         int ret = PK_PEv2_PulseEngineStateSet(device);
-        rtapi_print_msg(RTAPI_MSG_WARN, "SET LIMIT OVERRIDE TRUE:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, SET LIMIT OVERRIDE TRUE:%d\n", componentInstance->internals->cycles, ret);
     } else if (limitOverride == false && device->PEv2.LimitOverride == 1) {
         device->PEv2.LimitOverrideSetup = 0;
         int ret = PK_PEv2_PulseEngineStateSet(device);
-        rtapi_print_msg(RTAPI_MSG_WARN, "SET LIMIT OVERRIDE FALSE:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, SET LIMIT OVERRIDE FALSE:%d\n", componentInstance->internals->cycles, ret);
     }
 }
 
@@ -1193,7 +1190,7 @@ bool PMC_FinishStream(struct ComponentStruct* componentInstance) {
         }
 
         if (dataToReceive[0].s == EndOfMotionPacket) {
-            rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, Finishing stream, end of motion received\n", componentInstance->internals->cycles); // TODO DEBUG?
+            // rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Finishing stream, end of motion received\n", componentInstance->internals->cycles);
             hal_stream_detach(&stream);
             return true;
         }
@@ -1255,12 +1252,14 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                 nextState = ENABLED;
                 streamReadable = false;
             } else {
-                //rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, pulses: ", componentInstance->internals->cycles);
+                //rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, Pulses: ", componentInstance->internals->cycles);
 
                 for (int i = 0; i < numberOfAxes; i++) {
                     if (dataToReceive[i].s > 256) {
-                        // TODO document
                         rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Motion commanded exceeds limit: %d\n", componentInstance->internals->cycles, dataToReceive[i].s);
+                        nextState = MOTIONERROR;
+                        hal_stream_detach(&stream);
+                        return nextState;
                     }
 
                     uint8_t motion = dataToReceive[i].s;
@@ -1281,8 +1280,10 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                 ret = PK_PEv2_BufferFill(device);
 
                 if (device->PEv2.motionBufferEntriesAccepted != motionEntries) {
-                    // TODO handle if not all buffer entries are accepted
                     rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, PE Axes not all buffer entries accepted (%d, accepted %d) %d\n", componentInstance->internals->cycles, motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
+                    nextState = MOTIONERROR;
+                    hal_stream_detach(&stream);
+                    return nextState;
                 }
 
                 motionEntries = 0;
@@ -1421,7 +1422,7 @@ void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, e
         const char* currentStateName = PMC_GetStateName(currentState);
         const char* nextStateName = PMC_GetStateName(nextState);
 
-        rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, change state from %s to %s\n", componentInstance->internals->cycles, currentStateName, nextStateName); // TODO DBG?
+        rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Change state from %s to %s\n", componentInstance->internals->cycles, currentStateName, nextStateName);
     }
 
     if (!overrideCycleTime) {
@@ -1433,9 +1434,9 @@ void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, e
             const char* nextStateName = PMC_GetStateName(nextState);
 
             if (cycleTimeMs <= CycleTimeMs + 3.0) {
-                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, greater than %0.1fms elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
+                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, Greater than %0.1fms elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
             } else {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, greater than %0.1f!ms elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Greater than %0.1fms! elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
             }
         }
     }

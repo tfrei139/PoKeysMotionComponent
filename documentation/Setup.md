@@ -3,8 +3,8 @@ This walkthrough should help you setup this component on a clean installation of
 For installation of LinuxCNC, see the [its own documentation](https://linuxcnc.org/docs/stable/html/getting-started/getting-linuxcnc.html)
 
 ## Prerequisite
-- An installation of LinuxCNC > 2.9 (2.9.8 at the time of this writing) (*TODO* would this work with live-linuxCNC too?)
-- The PoKeys device and motors are set up with the PoKeys configuration application. (*TODO* specify minimum)
+- An installation of LinuxCNC > 2.9 (2.9.8 at the time of this writing) (*Not verified* should work with live-linuxCNC too)
+- The PoKeys device and motors are set up with the PoKeys configuration application. (See the appropriate [user manual from PoLabs](https://www.poscope.com/downloads-manuals/))
 
 ## Getting the component
 Either you copy the source directly to your LinuxCNC system or get it via Git.  
