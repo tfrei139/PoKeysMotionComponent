@@ -1248,7 +1248,7 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
             }
 
             if (dataToReceive[0].s == EndOfMotionPacket) {
-                rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, End of motion received\n", componentInstance->internals->cycles);
+                rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, End of motion received\n", componentInstance->internals->cycles);
                 nextState = ENABLED;
                 streamReadable = false;
             } else {
