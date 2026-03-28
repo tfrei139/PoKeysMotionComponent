@@ -74,6 +74,8 @@ typedef struct {
     uint8_t encoders_map[NumberOfEncoders];
     int8_t encoders_index_pin[NumberOfEncoders]; // contains both pin index and if the pin is inverted (negative number)
     float encoders_scale[NumberOfEncoders];
+    uint8_t matrix_rows;
+    uint8_t matrix_cols;
 } component_configuration;
 
 typedef struct {
@@ -623,9 +625,8 @@ bool PMC_ReadConfiguration(const char *instanceName, struct ComponentStruct* com
         return false;
     }
 
-    const char* levelTag = "LOG_LEVEL";
     int logLevel = 0;
-    int iniRead = iniFindInt(ini_file_ptr, levelTag, instanceName, &logLevel);
+    int iniRead = iniFindInt(ini_file_ptr, "LOG_LEVEL", instanceName, &logLevel);
 
     if (iniRead == 0 && logLevel > -1) {
         rtapi_set_msg_level(logLevel);
@@ -634,9 +635,8 @@ bool PMC_ReadConfiguration(const char *instanceName, struct ComponentStruct* com
     component_configuration* configuration = componentInstance->configuration;
 
     // Read device serial
-    const char* serialTag = "DEVICE_SERIAL";
     int deviceSerial = 0;
-    iniRead = iniFindInt(ini_file_ptr, serialTag, instanceName, &deviceSerial);
+    iniRead = iniFindInt(ini_file_ptr, "DEVICE_SERIAL", instanceName, &deviceSerial);
 
     if (iniRead != 0 || deviceSerial == 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "No device serial in INI set! '%d'\n", iniRead);
@@ -647,9 +647,8 @@ bool PMC_ReadConfiguration(const char *instanceName, struct ComponentStruct* com
     configuration->device_serial = deviceSerial;
 
     // Read and apply axes relevant configuration
-    const char* axisTag = "NUMBER_AXES";
     int numberOfAxes = 0;
-    iniRead = iniFindInt(ini_file_ptr, axisTag, instanceName, &numberOfAxes);
+    iniRead = iniFindInt(ini_file_ptr, "NUMBER_AXES", instanceName, &numberOfAxes);
 
     if (iniRead != 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "Number of axes not set in INI! '%d'\n", iniRead);
@@ -781,6 +780,17 @@ bool PMC_ReadConfiguration(const char *instanceName, struct ComponentStruct* com
         }
     }
     configuration->encoders = encoders;
+
+    // Read and apply keyboard matrix configuration
+    int matrixRows = 0;
+    int matrixCols = 0;
+    iniFindInt(ini_file_ptr, "MATRIX_KEYBOARD_ROWS", instanceName, &matrixRows);
+    iniFindInt(ini_file_ptr, "MATRIX_KEYBOARD_COLUMNS", instanceName, &matrixCols);
+
+    if (matrixRows > 0 && matrixCols > 0) {
+        componentInstance->configuration->matrix_rows = matrixRows;
+        componentInstance->configuration->matrix_cols = matrixCols;
+    }
 
     fclose(ini_file_ptr);
 
@@ -1465,7 +1475,7 @@ inline const char* PMC_GetStateName(enum State state) {
 
 // ------------------------------------
 // Extension of method `PK_DigitalIOSetGet`.
-// With addition of reading and handling encoder counts.
+// With addition of reading and handling encoder counts. And reading 8x8 Matrix keyboard.
 // PoKeysLib updates encoders with a separate method "PK_EncoderValuesGet", which uses separate requests.
 // ------------------------------------
 int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance) {
@@ -1497,6 +1507,10 @@ int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance) {
 
             internals->encoders_value_previous[i] = currentValue;
             device->Encoders[encoder].encoderValue += difference;
+        }
+
+        for (int i = 0; i < 64; i++) {
+            device->matrixKB.matrixKBvalues[i] = (device->response[50 + i / 8] & (1 << (i % 8))) > 0;
         }
     }
 

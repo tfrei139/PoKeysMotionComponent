@@ -15,6 +15,7 @@ pin out signed io.encoder.#.count [5] "Encoders, raw count";
 pin out bit io.encoder.#.index [5] "Encoders, index triggered";
 pin out float io.encoder.#.cps [5] "Encoders, counts/second";
 pin out float io.encoder.#.vps [5] "Encoders, velocity [(count/scale)/second]";
+pin out bit io.matrix.# [64] "Matrix keyboard (By row, then column)";
 
 pin out bit motion.is_ready = false "Indicates that the component is ready to accept motion commands";
 pin in bit motion.override_limit.# [16] "Limit switch override. Any pin set overrides globally on PoKeys";
