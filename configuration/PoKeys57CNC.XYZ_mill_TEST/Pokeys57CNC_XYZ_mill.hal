@@ -19,20 +19,19 @@ setp PoKeysMotionBuffer.0.axis.0.step-scale [PoKeysController.0]AXIS0_STEP_SCALE
 setp PoKeysMotionBuffer.0.axis.1.step-scale [PoKeysController.0]AXIS1_STEP_SCALE
 setp PoKeysMotionBuffer.0.axis.2.step-scale [PoKeysController.0]AXIS2_STEP_SCALE
 
-# external output signals
-net machine-is-on <= halui.machine.is-on
-net machine-is-on => PoKeysMotionBuffer.0.machine-is-on
-net machine-is-on => PoKeysController.0.machine-is-on
+# Connect "ready" pins
+net machine-is-on      <= halui.machine.is-on
+net machine-is-on      => PoKeysController.0.machine-is-on
+net component-is-ready <= PoKeysController.0.motion.is-ready
+net component-is-ready => PoKeysMotionBuffer.0.component-is-ready
 
-# buffer detects motion
-net buffer-in-motion <= PoKeysMotionBuffer.0.in-motion
-net buffer-in-motion => PoKeysController.0.motion.started
-
-# Indicators that motion should happen
+# Connect "motion" pins to motion buffer
+net motion-enabled       <= motion.motion-enabled
+net motion-enabled       => PoKeysMotionBuffer.0.motion.is-enabled
 net motion-jog-is-active <= motion.jog-is-active
-net motion-jog-is-active => PoKeysMotionBuffer.0.motion-jog-is-active
-net motion-in-position <= motion.in-position
-net motion-in-position => PoKeysMotionBuffer.0.motion-in-position
+net motion-jog-is-active => PoKeysMotionBuffer.0.motion.jog-is-active
+net motion-in-position   <= motion.in-position
+net motion-in-position   => PoKeysMotionBuffer.0.motion.in-position
 
 #*******************
 # E-Stop latch component
@@ -40,10 +39,10 @@ net motion-in-position => PoKeysMotionBuffer.0.motion-in-position
 
 loadrt estop_latch
 
-net estop-loopout estop-latch.0.ok-out => iocontrol.0.emc-enable-in
-net estop-loopin iocontrol.0.user-enable-out => estop-latch.0.ok-in
+net estop-loopout estop-latch.0.ok-out          => iocontrol.0.emc-enable-in
+net estop-loopin iocontrol.0.user-enable-out    => estop-latch.0.ok-in
 net estop-reset iocontrol.0.user-request-enable => estop-latch.0.reset
-net remote-estop estop-latch.0.fault-in <= PoKeysController.0.machine-estop
+net remote-estop estop-latch.0.fault-in         <= PoKeysController.0.machine-estop
 
 #*******************
 # Assign RT functions

@@ -31,8 +31,8 @@ MODULE_INFO(linuxcnc, "pin:io.encoder.#.count:s32:5:out:Encoders, raw count:None
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.index:bit:5:out:Encoders, index triggered:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.cps:float:5:out:Encoders, counts/second:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.vps:float:5:out:Encoders, velocity [(count/scale)/second]:None:None");
-MODULE_INFO(linuxcnc, "pin:motion.started:bit:0:in:Motion is being streamed:false:None");
-MODULE_INFO(linuxcnc, "pin:motion.override_limit.#:bit:6:in:Limit switch override. Any pin set overrides globally on PoKeys:None:None");
+MODULE_INFO(linuxcnc, "pin:motion.is_ready:bit:0:out:Indicates that the component is ready to accept motion commands:false:None");
+MODULE_INFO(linuxcnc, "pin:motion.override_limit.#:bit:16:in:Limit switch override. Any pin set overrides globally on PoKeys:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:8:out:Position in machine units:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.limit_positive:bit:8:out:Positive limit switches:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.limit_negative:bit:8:out:Negative limit switches:None:None");
@@ -46,7 +46,7 @@ MODULE_LICENSE("GPL");
 
 // Component extra configuration
 #define ComponentStruct __comp_state    // Internal struct of component
-#define NumberOfOverridePins 6          // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
+#define NumberOfOverridePins 16         // Reasons for override might be more than one per Axis. Example shared homing/limit switches.
 #define NumberOfDigitalPins 10          // Applies to both input and output pins. Could be raised as necessary
 #define NumberOfEncoders 5              // Up to 25+1 encoders. Could be raised as necessary
 #define NoEncoderIndex -127
@@ -77,6 +77,10 @@ typedef struct {
 } component_configuration;
 
 typedef struct {
+    // elapsed cycles
+    uint32_t cycles;
+    // cycle when buffering started
+    uint32_t cycleStartBuffer;
     // "Ring" buffer for velocity calculation
     uint8_t encoders_buffer_position[NumberOfEncoders][2];
     int32_t* encoders_buffer_values[NumberOfEncoders];
@@ -98,7 +102,7 @@ struct __comp_state {
     hal_bit_t* io_encoder_index[NumberOfEncoders];
     hal_float_t *io_encoder_cps[NumberOfEncoders];
     hal_float_t *io_encoder_vps[NumberOfEncoders];
-    hal_bit_t* motion_started;
+    hal_bit_t *motion_is_ready;
     hal_bit_t* motion_override_limit[NumberOfOverridePins];
     hal_float_t* axis_position_feedback[8];
     hal_bit_t* axis_limit_positive[8];
@@ -209,10 +213,10 @@ static int export(char *prefix, long extra_arg) {
             "%s.io.encoder.%01d.vps", prefix, j);
         if(r != 0) return r;
     }
-    r = hal_pin_bit_newf(HAL_IN, &(inst->motion_started), comp_id,
-        "%s.motion.started", prefix);
+    r = hal_pin_bit_newf(HAL_OUT, &(inst->motion_is_ready), comp_id,
+        "%s.motion.is-ready", prefix);
     if(r != 0) return r;
-    *(inst->motion_started) = false;
+    *(inst->motion_is_ready) = false;
     for(j=0; j < (NumberOfOverridePins); j++) {
         r = hal_pin_bit_newf(HAL_IN, &(inst->motion_override_limit[j]), comp_id,
             "%s.motion.override-limit.%01d", prefix, j);
@@ -371,8 +375,12 @@ enum State {
     INIT = 0,               // Component created
     IDLE = 1,               // Connected and PE stopped state
     ENABLED = 2,            // Connected and PE running state (not moving)
-    MOVING = 3,             // Connected and PE running state (moving)
-    ESTOP = 4,              // ESTOP toggled
+    MOTIONBUFFERING = 3,    // Connected and PE running state (buffer started streaming)
+    MOVING = 4,             // Connected and PE running state (moving)
+    MOTIONERROR = 5,        // Stop motion due to error
+    MOTIONDISABLE = 6,      // Stop motion due to disabled machine
+    MOTIONESTOP = 7,        // Stop motion due to emergency stop
+    ESTOP = 8,              // Emergency stop toggled
 };
 
 // ------------------------------------
@@ -386,13 +394,15 @@ void PMC_ProcessEStop(struct ComponentStruct* componentInstance);
 void PMC_ProcessDigitalPins(struct ComponentStruct* componentInstance);
 void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance);
 void PMC_ProcessEncoders(struct ComponentStruct* componentInstance);
-bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance);
+bool PMC_StreamAvailable(struct ComponentStruct* componentInstance);
+bool PMC_FinishStream(struct ComponentStruct* componentInstance);
+enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance);
 void PMC_ProcessPositions(struct ComponentStruct* componentInstance);
 void PMC_ProcessRelays(struct ComponentStruct* componentInstance);
 bool PMC_CompareRelayState(sPoKeysDevice* device, bool state, int offset);
 void PMC_SetActiveOutputsOff(struct ComponentStruct* componentInstance);
 struct timespec* PMC_GetStartTime();
-void PMC_ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, enum State currentState, enum State nextState);
+void PMC_ProcessCycleTime(struct timespec* startTime, bool overrideCycleTime, enum State currentState, struct ComponentStruct* componentInstance);
 const char* PMC_GetStateName(enum State state);
 
 int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance);
@@ -433,6 +443,7 @@ void user_mainloop(void) {
                     // Machine is enabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == true) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peRUNNING, "Set PE Running from IDLE");
+                        *currentInstance->motion_is_ready = true;
                         currentInstance->internal_state = ENABLED;
                         break;
                     }
@@ -452,6 +463,7 @@ void user_mainloop(void) {
 
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
+                        *currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = ESTOP;
                         break;
                     }
@@ -459,6 +471,7 @@ void user_mainloop(void) {
                     // Machine is disabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == false) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
+                        *currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = IDLE;
                         break;
                     }
@@ -471,37 +484,96 @@ void user_mainloop(void) {
                     PMC_ProcessLimitOverride(currentInstance);
 
                     // Check if motion is commanded
-                    if (0 + *currentInstance->motion_started == true) {
+                    if (PMC_StreamAvailable(currentInstance)) {
                         // switching states gives us at most "CycleTimeMs" of buffer.
-                        // sleep specific time to give the buffer extra time (20ms) to fill up.
-                        // OPTIONAL introduce "Buffering" state.
-                        usleep(20000);
-                        overrideCycleTime = true;
-                        rtapi_print_msg(RTAPI_MSG_DBG, "Going to motion\n");
-                        currentInstance->internal_state = MOVING;
+                        // "Buffering" state will provide extra time (20ms) to fill up.
+                        currentInstance->internals->cycleStartBuffer = currentInstance->internals->cycles;
+                        currentInstance->internal_state = MOTIONBUFFERING;
                         break;
                     }
 
                     break;
-                case MOVING:
-                    if (!PMC_ProcessMoveCommand(currentInstance)) {
-                        currentInstance->internal_state = ENABLED;
+                case MOTIONBUFFERING:
+                    if (currentInstance->internals->cycles - currentInstance->internals->cycleStartBuffer >= 4) {
+                        currentInstance->internal_state = MOVING;
+                        break;
                     }
+
+                    PMC_ReadPulseEngineStatus(currentInstance);
+                    PMC_ProcessEStop(currentInstance);
+
+                    // Set Estop from PoKeys
+                    if (*currentInstance->machine_estop == true) {
+                        *currentInstance->motion_is_ready = false;
+                        currentInstance->internal_state = MOTIONESTOP;
+                        break;
+                    }
+
+                    // Machine is disabled from LinuxCNC
+                    if (0 + *currentInstance->machine_is_on == false) {
+                        PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from ENABLED");
+                        *currentInstance->motion_is_ready = false;
+                        currentInstance->internal_state = MOTIONDISABLE;
+                        break;
+                    }
+
+                    PMC_ProcessDigitalPins(currentInstance);
+                    PMC_ProcessPositions(currentInstance);
+                    PMC_ProcessRelays(currentInstance);
+                    PMC_ProcessPwmPins(currentInstance);
+                    PMC_ProcessEncoders(currentInstance);
+                    PMC_ProcessLimitOverride(currentInstance);
+
+                    break;
+                case MOVING:
+                    currentInstance->internal_state = PMC_ProcessMoveCommand(currentInstance);
 
                     PMC_ProcessEStop(currentInstance);
 
                     // Set Estop from PoKeys
                     if (*currentInstance->machine_estop == true) {
-                        // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
-                        currentInstance->internal_state = ESTOP;
+                        *currentInstance->motion_is_ready = false;
+                        currentInstance->internal_state = MOTIONESTOP;
                         break;
                     }
 
                     // Machine is disabled from LinuxCNC
                     if (0 + *currentInstance->machine_is_on == false) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
-                        // TODO Can we somehow assert that the MotionBuffer does not add to the stream?
+                        *currentInstance->motion_is_ready = false;
+                        currentInstance->internal_state = MOTIONDISABLE;
+                        break;
+                    }
+
+                    PMC_ProcessDigitalPins(currentInstance);
+                    PMC_ProcessPositions(currentInstance);
+                    PMC_ProcessRelays(currentInstance);
+                    PMC_ProcessPwmPins(currentInstance);
+                    PMC_ProcessEncoders(currentInstance);
+
+                    break;
+                case MOTIONERROR:
+                    // Most likely error, buffer underrun. Return to enabled state and retry.
+                    currentInstance->internal_state = ENABLED;
+                    break;
+                case MOTIONDISABLE:
+                    if (PMC_FinishStream(currentInstance)) {
+                        overrideCycleTime = true;
                         currentInstance->internal_state = IDLE;
+                        break;
+                    }
+
+                    PMC_ProcessDigitalPins(currentInstance);
+                    PMC_ProcessPositions(currentInstance);
+                    PMC_ProcessRelays(currentInstance);
+                    PMC_ProcessPwmPins(currentInstance);
+                    PMC_ProcessEncoders(currentInstance);
+
+                    break;
+                case MOTIONESTOP:
+                    if (PMC_FinishStream(currentInstance)) {
+                        overrideCycleTime = true;
+                        currentInstance->internal_state = ESTOP;
                         break;
                     }
 
@@ -534,7 +606,7 @@ void user_mainloop(void) {
                     return;
             }
 
-            PMC_ProcessCycleTime(cycleStart, overrideCycleTime, originState, currentInstance->internal_state);
+            PMC_ProcessCycleTime(cycleStart, overrideCycleTime, originState, currentInstance);
         }
     }
 }
@@ -756,7 +828,6 @@ bool PMC_ConnectPokeysDevice(struct ComponentStruct* componentInstance) {
         ret = PK_PEv2_PulseEngineReboot(device);
         rtapi_print_msg(RTAPI_MSG_DBG, "PE Reboot:%d\n", ret);
         // In theory we should sleep, but it'l highly unlikely you'll start a motion 1 second after opening LCNC.
-        // TODO or is the device communication down during this time?
     }
 
     // Set up axis configuration
@@ -895,11 +966,11 @@ void PMC_ProcessLimitOverride(struct ComponentStruct* componentInstance) {
     if (limitOverride == true && device->PEv2.LimitOverride == 0) {
         device->PEv2.LimitOverrideSetup = 1;
         int ret = PK_PEv2_PulseEngineStateSet(device);
-        rtapi_print_msg(RTAPI_MSG_WARN, "SET LIMIT OVERRIDE TRUE:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, SET LIMIT OVERRIDE TRUE:%d\n", componentInstance->internals->cycles, ret);
     } else if (limitOverride == false && device->PEv2.LimitOverride == 1) {
         device->PEv2.LimitOverrideSetup = 0;
         int ret = PK_PEv2_PulseEngineStateSet(device);
-        rtapi_print_msg(RTAPI_MSG_WARN, "SET LIMIT OVERRIDE FALSE:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, SET LIMIT OVERRIDE FALSE:%d\n", componentInstance->internals->cycles, ret);
     }
 }
 
@@ -909,7 +980,7 @@ void PMC_ProcessLimitOverride(struct ComponentStruct* componentInstance) {
 // ------------------------------------
 void PMC_ProcessEStop(struct ComponentStruct* componentInstance) {
     if (componentInstance->device->PEv2.PulseEngineState == PK_PEState_peSTOP_EMERGENCY) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop due to PulseEngine\n");
+        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, E-Stop due to PulseEngine\n", componentInstance->internals->cycles);
 
         *componentInstance->machine_estop = true;
 
@@ -919,14 +990,14 @@ void PMC_ProcessEStop(struct ComponentStruct* componentInstance) {
 		bool currentEstop = 0 + *componentInstance->machine_estop;
 
         uint8_t eStopPin = componentInstance->device->Pins[EstopPinNumber].DigitalValueGet;
-		rtapi_print_msg(RTAPI_MSG_DBG, "Getting E-Stop:%d\n", eStopPin);
+		rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Getting E-Stop:%d\n", componentInstance->internals->cycles, eStopPin);
 
 		if (currentEstop == 1 && eStopPin == 0) {
-			rtapi_print_msg(RTAPI_MSG_WARN, "E-Stop is Reset (by pin)\n");
+			rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, E-Stop is Reset (by pin)\n", componentInstance->internals->cycles);
 
 			*componentInstance->machine_estop = false;
 		} else if (currentEstop == 0 && eStopPin > 0) {
-			rtapi_print_msg(RTAPI_MSG_ERR, "E-Stop due to pin!\n");
+			rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, E-Stop due to pin!\n", componentInstance->internals->cycles);
 
 			*componentInstance->machine_estop = true;
 
@@ -947,7 +1018,7 @@ void PMC_ProcessDigitalPins(struct ComponentStruct* componentInstance) {
     }
 
     int ret = PMC_DigitalIOSetGet(componentInstance);
-    //rtapi_print_msg(RTAPI_MSG_DBG, "Update all digital pins:%d\n", ret);
+    //rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Update all digital pins:%d\n", componentInstance->internals->cycles, ret);
 
     for (int i = 0; i < componentInstance->configuration->input_pins; i++) {
         int pinNumber = componentInstance->configuration->input_pin_map[i];
@@ -974,7 +1045,7 @@ void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance) {
         float pinValue = *componentInstance->io_pwm_pin[i];
 
         if (pinValue < 0.0f || pinValue > 100.0f) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "PWM channel %d, exceeds range of 0.0 - 100.0!\n", channel);
+            rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, PWM channel %d, exceeds range of 0.0 - 100.0!\n", componentInstance->internals->cycles, channel);
 
             if (device->PWM.PWMduty[channel] > 0) {
                 // something wrong, let's stop here.
@@ -987,7 +1058,7 @@ void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance) {
             uint32_t dutyCycle = ((pinValue / 100.0f) * (float)device->PWM.PWMperiod);
 
             if (device->PWM.PWMduty[channel] - dutyCycle != 0) {
-                rtapi_print_msg(RTAPI_MSG_DBG, "PWM channel %d, set from %d to %d\n", channel, device->PWM.PWMduty[channel], dutyCycle);
+                rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, PWM channel %d, set from %d to %d\n", componentInstance->internals->cycles, channel, device->PWM.PWMduty[channel], dutyCycle);
                 device->PWM.PWMduty[channel] = dutyCycle;
                 setNecessary = true;
             }
@@ -996,7 +1067,7 @@ void PMC_ProcessPwmPins(struct ComponentStruct* componentInstance) {
 
     if (setNecessary) {
         int ret = PK_PWMUpdate(device);
-        rtapi_print_msg(RTAPI_MSG_DBG, "Update PWM:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Update PWM:%d\n", componentInstance->internals->cycles, ret);
     }
 }
 
@@ -1077,17 +1148,72 @@ void PMC_ProcessEncoders(struct ComponentStruct* componentInstance) {
 }
 
 // ------------------------------------
-// Process streamed move command and implicitly update PE status information.
-// Returns false when movement stops.
+// Checks whether there is motion being streamed.
 // ------------------------------------
-bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
-    bool continueMove = true;
+bool PMC_StreamAvailable(struct ComponentStruct* componentInstance) {
     hal_stream_t stream;
     int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
 
     if (ret < 0) {
-        rtapi_print_msg(RTAPI_MSG_ERR, "Shared Buffer error=%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Shared Buffer error: %d\n", componentInstance->internals->cycles, ret);
         return false;
+    }
+
+    bool readable = hal_stream_readable(&stream);
+    hal_stream_detach(&stream);
+    return readable;
+}
+
+// ------------------------------------
+// If the motion was interrupted, there may still be data in the buffer.
+// Read and discard the buffer until we get the EOM signal.
+// ------------------------------------
+bool PMC_FinishStream(struct ComponentStruct* componentInstance) {
+    hal_stream_t stream;
+    int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
+
+    if (ret < 0) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Finishing stream, error attaching: %d\n", componentInstance->internals->cycles, ret);
+        return true;
+    }
+
+    bool readable = hal_stream_readable(&stream);
+
+    uint8_t numberOfAxes = componentInstance->configuration->number_axes;
+    while (readable) {
+        union hal_stream_data dataToReceive[numberOfAxes];
+        ret = hal_stream_read(&stream, dataToReceive, NULL);
+
+        if (ret != 0) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Finishing stream, error reading: %d\n", componentInstance->internals->cycles, ret);
+            break;
+        }
+
+        if (dataToReceive[0].s == EndOfMotionPacket) {
+            // rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Finishing stream, end of motion received\n", componentInstance->internals->cycles);
+            hal_stream_detach(&stream);
+            return true;
+        }
+
+        readable = hal_stream_readable(&stream);
+    }
+
+    hal_stream_detach(&stream);
+    return false;
+}
+
+// ------------------------------------
+// Process streamed move command and implicitly update PE status information.
+// Returns false when movement stops.
+// ------------------------------------
+enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
+    enum State nextState = MOVING;
+    hal_stream_t stream;
+    int ret = hal_stream_attach(&stream, comp_id, SharedMemoryKey, componentInstance->configuration->streamtype);
+
+    if (ret < 0) {
+        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Shared Buffer error: %d\n", componentInstance->internals->cycles, ret);
+        return MOTIONERROR;
     }
 
     bool streamReadable = hal_stream_readable(&stream);
@@ -1095,7 +1221,7 @@ bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
     if (!streamReadable) {
         // if the last cycle was slow (>5ms), we do not wait and "almost immediately" process the next motion state.
         // since the servo thread may not have updated yet, we delay here to get at least one value here.
-        rtapi_print_msg(RTAPI_MSG_WARN, "Potential Buffer underrun? EndOfMotion Packet missing? Try sleep\n");
+        rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, Potential Buffer underrun? EndOfMotion Packet missing? Try sleep\n", componentInstance->internals->cycles);
         usleep(1000); // the time of the servo period (1ms).
         streamReadable = hal_stream_readable(&stream);
     }
@@ -1116,28 +1242,37 @@ bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
             ret = hal_stream_read(&stream, dataToReceive, NULL);
 
             if (ret != 0) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Error reading stream:%d\n", ret);
-                continueMove = false;
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Error reading stream: %d\n", componentInstance->internals->cycles, ret);
+                nextState = MOTIONERROR;
                 break;
             }
 
             if (dataToReceive[0].s == EndOfMotionPacket) {
-                rtapi_print_msg(RTAPI_MSG_DBG, "End of motion\n");
-                continueMove = false;
-                break;
+                rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, End of motion received\n", componentInstance->internals->cycles);
+                nextState = ENABLED;
+                streamReadable = false;
+            } else {
+                //rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, Pulses: ", componentInstance->internals->cycles);
+
+                for (int i = 0; i < numberOfAxes; i++) {
+                    if (dataToReceive[i].s > 256) {
+                        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Motion commanded exceeds limit: %d\n", componentInstance->internals->cycles, dataToReceive[i].s);
+                        nextState = MOTIONERROR;
+                        hal_stream_detach(&stream);
+                        return nextState;
+                    }
+
+                    uint8_t motion = dataToReceive[i].s;
+                    //rtapi_print_msg(RTAPI_MSG_INFO, "%d,", motion);
+                    device->PEv2.MotionBuffer[(motionEntries * numberOfAxes) + i] = motion;
+                }
+
+                //rtapi_print_msg(RTAPI_MSG_INFO, "\n");
+
+                motionEntries++;
+
+                streamReadable = hal_stream_readable(&stream);
             }
-
-            for (int i = 0; i < numberOfAxes; i++) {
-                uint8_t motion = dataToReceive[i].s;
-                //rtapi_print_msg(RTAPI_MSG_DBG, "%d,", motion);
-                device->PEv2.MotionBuffer[(motionEntries * numberOfAxes) + i] = motion;
-            }
-
-            //rtapi_print_msg(RTAPI_MSG_DBG, "\n");
-
-            motionEntries++;
-
-            streamReadable = hal_stream_readable(&stream);
 
             if (streamReadable == false || motionEntries == maxMotionPackets) {
                 device->PEv2.newMotionBufferEntries = motionEntries;
@@ -1145,23 +1280,25 @@ bool PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                 ret = PK_PEv2_BufferFill(device);
 
                 if (device->PEv2.motionBufferEntriesAccepted != motionEntries) {
-                    // TODO handle if not all buffer entries are accepted
-                    rtapi_print_msg(RTAPI_MSG_ERR, "PE Axes NOT ALL BUFFER ENTRIES ACCEPTED (%d, accepted %d)%d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
+                    rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, PE Axes not all buffer entries accepted (%d, accepted %d) %d\n", componentInstance->internals->cycles, motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
+                    nextState = MOTIONERROR;
+                    hal_stream_detach(&stream);
+                    return nextState;
                 }
 
                 motionEntries = 0;
-                //rtapi_print_msg(RTAPI_MSG_DBG, "PE Axes (%d, accepted %d), Move commanded:%d\n", motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
+                //rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, PE Axes (%d, accepted %d), Move commanded:%d\n", componentInstance->internals->cycles, motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
             }
         }
         while (streamReadable);
     } else {
-        rtapi_print_msg(RTAPI_MSG_ERR, "Buffer underrun? EndOfMotion Packet missing?\n");
-        continueMove = false;
+        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Buffer underrun? EndOfMotion Packet missing?\n", componentInstance->internals->cycles);
+        nextState = MOTIONERROR;
     }
 
     hal_stream_detach(&stream);
 
-    return continueMove;
+    return nextState;
 }
 
 // ------------------------------------
@@ -1189,7 +1326,7 @@ void PMC_ProcessRelays(struct ComponentStruct* componentInstance) {
     sPoKeysDevice* device = componentInstance->device;
 
     int ret = PK_PEv2_ExternalOutputsGet(device);
-    //rtapi_print_msg(RTAPI_MSG_DBG, "Getting Relay status:%d, %d\n", ret, device->PEv2.ExternalOCOutputs);
+    //rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Getting Relay status:%d, %d\n", componentInstance->internals->cycles, ret, device->PEv2.ExternalOCOutputs);
 
     bool ssr1on = 0 + *componentInstance->io_solid_state_relay[0];
     bool ssr2on = 0 + *componentInstance->io_solid_state_relay[1];
@@ -1212,7 +1349,7 @@ void PMC_ProcessRelays(struct ComponentStruct* componentInstance) {
 
     if (setNecessary) {
         ret = PK_PEv2_ExternalOutputsSet(device);
-        rtapi_print_msg(RTAPI_MSG_INFO, "Change relays:%d\n", ret);
+        rtapi_print_msg(RTAPI_MSG_INFO, "Cycle %d, Change relays:%d\n", componentInstance->internals->cycles, ret);
     }
 }
 
@@ -1272,29 +1409,39 @@ struct timespec* PMC_GetStartTime() {
 // ------------------------------------
 // Try to keep the cycle time within defined limits.
 // ------------------------------------
-void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum State currentState, enum State nextState) {
+void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum State currentState, struct ComponentStruct* componentInstance) {
+    enum State nextState = componentInstance->internal_state;
     struct timespec cycleEnd;
     clock_gettime(CLOCK_REALTIME, &cycleEnd);
-    float t_ms = ((float)(cycleEnd.tv_sec - cycleStart->tv_sec) * 1.0e9 + (float)(cycleEnd.tv_nsec - cycleStart->tv_nsec)) / 1.0e6;
+    float cycleTimeMs = ((float)(cycleEnd.tv_sec - cycleStart->tv_sec) * 1.0e9 + (float)(cycleEnd.tv_nsec - cycleStart->tv_nsec)) / 1.0e6;
     free(cycleStart);
 
-    rtapi_print_msg(RTAPI_MSG_DBG, "Time elapsed %f ms\n", t_ms);
+    rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Time elapsed %0.2f ms\n", componentInstance->internals->cycles, cycleTimeMs);
+
+    if (currentState != nextState) {
+        const char* currentStateName = PMC_GetStateName(currentState);
+        const char* nextStateName = PMC_GetStateName(nextState);
+
+        rtapi_print_msg(RTAPI_MSG_DBG, "Cycle %d, Change state from %s to %s\n", componentInstance->internals->cycles, currentStateName, nextStateName);
+    }
 
     if (!overrideCycleTime) {
-        if (t_ms <= CycleTimeMs) {
-            useconds_t sleepTimeUs = (CycleTimeMs - t_ms) * 1000;
+        if (cycleTimeMs <= CycleTimeMs) {
+            useconds_t sleepTimeUs = (CycleTimeMs - cycleTimeMs) * 1000;
             usleep(sleepTimeUs);
         } else {
             const char* currentStateName = PMC_GetStateName(currentState);
             const char* nextStateName = PMC_GetStateName(nextState);
 
-            if (t_ms <= CycleTimeMs + 3.0) {
-                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle greater than %fms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
+            if (cycleTimeMs <= CycleTimeMs + 3.0) {
+                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, Greater than %0.1fms elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
             } else {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle greater than %f!ms elapsed %f ms, from %s to %s\n", CycleTimeMs, t_ms, currentStateName, nextStateName);
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Greater than %0.1fms! elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
             }
         }
     }
+
+    componentInstance->internals->cycles++;
 }
 
 // ------------------------------------
@@ -1306,7 +1453,11 @@ inline const char* PMC_GetStateName(enum State state) {
         case INIT: return "INIT";
         case IDLE: return "IDLE";
         case ENABLED: return "ENABLED";
+        case MOTIONBUFFERING: return "MOTIONBUFFERING";
         case MOVING: return "MOVING";
+        case MOTIONERROR: return "MOTIONERROR";
+        case MOTIONDISABLE: return "MOTIONDISABLE";
+        case MOTIONESTOP: return "MOTIONESTOP";
         case ESTOP: return "ESTOP";
         default: return "UNDEFINED";
     }

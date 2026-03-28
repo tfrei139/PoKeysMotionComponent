@@ -14,13 +14,11 @@ If you have in depth know-how and find something, please create an issue, so I c
 This list is mainly intended as a reminder for myself.
 
 - Testing
-    - motion buffer in error situations
     - probing
     - soft limits
 - IO
     - Matrix-Keyboard (up to 8x8 should be basically free with `PK_DigitalIOSetGet`)
 - Technical
-    - Split up code base & Merge components using `hal_export_funct`?
     - Velocity mode
 - Provide more example configurations
     - Complete MPG example

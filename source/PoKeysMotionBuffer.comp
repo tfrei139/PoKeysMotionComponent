@@ -1,10 +1,14 @@
 component PoKeysMotionBuffer;
 
-pin in bit machine_is_on = false "HALUI: Only when the machine is enabled, motion can happend";
-pin in bit motion_in_position = true "When the motion planner is not in position, we stream the commanded position";
-pin in bit motion_jog_is_active = false "When the motion planner is jogging, in position remains true. We stream the commanded position";
+pin in bit component_is_ready = false "Only when the receiving component is ready, motion should be streamed";
 
-pin out bit in_motion = false "Indicates that the stream is open";
+pin in bit motion.is_enabled = false "When the motion planner is enabled, motion can happen. Conversely if disabled motion mus stop immediately.";
+pin in bit motion.in_position = true "When the motion planner is not in position, start streaming the commanded position";
+pin in bit motion.jog_is_active = false "When the motion planner is jogging, 'in position' remains true, start streaming the commanded position";
+
+pin out bit motion.is_init = false "Flag whether the internal position is synchronised with the input pins (DEBUG)";
+pin out bit motion.is_streaming = false "Flag whether the motion is being streamed (DEBUG)";
+pin out bit motion.has_error = false "Indicates that the stream had an error. Prevents spamming from RT thread, only show error once (DEBUG)";
 
 pin in float axis.#.position_command [8 : personality] "Commanded position by the motion controller";
 pin out float axis.#.last_position [8 : personality] "Internal tracking of last commanded position (DEBUG)";
@@ -27,10 +31,9 @@ author "T.Frei";
 #define SharedMemoryKey 57       // Arbitrary number
 #define BufferDepth 128          // Buffer on PoKeys side would be 128
 #define EndOfMotionPacket 0x0101 // Arbitrary number > uint8
-//#define MeasureTime
+//#define MeasureTime            // Debug information how long the methods take
 
-hal_stream_t* MotionStream;
-bool IsInit = false;
+hal_stream_t* MotionStream;      // Streaming exchange to the uspace component
 
 // ------------------------------------
 // Setup function
@@ -92,89 +95,123 @@ EXTRA_CLEANUP() {
 // Main Function
 // ------------------------------------
 FUNCTION(_) {
-    if (!machine_is_on && IsInit) {
-        IsInit = false;
-        in_motion = false;
+    // if either the motion planner or the controller component is inactive we must immediately stop and idle.
+    if (!(motion_is_enabled && component_is_ready)) {
+        if (motion_is_streaming) {
+            union hal_stream_data dataToSend[personality];
+            dataToSend[0].s = EndOfMotionPacket;
+            int writeRes = hal_stream_write(MotionStream, dataToSend);
+
+            if (writeRes != 0 && motion_has_error == false) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "End of Motion BUFFER overrun: %d\n", writeRes);
+            }
+
+            motion_has_error = false;
+            motion_is_streaming = false;
+        }
+
+        if (motion_is_init) {
+            motion_is_init = false;
+        }
+
         return;
     }
 
-    if (machine_is_on && !IsInit) {
+    if (!motion_is_init) {
         for (int i = 0; i < personality; i++) {
             axis_last_position(i) = axis_position_command(i);
             axis_pulses_leftover(i) = 0.0f;
             axis_step_width(i) = 1 / fabs(axis_step_scale(i));
         }
-        IsInit = true;
-        return;
+
+        motion_is_init = true;
     }
 
-	if (motion_in_position == false || motion_jog_is_active == true) {
-		for (int i = 0; i < personality; i++) {
-#ifdef MeasureTime
-            long long startTime = rtapi_get_time();
-#endif
-			union hal_stream_data dataToSend[personality];
+    // if either we are not in position or jogging is active we must start streaming.
+    // if neither applies, but we were streaming, check if we have reached the final commanded position.
+    bool motionCommanded = false;
+    if (motion_in_position == false || motion_jog_is_active == true) {
+        motionCommanded = true;
+    } else if (motion_is_streaming) {
+        for (int i = 0; i < personality; i++) {
+            float differenceInPosition = axis_position_command(i) - axis_last_position(i);
 
-            for (int i = 0; i < personality; i++) {
-                float differenceInPosition = axis_position_command(i) - axis_last_position(i);
-
-                if (fabs(differenceInPosition) < axis_step_width(i)) {
-                    dataToSend[i].s = 0;
-                } else {
-					axis_last_position(i) = axis_position_command(i);
-
-                    float pulsesDifference = differenceInPosition * axis_step_scale(i);
-                    int32_t pulses = floor(pulsesDifference);
-                    axis_pulses_leftover(i) += (pulsesDifference - pulses);
-
-                    if (axis_pulses_leftover(i) >= 1.0f) {
-                        pulses++;
-                        axis_pulses_leftover(i) -= 1.0f;
-                    }
-                    else if (axis_pulses_leftover(i) <= -1.0f) {
-                        pulses--;
-                        axis_pulses_leftover(i) += 1.0f;
-                    }
-
-                    int32_t motion = abs(pulses) & 127;
-
-                    if (pulses < 0) {
-                        motion |= (1<<7);
-                    }
-
-                    dataToSend[i].s = motion;
-                }
+            if (fabs(differenceInPosition) >= axis_step_width(i)) {
+                motionCommanded = true;
+                break;
             }
-
-            int writeRes = hal_stream_write(MotionStream, dataToSend);
-            if (writeRes != 0) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun: %d\n", writeRes);
-            }
-
-            in_motion = true;
-
-#ifdef MeasureTime
-            long long endTime = rtapi_get_time();
-            long int deltaTime = (long int)(endTime - startTime) / 1000;
-
-            if (deltaTime >= 50) {
-				rtapi_print_msg(RTAPI_MSG_WARN, "BUFFER SEND took: %dus\n", deltaTime);
-			}
-#endif
-
-            return;
         }
+    }
+
+	if (motionCommanded) {
+#ifdef MeasureTime
+        long long startTime = rtapi_get_time();
+#endif
+        union hal_stream_data dataToSend[personality];
+
+        for (int i = 0; i < personality; i++) {
+            float differenceInPosition = axis_position_command(i) - axis_last_position(i);
+
+            if (fabs(differenceInPosition) < axis_step_width(i)) {
+                dataToSend[i].s = 0;
+            } else {
+                axis_last_position(i) = axis_position_command(i);
+
+                float pulsesDifference = differenceInPosition * axis_step_scale(i);
+                int32_t pulses = floor(pulsesDifference);
+                axis_pulses_leftover(i) += (pulsesDifference - pulses);
+
+                if (axis_pulses_leftover(i) >= 1.0f) {
+                    pulses++;
+                    axis_pulses_leftover(i) -= 1.0f;
+                }
+                else if (axis_pulses_leftover(i) <= -1.0f) {
+                    pulses--;
+                    axis_pulses_leftover(i) += 1.0f;
+                }
+
+                int32_t motion = abs(pulses) & 127;
+
+                if (pulses < 0) {
+                    motion |= (1<<7);
+                }
+
+                dataToSend[i].s = motion;
+            }
+        }
+
+        int writeRes = hal_stream_write(MotionStream, dataToSend);
+        if (writeRes != 0 && motion_has_error == false) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun: %d\n", writeRes);
+            motion_has_error = true;
+        }
+
+        motion_is_streaming = true;
+
+#ifdef MeasureTime
+        long long endTime = rtapi_get_time();
+        long int deltaTime = (long int)(endTime - startTime) / 1000;
+
+        if (deltaTime >= 50) {
+            rtapi_print_msg(RTAPI_MSG_WARN, "BUFFER SEND took: %dus\n", deltaTime);
+        }
+#endif
+
+        return;
 	}
 
-    if (in_motion == true) {
-        in_motion = false;
+    if (motion_is_streaming) {
+        motion_is_streaming = false;
 
         union hal_stream_data dataToSend[personality];
         dataToSend[0].s = EndOfMotionPacket;
         int writeRes = hal_stream_write(MotionStream, dataToSend);
 
-        if (writeRes != 0) {
+        if (writeRes != 0 && motion_has_error == false) {
             rtapi_print_msg(RTAPI_MSG_ERR, "End of Motion BUFFER overrun: %d\n", writeRes);
         }
+
+        // reset stream error at the end of one motion.
+        motion_has_error = false;
     }
 }
