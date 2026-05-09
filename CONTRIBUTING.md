@@ -18,3 +18,5 @@ This list is mainly intended as a reminder for myself.
     - soft limits
 - Provide more example configurations
     - Complete MPG example
+- Fit & Finish
+    - Error messages to user?

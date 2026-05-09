@@ -24,7 +24,7 @@ MODULE_INFO(linuxcnc, "pin:io.encoder.#.count:s32:5:out:Encoders, raw count:None
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.index:bit:5:out:Encoders, index triggered:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.cps:float:5:out:Encoders, counts/second:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.vps:float:5:out:Encoders, velocity [(count/scale)/second]:None:None");
-MODULE_INFO(linuxcnc, "pin:io.matrix.#:bit:64:out:Matrix keyboard (By row, then column):None:None");
+MODULE_INFO(linuxcnc, "pin:io.matrix.#:bit:64:out:Matrix keyboard:None:None");
 MODULE_INFO(linuxcnc, "pin:motion.is_ready:bit:0:out:Indicates that the component is ready to accept motion commands:false:None");
 MODULE_INFO(linuxcnc, "pin:motion.override_limit.#:bit:16:in:Limit switch override. Any pin set overrides globally on PoKeys:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:8:out:Position in machine units:None:None");
