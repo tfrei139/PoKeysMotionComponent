@@ -70,3 +70,6 @@ Due to that concern, I do not reflect a reset on index on the component side.
 The pin `io.encoder.D.count` will wrap around if the maximum value of integer is reached. The "count/velocity per second" pins are stable during this wrap around.
 
 The pin `io.encoder.D.cps` is calculated from the last 10 averages consisting of 20 values each, resulting in the average count of one second. No further filtering/stabilizing is done.
+
+## Matrix keyboard
+The Pokeys supports a 8 columns x 16 rows matrix, however with the used request to fetch the IO status only a 8x8 matrix is returned. Since this information is basically for free, performance wise, I opted to support only 8x8.
