@@ -173,6 +173,16 @@ net probe-in     =>  motion.probe-input
 #net mpg-scale => axis.z.jog-scale
 
 #******************************
+# matrix keyboard
+#******************************
+
+#net spindle-on <= PoKeysController.0.io.matrix.1
+#net spindle-on => halui.spindle.0.forward
+
+#net spindle-off <= PoKeysController.0.io.matrix.7
+#net spindle-off => halui.spindle.0.stop
+
+#******************************
 # manual tool change signals
 #******************************
 
