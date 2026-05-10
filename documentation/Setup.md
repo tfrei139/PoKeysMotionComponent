@@ -124,10 +124,10 @@ PWM_PIN_0 = 17
 ```
 net pwm-value => PoKeysController.0.io.pwm-pin.0
 ```
-The "io.pwm-pin.D" accepts a floating point value from 0% to 100% duty cycle.
+The `io.pwm-pin.D` accepts a floating point value from 0% to 100% duty cycle.
 
 
-### Setting up Encoder pins
+### Setting up encoder pins
 The PoKeys device offers up to 26 encoders. By default up to 5 can be configured in the ini file.  
 ini options:
 ```INI
@@ -154,3 +154,31 @@ io.encoder.0.vps
 Note on indexing: The component will not handle the index high in any special way. The PoKeys device may be set up to reset the count, which may lead to undefined behavior of the hal pins.  
 
 Note on implementation: The different types of encoders supported by PoKeys are abstracted away. See also the [Design document -> Encoders](DesignDocument.md).
+
+### Setting up the matrix keyboard
+A matrix keyboard with up to 8 columns and 8 rows can be used.
+ini options:
+```INI
+MATRIX_KEYBOARD_COLUMNS = 3
+MATRIX_KEYBOARD_ROWS = 4
+```
+The corresponding hal pins will be created sequentially row by row.
+```
+io.matrix.0
+io.matrix.1
+io.matrix.2
+...
+```
+Example of numbering for the above configuration. i.e. Button in column B and row 3 would be index 7
+```
+ # | A |  B |  C |
+---+---+----+----+
+ 1 | 0 |  1 |  2 |
+---+---+----+----+
+ 2 | 3 |  4 |  5 |
+---+---+----+----+
+ 3 | 6 |  7 |  8 |
+---+---+----+----+
+ 4 | 9 | 10 | 11 |
+---+---+----+----+
+```

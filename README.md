@@ -26,6 +26,7 @@ The controller will read the buffer and forward it to the PoKeys pulse engine. T
     - Configurable digital input/output pins
     - PWM pins (example spindle speed control)
     - Basic, fast and ultra fast encoders (example MPG jogging)
+    - Matrix keyboard up to 8x8 buttons
 
 ## Setup
 A walkthrough to set this component up is available here [Setup](documentation/Setup.md)

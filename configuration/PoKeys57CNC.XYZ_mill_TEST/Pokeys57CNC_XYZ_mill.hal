@@ -156,10 +156,10 @@ net probe-in     =>  motion.probe-input
 #net mpg-y axis.y.jog-enable <= mpg-enable
 #net mpg-z axis.z.jog-enable <= mpg-enable
 
-net mpg-counts <= PoKeysController.0.io.encoder.0.count
-net mpg-counts => joint.0.jog-counts
-net mpg-counts => joint.1.jog-counts
-net mpg-counts => joint.2.jog-counts
+#net mpg-counts <= PoKeysController.0.io.encoder.0.count
+#net mpg-counts => joint.0.jog-counts
+#net mpg-counts => joint.1.jog-counts
+#net mpg-counts => joint.2.jog-counts
 
 # axis jogging only possible if machine is homed
 #net mpg-counts => axis.x.jog-counts
@@ -171,6 +171,16 @@ net mpg-counts => joint.2.jog-counts
 #net mpg-scale => axis.x.jog-scale
 #net mpg-scale => axis.y.jog-scale
 #net mpg-scale => axis.z.jog-scale
+
+#******************************
+# matrix keyboard
+#******************************
+
+#net spindle-on <= PoKeysController.0.io.matrix.1
+#net spindle-on => halui.spindle.0.forward
+
+#net spindle-off <= PoKeysController.0.io.matrix.7
+#net spindle-off => halui.spindle.0.stop
 
 #******************************
 # manual tool change signals

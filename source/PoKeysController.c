@@ -31,6 +31,7 @@ MODULE_INFO(linuxcnc, "pin:io.encoder.#.count:s32:5:out:Encoders, raw count:None
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.index:bit:5:out:Encoders, index triggered:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.cps:float:5:out:Encoders, counts/second:None:None");
 MODULE_INFO(linuxcnc, "pin:io.encoder.#.vps:float:5:out:Encoders, velocity [(count/scale)/second]:None:None");
+MODULE_INFO(linuxcnc, "pin:io.matrix.#:bit:64:out:Matrix keyboard:None:None");
 MODULE_INFO(linuxcnc, "pin:motion.is_ready:bit:0:out:Indicates that the component is ready to accept motion commands:false:None");
 MODULE_INFO(linuxcnc, "pin:motion.override_limit.#:bit:16:in:Limit switch override. Any pin set overrides globally on PoKeys:None:None");
 MODULE_INFO(linuxcnc, "pin:axis.#.position_feedback:float:8:out:Position in machine units:None:None");
@@ -74,6 +75,8 @@ typedef struct {
     uint8_t encoders_map[NumberOfEncoders];
     int8_t encoders_index_pin[NumberOfEncoders]; // contains both pin index and if the pin is inverted (negative number)
     float encoders_scale[NumberOfEncoders];
+    uint8_t matrix_cols;
+    uint8_t matrix_rows;
 } component_configuration;
 
 typedef struct {
@@ -102,6 +105,7 @@ struct __comp_state {
     hal_bit_t* io_encoder_index[NumberOfEncoders];
     hal_float_t *io_encoder_cps[NumberOfEncoders];
     hal_float_t *io_encoder_vps[NumberOfEncoders];
+    hal_bit_t *io_matrix[64];
     hal_bit_t *motion_is_ready;
     hal_bit_t* motion_override_limit[NumberOfOverridePins];
     hal_float_t* axis_position_feedback[8];
@@ -211,6 +215,11 @@ static int export(char *prefix, long extra_arg) {
     for(j=0; j < (configuration->encoders); j++) {
         r = hal_pin_float_newf(HAL_OUT, &(inst->io_encoder_vps[j]), comp_id,
             "%s.io.encoder.%01d.vps", prefix, j);
+        if(r != 0) return r;
+    }
+    for(j=0; j < (configuration->matrix_cols * configuration->matrix_rows); j++) {
+        r = hal_pin_bit_newf(HAL_OUT, &(inst->io_matrix[j]), comp_id,
+            "%s.io.matrix.%01d", prefix, j);
         if(r != 0) return r;
     }
     r = hal_pin_bit_newf(HAL_OUT, &(inst->motion_is_ready), comp_id,
@@ -623,9 +632,8 @@ bool PMC_ReadConfiguration(const char *instanceName, struct ComponentStruct* com
         return false;
     }
 
-    const char* levelTag = "LOG_LEVEL";
     int logLevel = 0;
-    int iniRead = iniFindInt(ini_file_ptr, levelTag, instanceName, &logLevel);
+    int iniRead = iniFindInt(ini_file_ptr, "LOG_LEVEL", instanceName, &logLevel);
 
     if (iniRead == 0 && logLevel > -1) {
         rtapi_set_msg_level(logLevel);
@@ -634,9 +642,8 @@ bool PMC_ReadConfiguration(const char *instanceName, struct ComponentStruct* com
     component_configuration* configuration = componentInstance->configuration;
 
     // Read device serial
-    const char* serialTag = "DEVICE_SERIAL";
     int deviceSerial = 0;
-    iniRead = iniFindInt(ini_file_ptr, serialTag, instanceName, &deviceSerial);
+    iniRead = iniFindInt(ini_file_ptr, "DEVICE_SERIAL", instanceName, &deviceSerial);
 
     if (iniRead != 0 || deviceSerial == 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "No device serial in INI set! '%d'\n", iniRead);
@@ -647,9 +654,8 @@ bool PMC_ReadConfiguration(const char *instanceName, struct ComponentStruct* com
     configuration->device_serial = deviceSerial;
 
     // Read and apply axes relevant configuration
-    const char* axisTag = "NUMBER_AXES";
     int numberOfAxes = 0;
-    iniRead = iniFindInt(ini_file_ptr, axisTag, instanceName, &numberOfAxes);
+    iniRead = iniFindInt(ini_file_ptr, "NUMBER_AXES", instanceName, &numberOfAxes);
 
     if (iniRead != 0) {
         rtapi_print_msg(RTAPI_MSG_ERR, "Number of axes not set in INI! '%d'\n", iniRead);
@@ -781,6 +787,29 @@ bool PMC_ReadConfiguration(const char *instanceName, struct ComponentStruct* com
         }
     }
     configuration->encoders = encoders;
+
+    // Read and apply keyboard matrix configuration
+    int matrixCols = 0;
+    int matrixRows = 0;
+    iniFindInt(ini_file_ptr, "MATRIX_KEYBOARD_COLUMNS", instanceName, &matrixCols);
+    iniFindInt(ini_file_ptr, "MATRIX_KEYBOARD_ROWS", instanceName, &matrixRows);
+
+    if (matrixCols > 0 && matrixRows > 0) {
+        if (matrixCols > 8) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "Too many columns for matrix keyboard (1..8) '%d'\n", matrixCols);
+            fclose(ini_file_ptr);
+            return false;
+        }
+
+        if (matrixRows > 8) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "Too many rows for matrix keyboard (1..8) '%d'\n", matrixRows);
+            fclose(ini_file_ptr);
+            return false;
+        }
+
+        componentInstance->configuration->matrix_cols = matrixCols;
+        componentInstance->configuration->matrix_rows = matrixRows;
+    }
 
     fclose(ini_file_ptr);
 
@@ -1029,6 +1058,15 @@ void PMC_ProcessDigitalPins(struct ComponentStruct* componentInstance) {
             *componentInstance->io_input_pin[i] = true;
         } else {
             *componentInstance->io_input_pin[i] = false;
+        }
+    }
+
+    for (int i = 0; i < componentInstance->configuration->matrix_rows; i++) {
+        for (int j = 0; j < componentInstance->configuration->matrix_cols; j++) {
+            int localIndex = (i * componentInstance->configuration->matrix_cols) + j;
+            int deviceIndex = (i * 8) + j;
+            uint8_t keyState = componentInstance->device->matrixKB.matrixKBvalues[deviceIndex];
+            *componentInstance->io_matrix[localIndex] = keyState > 0;
         }
     }
 }
@@ -1465,7 +1503,7 @@ inline const char* PMC_GetStateName(enum State state) {
 
 // ------------------------------------
 // Extension of method `PK_DigitalIOSetGet`.
-// With addition of reading and handling encoder counts.
+// With addition of reading and handling encoder counts. And reading 8x8 Matrix keyboard.
 // PoKeysLib updates encoders with a separate method "PK_EncoderValuesGet", which uses separate requests.
 // ------------------------------------
 int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance) {
@@ -1497,6 +1535,10 @@ int32_t PMC_DigitalIOSetGet(struct ComponentStruct* componentInstance) {
 
             internals->encoders_value_previous[i] = currentValue;
             device->Encoders[encoder].encoderValue += difference;
+        }
+
+        for (int i = 0; i < 64; i++) {
+            device->matrixKB.matrixKBvalues[i] = (device->response[50 + i / 8] & (1 << (i % 8))) > 0;
         }
     }
 

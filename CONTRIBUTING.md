@@ -16,9 +16,7 @@ This list is mainly intended as a reminder for myself.
 - Testing
     - probing
     - soft limits
-- IO
-    - Matrix-Keyboard (up to 8x8 should be basically free with `PK_DigitalIOSetGet`)
-- Technical
-    - Velocity mode
 - Provide more example configurations
     - Complete MPG example
+- Fit & Finish
+    - Error messages to user?
