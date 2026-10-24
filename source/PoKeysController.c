@@ -1465,8 +1465,19 @@ void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, e
 
     if (!overrideCycleTime) {
         if (cycleTimeMs <= CycleTimeMs) {
-            useconds_t sleepTimeUs = (CycleTimeMs - cycleTimeMs) * 1000;
+            float sleepTimeMs = (CycleTimeMs - cycleTimeMs);
+            useconds_t sleepTimeUs = sleepTimeMs * 1000;
             usleep(sleepTimeUs);
+
+            struct timespec sleepEnd;
+            clock_gettime(CLOCK_REALTIME, &sleepEnd);
+            float actualSleepTimeMs = ((float)(sleepEnd.tv_sec - cycleEnd->tv_sec) * 1.0e9 + (float)(sleepEnd.tv_nsec - cycleEnd->tv_nsec)) / 1.0e6;
+
+            // 10 μs margin
+            if (actualSleepTimeMs > (sleepTimeMs + 0.01)) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Overslept! Calculated %0.2fms, actual %0.2fms\n", componentInstance->internals->cycles, sleepTimeMs, actualSleepTimeMs);
+            }
+
         } else {
             const char* currentStateName = PMC_GetStateName(currentState);
             const char* nextStateName = PMC_GetStateName(nextState);
