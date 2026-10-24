@@ -1439,7 +1439,7 @@ void PMC_SetActiveOutputsOff(struct ComponentStruct* componentInstance) {
 struct timespec* PMC_GetStartTime() {
     struct timespec* timeStamp;
     timeStamp = malloc(sizeof(struct timespec));
-    clock_gettime(CLOCK_REALTIME, timeStamp);
+    clock_gettime(CLOCK_MONOTONIC, timeStamp);
 
     return timeStamp;
 }
@@ -1450,7 +1450,7 @@ struct timespec* PMC_GetStartTime() {
 void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum State currentState, struct ComponentStruct* componentInstance) {
     enum State nextState = componentInstance->internal_state;
     struct timespec cycleEnd;
-    clock_gettime(CLOCK_REALTIME, &cycleEnd);
+    clock_gettime(CLOCK_MONOTONIC, &cycleEnd);
     float cycleTimeMs = ((float)(cycleEnd.tv_sec - cycleStart->tv_sec) * 1.0e9 + (float)(cycleEnd.tv_nsec - cycleStart->tv_nsec)) / 1.0e6;
     free(cycleStart);
 
@@ -1466,25 +1466,49 @@ void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, e
     if (!overrideCycleTime) {
         if (cycleTimeMs <= CycleTimeMs) {
             float sleepTimeMs = (CycleTimeMs - cycleTimeMs);
+
+            // Original
             //useconds_t sleepTimeUs = sleepTimeMs * 1000;
             //usleep(sleepTimeUs);
+
+            // Singluar clock_nanosleep approach
             struct timespec sleepTime;
             struct timespec snoozeTime;
             sleepTime.tv_sec = 0;
             sleepTime.tv_nsec = sleepTimeMs * 1.0e6;
-            int sleepResult = nanosleep(&sleepTime, &snoozeTime);
-			// TODO check snooze and result. Try to sleep in loop
-			
+            int sleepResult = clock_nanosleep(CLOCK_MONOTONIC, &sleepTime, &snoozeTime);
+			// TODO check snooze and result.
+
             struct timespec sleepEnd;
-            clock_gettime(CLOCK_REALTIME, &sleepEnd);
-            
+            clock_gettime(CLOCK_MONOTONIC, &sleepEnd);
+
             float actualSleepTimeMs = ((float)(sleepEnd.tv_sec - cycleEnd.tv_sec) * 1.0e9 + (float)(sleepEnd.tv_nsec - cycleEnd.tv_nsec)) / 1.0e6;
 
-            // 500 μs margin. Accuracy of the sleeping mechanism terrible
-            if (actualSleepTimeMs > (sleepTimeMs + 0.5)) {
+            // TODO 100 μs margin. Accuracy of the sleeping mechanism terrible
+            if (actualSleepTimeMs > (sleepTimeMs + 0.1)) {
                 rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Overslept! Calculated %0.2fms, actual %0.2fms\n", componentInstance->internals->cycles, sleepTimeMs, actualSleepTimeMs);
             }
 
+            // TODO 2nd approach
+            /* float actualSleepTimeMs;
+            do {
+                struct timespec sleepTime;
+                struct timespec snoozeTime;
+                sleepTime.tv_sec = 0;
+                sleepTime.tv_nsec = 100000; // 100 μs; 0.1ms
+                int sleepResult = clock_nanosleep(CLOCK_MONOTONIC, &sleepTime, &snoozeTime);
+                // TODO check snooze and result.
+
+                struct timespec sleepEnd;
+                clock_gettime(CLOCK_MONOTONIC, &sleepEnd);
+
+                actualSleepTimeMs = ((float)(sleepEnd.tv_sec - cycleEnd.tv_sec) * 1.0e9 + (float)(sleepEnd.tv_nsec - cycleEnd.tv_nsec)) / 1.0e6;
+
+            } while (actualSleepTimeMs <= sleepTimeMs);
+
+            if (actualSleepTimeMs > (sleepTimeMs + 0.1)) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Overslept! Calculated %0.2fms, actual %0.2fms\n", componentInstance->internals->cycles, sleepTimeMs, actualSleepTimeMs);
+            } */
         } else {
             const char* currentStateName = PMC_GetStateName(currentState);
             const char* nextStateName = PMC_GetStateName(nextState);
