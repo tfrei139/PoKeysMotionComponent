@@ -1466,15 +1466,22 @@ void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, e
     if (!overrideCycleTime) {
         if (cycleTimeMs <= CycleTimeMs) {
             float sleepTimeMs = (CycleTimeMs - cycleTimeMs);
-            useconds_t sleepTimeUs = sleepTimeMs * 1000;
-            usleep(sleepTimeUs);
-
+            //useconds_t sleepTimeUs = sleepTimeMs * 1000;
+            //usleep(sleepTimeUs);
+            struct timespec sleepTime;
+            struct timespec snoozeTime;
+            sleepTime.tv_sec = 0;
+            sleepTime.tv_nsec = sleepTimeMs * 1.0e6;
+            int sleepResult = nanosleep(&sleepTime, &snoozeTime);
+			// TODO check snooze and result. Try to sleep in loop
+			
             struct timespec sleepEnd;
             clock_gettime(CLOCK_REALTIME, &sleepEnd);
-            float actualSleepTimeMs = ((float)(sleepEnd.tv_sec - cycleEnd->tv_sec) * 1.0e9 + (float)(sleepEnd.tv_nsec - cycleEnd->tv_nsec)) / 1.0e6;
+            
+            float actualSleepTimeMs = ((float)(sleepEnd.tv_sec - cycleEnd.tv_sec) * 1.0e9 + (float)(sleepEnd.tv_nsec - cycleEnd.tv_nsec)) / 1.0e6;
 
-            // 10 μs margin
-            if (actualSleepTimeMs > (sleepTimeMs + 0.01)) {
+            // 500 μs margin. Accuracy of the sleeping mechanism terrible
+            if (actualSleepTimeMs > (sleepTimeMs + 0.5)) {
                 rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Overslept! Calculated %0.2fms, actual %0.2fms\n", componentInstance->internals->cycles, sleepTimeMs, actualSleepTimeMs);
             }
 
