@@ -1481,7 +1481,7 @@ void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, e
             } while (actualSleepTimeMs <= (sleepTimeMs - 0.05));
 
             if (actualSleepTimeMs > (sleepTimeMs + 3.0)) {
-                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Overslept! Calculated %0.2fms, acutal +%0.2fms\n", componentInstance->internals->cycles, sleepTimeMs, actualSleepTimeMs - sleepTimeMs);
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Overslept! Calculated %0.2fms, actual +%0.2fms\n", componentInstance->internals->cycles, sleepTimeMs, actualSleepTimeMs - sleepTimeMs);
             } else if (actualSleepTimeMs > (sleepTimeMs + 1.0)) {
                 rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, Overslept, Calculated %0.2fms, actual +%0.2fms\n", componentInstance->internals->cycles, sleepTimeMs, actualSleepTimeMs - sleepTimeMs);
             }

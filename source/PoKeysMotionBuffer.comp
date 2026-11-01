@@ -34,11 +34,13 @@ author "T.Frei";
 //#define MeasureTime            // Debug information how long the methods take
 
 hal_stream_t* MotionStream;      // Streaming exchange to the uspace component
+long long LastEnd;
 
 // ------------------------------------
 // Setup function
 // ------------------------------------
 EXTRA_SETUP() {
+    rtapi_set_msg_level(3);
 #ifdef MeasureTime
     long long startTime = rtapi_get_time();
 #endif
@@ -69,6 +71,7 @@ EXTRA_SETUP() {
     rtapi_print_msg(RTAPI_MSG_DBG, "BUFFER SETUP took: %dus\n", deltaTime);
 #endif
 
+    LastEnd = rtapi_get_time();
     return exitCode;
 }
 
@@ -95,6 +98,14 @@ EXTRA_CLEANUP() {
 // Main Function
 // ------------------------------------
 FUNCTION(_) {
+
+    long long startTime = rtapi_get_time();
+    long int deltaTimeUs = (long int)(LastEnd - startTime) / 1000;
+
+    if (deltaTimeUs < 950 || deltaTimeUs > 1050) {
+        rtapi_print_msg(RTAPI_MSG_INFO, "Interval unexpected: %dus\n", deltaTimeUs);
+    }
+
     // if either the motion planner or the controller component is inactive we must immediately stop and idle.
     if (!(motion_is_enabled && component_is_ready)) {
         if (motion_is_streaming) {
@@ -114,6 +125,7 @@ FUNCTION(_) {
             motion_is_init = false;
         }
 
+        LastEnd = rtapi_get_time();
         return;
     }
 
@@ -197,6 +209,7 @@ FUNCTION(_) {
         }
 #endif
 
+        LastEnd = rtapi_get_time();
         return;
 	}
 
@@ -214,4 +227,6 @@ FUNCTION(_) {
         // reset stream error at the end of one motion.
         motion_has_error = false;
     }
+
+    LastEnd = rtapi_get_time();
 }
