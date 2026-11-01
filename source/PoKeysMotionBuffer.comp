@@ -34,7 +34,8 @@ author "T.Frei";
 //#define MeasureTime            // Debug information how long the methods take
 
 hal_stream_t* MotionStream;      // Streaming exchange to the uspace component
-long long LastEnd;
+long long LastTimestamp;         // Timestamp of the last period
+short SummedTimeDifferenceUs = 0;  // TODO
 
 // ------------------------------------
 // Setup function
@@ -71,7 +72,6 @@ EXTRA_SETUP() {
     rtapi_print_msg(RTAPI_MSG_DBG, "BUFFER SETUP took: %dus\n", deltaTime);
 #endif
 
-    LastEnd = rtapi_get_time();
     return exitCode;
 }
 
@@ -98,13 +98,34 @@ EXTRA_CLEANUP() {
 // Main Function
 // ------------------------------------
 FUNCTION(_) {
+    long long startTimeNs = rtapi_get_time();
 
-    long long startTime = rtapi_get_time();
-    long int deltaTimeUs = (long int)(LastEnd - startTime) / 1000;
+    if (LastTimestamp == 0) {
+        LastTimestamp = startTimeNs;
+    }
 
-    if (deltaTimeUs < 950 || deltaTimeUs > 1050) {
+    long int deltaTimeUs = (long int)(startTimeNs - LastTimestamp) / 1000;
+
+    SummedTimeDifferenceUs += (deltaTimeUs - 1000);
+
+    if (deltaTimeUs < 970 || deltaTimeUs > 1030) {
         rtapi_print_msg(RTAPI_MSG_INFO, "Interval unexpected: %dus\n", deltaTimeUs);
     }
+
+    if (SummedTimeDifferenceUs < -1000) {
+        rtapi_print_msg(RTAPI_MSG_WARN, "Skip a period: %dus\n", SummedTimeDifferenceUs);
+        SummedTimeDifferenceUs += 1000;
+        // Skip a period
+        return;
+    }
+
+    if (SummedTimeDifferenceUs > 1000) {
+        rtapi_print_msg(RTAPI_MSG_WARN, "Running out of time: %dus\n", SummedTimeDifferenceUs);
+        SummedTimeDifferenceUs -= 1000;
+        // TODO Double the work, LOL.
+    }
+
+    LastTimestamp = startTimeNs;
 
     // if either the motion planner or the controller component is inactive we must immediately stop and idle.
     if (!(motion_is_enabled && component_is_ready)) {
@@ -125,7 +146,6 @@ FUNCTION(_) {
             motion_is_init = false;
         }
 
-        LastEnd = rtapi_get_time();
         return;
     }
 
@@ -208,8 +228,6 @@ FUNCTION(_) {
             rtapi_print_msg(RTAPI_MSG_WARN, "BUFFER SEND took: %dus\n", deltaTime);
         }
 #endif
-
-        LastEnd = rtapi_get_time();
         return;
 	}
 
@@ -227,6 +245,4 @@ FUNCTION(_) {
         // reset stream error at the end of one motion.
         motion_has_error = false;
     }
-
-    LastEnd = rtapi_get_time();
 }
