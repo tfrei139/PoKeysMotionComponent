@@ -34,7 +34,7 @@ author "T.Frei";
 //#define MeasureTime            // Debug information how long the methods take
 
 hal_stream_t* MotionStream;      // Streaming exchange to the uspace component
-long long LastTimestamp;         // Timestamp of the last period
+long long LastStartTimeNs;         // Timestamp of the last period
 short SummedTimeDifferenceUs = 0;  // TODO
 
 // ------------------------------------
@@ -100,33 +100,6 @@ EXTRA_CLEANUP() {
 FUNCTION(_) {
     long long startTimeNs = rtapi_get_time();
 
-    if (LastTimestamp == 0) {
-        LastTimestamp = startTimeNs;
-    }
-
-    long int deltaTimeUs = (long int)(startTimeNs - LastTimestamp) / 1000;
-
-    SummedTimeDifferenceUs += (deltaTimeUs - 1000);
-
-    if (deltaTimeUs < 970 || deltaTimeUs > 1030) {
-        rtapi_print_msg(RTAPI_MSG_INFO, "Interval unexpected: %dus\n", deltaTimeUs);
-    }
-
-    if (SummedTimeDifferenceUs < -1000) {
-        rtapi_print_msg(RTAPI_MSG_WARN, "Skip a period: %dus\n", SummedTimeDifferenceUs);
-        SummedTimeDifferenceUs += 1000;
-        // Skip a period
-        return;
-    }
-
-    if (SummedTimeDifferenceUs > 1000) {
-        rtapi_print_msg(RTAPI_MSG_WARN, "Running out of time: %dus\n", SummedTimeDifferenceUs);
-        SummedTimeDifferenceUs -= 1000;
-        // TODO Double the work, LOL.
-    }
-
-    LastTimestamp = startTimeNs;
-
     // if either the motion planner or the controller component is inactive we must immediately stop and idle.
     if (!(motion_is_enabled && component_is_ready)) {
         if (motion_is_streaming) {
@@ -179,6 +152,32 @@ FUNCTION(_) {
 #ifdef MeasureTime
         long long startTime = rtapi_get_time();
 #endif
+        if (LastStartTimeNs > 0) {
+            long int deltaTimeUs = (long int)(startTimeNs - LastStartTimeNs) / 1000;
+
+            SummedTimeDifferenceUs += (deltaTimeUs - 1000);
+
+            if (deltaTimeUs < 990 || deltaTimeUs > 1010) {
+                rtapi_print_msg(RTAPI_MSG_INFO, "Period jitter unexpected high: %dus, summed difference: %dus\n", deltaTimeUs, SummedTimeDifferenceUs);
+            }
+
+            if (SummedTimeDifferenceUs < -1000) {
+                // If we are running away we can skip streaming a motion packet once. The buffer will be filled.
+                rtapi_print_msg(RTAPI_MSG_WARN, "Summed jitter exceeds -1ms. Skip an interval: %dus\n", SummedTimeDifferenceUs);
+                SummedTimeDifferenceUs += 1000;
+                LastStartTimeNs = startTimeNs;
+                return;
+            }
+
+            if (SummedTimeDifferenceUs > 1000) {
+                // If we are lagging behind, there is no solution. Just inform the user and hope for a more stable system.
+                rtapi_print_msg(RTAPI_MSG_ERR, "Summed jitter exceeds +1ms. %dus\n", SummedTimeDifferenceUs);
+                motion_has_error = true;
+            }
+        }
+
+        LastStartTimeNs = startTimeNs;
+
         union hal_stream_data dataToSend[personality];
 
         for (int i = 0; i < personality; i++) {
@@ -244,5 +243,9 @@ FUNCTION(_) {
 
         // reset stream error at the end of one motion.
         motion_has_error = false;
+
+        // reset timekeeping
+        LastStartTimeNs = 0;
+        SummedTimeDifferenceUs = 0;
     }
 }
