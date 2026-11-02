@@ -1439,7 +1439,7 @@ void PMC_SetActiveOutputsOff(struct ComponentStruct* componentInstance) {
 struct timespec* PMC_GetStartTime() {
     struct timespec* timeStamp;
     timeStamp = malloc(sizeof(struct timespec));
-    clock_gettime(CLOCK_REALTIME, timeStamp);
+    clock_gettime(CLOCK_MONOTONIC, timeStamp);
 
     return timeStamp;
 }
@@ -1450,7 +1450,7 @@ struct timespec* PMC_GetStartTime() {
 void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum State currentState, struct ComponentStruct* componentInstance) {
     enum State nextState = componentInstance->internal_state;
     struct timespec cycleEnd;
-    clock_gettime(CLOCK_REALTIME, &cycleEnd);
+    clock_gettime(CLOCK_MONOTONIC, &cycleEnd);
     float cycleTimeMs = ((float)(cycleEnd.tv_sec - cycleStart->tv_sec) * 1.0e9 + (float)(cycleEnd.tv_nsec - cycleStart->tv_nsec)) / 1.0e6;
     free(cycleStart);
 
@@ -1465,14 +1465,32 @@ void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, e
 
     if (!overrideCycleTime) {
         if (cycleTimeMs <= CycleTimeMs) {
-            useconds_t sleepTimeUs = (CycleTimeMs - cycleTimeMs) * 1000;
-            usleep(sleepTimeUs);
+            float sleepTimeMs = (CycleTimeMs - cycleTimeMs);
+            float actualSleepTimeMs;
+            do {
+                struct timespec sleepTime;
+                sleepTime.tv_sec = 0;
+                sleepTime.tv_nsec = 100000; // = 100 μs = 0.1ms
+                clock_nanosleep(CLOCK_MONOTONIC, 0, &sleepTime, NULL);
+ 
+                struct timespec sleepEnd;
+                clock_gettime(CLOCK_MONOTONIC, &sleepEnd);
+
+                actualSleepTimeMs = ((float)(sleepEnd.tv_sec - cycleEnd.tv_sec) * 1.0e9 + (float)(sleepEnd.tv_nsec - cycleEnd.tv_nsec)) / 1.0e6;
+
+            } while (actualSleepTimeMs <= (sleepTimeMs - 0.05));
+
+            if (actualSleepTimeMs > (sleepTimeMs + 3.0)) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Overslept! Calculated %0.2fms, actual +%0.2fms\n", componentInstance->internals->cycles, sleepTimeMs, actualSleepTimeMs - sleepTimeMs);
+            } else if (actualSleepTimeMs > (sleepTimeMs + 1.0)) {
+                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, Overslept, Calculated %0.2fms, actual +%0.2fms\n", componentInstance->internals->cycles, sleepTimeMs, actualSleepTimeMs - sleepTimeMs);
+            }
         } else {
             const char* currentStateName = PMC_GetStateName(currentState);
             const char* nextStateName = PMC_GetStateName(nextState);
 
             if (cycleTimeMs <= CycleTimeMs + 3.0) {
-                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, Greater than %0.1fms elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
+                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, Greater than %0.1fms, elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
             } else {
                 rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Greater than %0.1fms! elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
             }
