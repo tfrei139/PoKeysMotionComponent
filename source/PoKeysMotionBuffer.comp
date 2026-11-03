@@ -163,7 +163,7 @@ FUNCTION(_) {
 
             if (SummedTimeDifferenceUs < -1000) {
                 // If we are running away we can skip streaming a motion packet once. The buffer will be filled.
-                rtapi_print_msg(RTAPI_MSG_WARN, "Summed jitter exceeds -1ms. Skip an interval: %dus\n", SummedTimeDifferenceUs);
+                rtapi_print_msg(RTAPI_MSG_WARN, "Summed jitter exceeds -1ms: %dus. Skip an interval\n", SummedTimeDifferenceUs);
                 SummedTimeDifferenceUs += 1000;
                 LastStartTimeNs = startTimeNs;
                 return;
@@ -171,7 +171,7 @@ FUNCTION(_) {
 
             if (SummedTimeDifferenceUs > 1000) {
                 // If we are lagging behind, there is no solution. Just inform the user and hope for a more stable system.
-                rtapi_print_msg(RTAPI_MSG_ERR, "Summed jitter exceeds +1ms. %dus\n", SummedTimeDifferenceUs);
+                rtapi_print_msg(RTAPI_MSG_ERR, "Summed jitter exceeds +1ms: %dus.\n", SummedTimeDifferenceUs);
                 motion_has_error = true;
             }
         }

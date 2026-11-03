@@ -1317,6 +1317,9 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
                 ret = PK_PEv2_BufferFill(device);
 
+                // TODO Test, remove
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Available slots: %d\n", componentInstance->internals->cycles, device->PEv2.info.bufferDepth);
+
                 if (device->PEv2.motionBufferEntriesAccepted != motionEntries) {
                     rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, PE Axes not all buffer entries accepted (%d, accepted %d) %d\n", componentInstance->internals->cycles, motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
                     nextState = MOTIONERROR;
