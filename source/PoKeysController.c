@@ -89,6 +89,9 @@ typedef struct {
     int32_t* encoders_buffer_values[NumberOfEncoders];
     // Comparative values for summing the encoder values
     int8_t encoders_value_previous[NumberOfEncoders];
+    // motion buffer tracking
+    uint32_t motion_buffer_entries;
+    struct timespec* motion_first_send;
 } component_internals;
 
 struct __comp_state {
@@ -543,6 +546,10 @@ void user_mainloop(void) {
                     if (*currentInstance->machine_estop == true) {
                         *currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = MOTIONESTOP;
+
+                        free(currentInstance->internals->motion_first_send);
+                        currentInstance->internals->motion_first_send = NULL;
+                        currentInstance->internals->motion_buffer_entries = 0;
                         break;
                     }
 
@@ -551,6 +558,10 @@ void user_mainloop(void) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         *currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = MOTIONDISABLE;
+
+                        free(currentInstance->internals->motion_first_send);
+                        currentInstance->internals->motion_first_send = NULL;
+                        currentInstance->internals->motion_buffer_entries = 0;
                         break;
                     }
 
@@ -1318,7 +1329,24 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                 ret = PK_PEv2_BufferFill(device);
 
                 // TODO Test, remove
-                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Available slots: %d\n", componentInstance->internals->cycles, device->PEv2.info.bufferDepth);
+                componentInstance->internals->motion_buffer_entries += device->PEv2.motionBufferEntriesAccepted;
+                if (componentInstance->internals->motion_first_send == NULL) {
+                    componentInstance->internals->motion_first_send = PMC_GetStartTime();
+                } else {
+                    struct timespec* currentTime = PMC_GetStartTime();
+                    struct timespec* firstSend = componentInstance->internals->motion_first_send;
+
+                    int milisSinceStart = fabs(((float)(currentTime->tv_sec - firstSend->tv_sec) * 1.0e9 + (float)(currentTime->tv_nsec - firstSend->tv_nsec)) / 1.0e6);
+                    int currentBufferEntries = componentInstance->internals->motion_buffer_entries - milisSinceStart; // 1 entry per MS expected
+
+                    if (currentBufferEntries < 20) {
+                        rtapi_print_msg(RTAPI_MSG_ERR, "Calculated entries in Buffer: %d\n", currentBufferEntries);
+				    } else if (currentBufferEntries > 30) {
+                        rtapi_print_msg(RTAPI_MSG_ERR, "Calculated entries in Buffer: %d\n", currentBufferEntries);
+				    }
+
+                    free(currentTime);
+                }
 
                 if (device->PEv2.motionBufferEntriesAccepted != motionEntries) {
                     rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, PE Axes not all buffer entries accepted (%d, accepted %d) %d\n", componentInstance->internals->cycles, motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
@@ -1338,6 +1366,12 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
     }
 
     hal_stream_detach(&stream);
+
+    if (nextState != ENABLED) {
+        free(componentInstance->internals->motion_first_send);
+        componentInstance->internals->motion_first_send = NULL;
+        componentInstance->internals->motion_buffer_entries = 0;
+    }
 
     return nextState;
 }
