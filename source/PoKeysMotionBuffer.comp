@@ -32,10 +32,16 @@ author "T.Frei";
 #define BufferDepth 128          // Buffer on PoKeys side would be 128
 #define EndOfMotionPacket 0x0101 // Arbitrary number > uint8
 //#define MeasureTime            // Debug information how long the methods take
+#define TimeKeeping            // TODO
 
 hal_stream_t* MotionStream;      // Streaming exchange to the uspace component
+
+#ifdef TimeKeeping
+long long StartTimeNs = 0;              // Timestamp of cycle starting motion
+long MotionCycles = 0;
 long long LastStartTimeNs;         // Timestamp of the last period
 short SummedTimeDifferenceUs = 0;  // TODO
+#endif
 
 // ------------------------------------
 // Setup function
@@ -98,7 +104,9 @@ EXTRA_CLEANUP() {
 // Main Function
 // ------------------------------------
 FUNCTION(_) {
+#ifdef TimeKeeping
     long long startTimeNs = rtapi_get_time();
+#endif
 
     // if either the motion planner or the controller component is inactive we must immediately stop and idle.
     if (!(motion_is_enabled && component_is_ready)) {
@@ -152,6 +160,7 @@ FUNCTION(_) {
 #ifdef MeasureTime
         long long startTime = rtapi_get_time();
 #endif
+#ifdef TimeKeeping
         if (LastStartTimeNs > 0) {
             long int deltaTimeUs = (long int)(startTimeNs - LastStartTimeNs) / 1000;
 
@@ -176,7 +185,21 @@ FUNCTION(_) {
             }
         }
 
+        if (StartTimeNs == 0){
+            StartTimeNs = startTimeNs;
+        } else {
+            MotionCycles++;
+
+            long int deltaTotalMs = (long int)(startTimeNs - LastStartTimeNs) / 1.0e6;
+            int currentMotionEntries = MotionCycles - deltaTotalMs; // 1 entry per MS expected
+
+            if (currentMotionEntries != 0){
+                rtapi_print_msg(RTAPI_MSG_WARN, "Time since start %dms: Cycles since start: %d\n", deltaTotalMs, MotionCycles);
+            }
+        }
+
         LastStartTimeNs = startTimeNs;
+#endif
 
         union hal_stream_data dataToSend[personality];
 
@@ -244,8 +267,13 @@ FUNCTION(_) {
         // reset stream error at the end of one motion.
         motion_has_error = false;
 
+#ifdef TimeKeeping
         // reset timekeeping
         LastStartTimeNs = 0;
         SummedTimeDifferenceUs = 0;
+
+        StartTimeNs = 0;
+        MotionCycles = 0;
+#endif
     }
 }

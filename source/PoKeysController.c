@@ -1339,9 +1339,9 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                     int milisSinceStart = fabs(((float)(currentTime->tv_sec - firstSend->tv_sec) * 1.0e9 + (float)(currentTime->tv_nsec - firstSend->tv_nsec)) / 1.0e6);
                     int currentBufferEntries = componentInstance->internals->motion_buffer_entries - milisSinceStart; // 1 entry per MS expected
 
-                    if (currentBufferEntries < 20) {
+                    if (currentBufferEntries < 21) {
                         rtapi_print_msg(RTAPI_MSG_ERR, "Calculated entries in Buffer: %d\n", currentBufferEntries);
-				    } else if (currentBufferEntries > 30) {
+				    } else if (currentBufferEntries > 26) {
                         rtapi_print_msg(RTAPI_MSG_ERR, "Calculated entries in Buffer: %d\n", currentBufferEntries);
 				    }
 
