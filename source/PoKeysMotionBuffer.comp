@@ -190,10 +190,10 @@ FUNCTION(_) {
         } else {
             MotionCycles++;
 
-            long int deltaTotalMs = (long int)(startTimeNs - LastStartTimeNs) / 1.0e6;
+            int deltaTotalMs = (int)((LastStartTimeNs - StartTimeNs) / 1.0e6);
             int currentMotionEntries = MotionCycles - deltaTotalMs; // 1 entry per MS expected
 
-            if (currentMotionEntries != 0){
+            if (currentMotionEntries > 1 || currentMotionEntries < -1) {
                 rtapi_print_msg(RTAPI_MSG_WARN, "Time since start %dms: Cycles since start: %d\n", deltaTotalMs, MotionCycles);
             }
         }

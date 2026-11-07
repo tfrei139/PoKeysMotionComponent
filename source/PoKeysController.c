@@ -1367,7 +1367,7 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
     hal_stream_detach(&stream);
 
-    if (nextState != ENABLED) {
+    if (nextState != MOVING) {
         free(componentInstance->internals->motion_first_send);
         componentInstance->internals->motion_first_send = NULL;
         componentInstance->internals->motion_buffer_entries = 0;
