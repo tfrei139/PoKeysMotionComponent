@@ -41,6 +41,7 @@ long long StartTimeNs = 0;              // Timestamp of cycle starting motion
 long MotionCycles = 0;
 long long LastStartTimeNs;         // Timestamp of the last period
 short SummedTimeDifferenceUs = 0;  // TODO
+bool HasTimeKeepingError = false;   // Prevent logspam
 #endif
 
 // ------------------------------------
@@ -161,40 +162,32 @@ FUNCTION(_) {
         long long startTime = rtapi_get_time();
 #endif
 #ifdef TimeKeeping
+        if (StartTimeNs == 0){
+            StartTimeNs = startTimeNs;
+        } else {
+            MotionCycles++;
+        }
+
         if (LastStartTimeNs > 0) {
             long int deltaTimeUs = (long int)(startTimeNs - LastStartTimeNs) / 1000;
-
             SummedTimeDifferenceUs += (deltaTimeUs - 1000);
 
             if (deltaTimeUs < 990 || deltaTimeUs > 1010) {
                 rtapi_print_msg(RTAPI_MSG_INFO, "Period jitter unexpected high: %dus, summed difference: %dus\n", deltaTimeUs, SummedTimeDifferenceUs);
             }
 
-            if (SummedTimeDifferenceUs < -1000) {
-                // If we are running away we can skip streaming a motion packet once. The buffer will be filled.
-                rtapi_print_msg(RTAPI_MSG_WARN, "Summed jitter exceeds -1ms: %dus. Skip an interval\n", SummedTimeDifferenceUs);
-                SummedTimeDifferenceUs += 1000;
-                LastStartTimeNs = startTimeNs;
-                return;
+            // Expected buffer is 20ms, total buffer on PoKeys is 125ms. If we exceed skipping 100ms time, we are likely to be refused adding motion entries.
+            if (!HasTimeKeepingError && SummedTimeDifferenceUs < -1000 * 100) {
+                int deltaTotalMs = (int)((LastStartTimeNs - StartTimeNs) / 1.0e6);
+                rtapi_print_msg(RTAPI_MSG_ERR, "Summed jitter exceeds -100ms: %dus. Cycles since start: %d. Time since start: %dms\n", SummedTimeDifferenceUs, MotionCycles, deltaTotalMs);
+                HasTimeKeepingError = true;
             }
 
-            if (SummedTimeDifferenceUs > 1000) {
-                // If we are lagging behind, there is no solution. Just inform the user and hope for a more stable system.
-                rtapi_print_msg(RTAPI_MSG_ERR, "Summed jitter exceeds +1ms: %dus.\n", SummedTimeDifferenceUs);
-                motion_has_error = true;
-            }
-        }
-
-        if (StartTimeNs == 0){
-            StartTimeNs = startTimeNs;
-        } else {
-            MotionCycles++;
-
-            int deltaTotalMs = (int)((LastStartTimeNs - StartTimeNs) / 1.0e6);
-            int currentMotionEntries = MotionCycles - deltaTotalMs; // 1 entry per MS expected
-
-            if (currentMotionEntries > 1 || currentMotionEntries < -1) {
-                rtapi_print_msg(RTAPI_MSG_WARN, "Time since start %dms: Cycles since start: %d\n", deltaTotalMs, MotionCycles);
+            // If we are lagging 20ms behind, the buffer is likely to underrun.
+            if (!HasTimeKeepingError && SummedTimeDifferenceUs > 1000 * 20) {
+                int deltaTotalMs = (int)((LastStartTimeNs - StartTimeNs) / 1.0e6);
+                rtapi_print_msg(RTAPI_MSG_ERR, "Summed jitter exceeds +20ms: %dus. Cycles since start: %d. Time since start: %dms\n", SummedTimeDifferenceUs, MotionCycles, deltaTotalMs);
+                HasTimeKeepingError = true;
             }
         }
 
@@ -236,7 +229,11 @@ FUNCTION(_) {
 
         int writeRes = hal_stream_write(MotionStream, dataToSend);
         if (writeRes != 0 && motion_has_error == false) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun: %d\n", writeRes);
+            rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun, error: %d\n", writeRes);
+#ifdef TimeKeeping
+            int deltaTotalMs = (int)((LastStartTimeNs - StartTimeNs) / 1.0e6);
+            rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun, current time difference %dus. Cycles since start: %d. Time since start: %dms\n", SummedTimeDifferenceUs, MotionCycles, deltaTotalMs);
+#endif
             motion_has_error = true;
         }
 
@@ -274,6 +271,7 @@ FUNCTION(_) {
 
         StartTimeNs = 0;
         MotionCycles = 0;
+        HasTimeKeepingError = false;
 #endif
     }
 }
