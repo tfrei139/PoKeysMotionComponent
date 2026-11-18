@@ -1345,13 +1345,13 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                     struct timespec* currentTime = PMC_GetStartTime();
                     struct timespec* firstSend = componentInstance->internals->motion_first_send;
 
-                    int milisSinceStart = fabs(((float)(currentTime->tv_sec - firstSend->tv_sec) * 1.0e9 + (float)(currentTime->tv_nsec - firstSend->tv_nsec)) / 1.0e6);
-                    int currentBufferEntries = componentInstance->internals->motion_buffer_entries - milisSinceStart; // 1 entry per MS expected
+                    float milisSinceStart = ((float)(currentTime->tv_sec - firstSend->tv_sec) * 1.0e9 + (float)(currentTime->tv_nsec - firstSend->tv_nsec)) / 1.0e6;
+                    int currentBufferEntries = componentInstance->internals->motion_buffer_entries - fabs(milisSinceStart); // 1 entry per MS expected
 
                     if (currentBufferEntries < 21) {
-                        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Calculated entries in Buffer: %d\n", componentInstance->internals->cycles, currentBufferEntries);
+                        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Calculated entries in Buffer: %d, Time since start: %dms\n", componentInstance->internals->cycles, currentBufferEntries, milisSinceStart);
 				    } else if (currentBufferEntries > 26) {
-                        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Calculated entries in Buffer: %d\n", componentInstance->internals->cycles, currentBufferEntries);
+                        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Calculated entries in Buffer: %d, Time since start: %dms\n", componentInstance->internals->cycles, currentBufferEntries, milisSinceStart);
 				    }
 
                     free(currentTime);
