@@ -1349,9 +1349,9 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                     int currentBufferEntries = componentInstance->internals->motion_buffer_entries - fabs(milisSinceStart); // 1 entry per MS expected
 
                     if (currentBufferEntries < 21) {
-                        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Calculated entries in Buffer: %d, Time since start: %dms\n", componentInstance->internals->cycles, currentBufferEntries, milisSinceStart);
+                        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Calculated entries in Buffer: %d, Time since start: %0.2fms\n", componentInstance->internals->cycles, currentBufferEntries, milisSinceStart);
 				    } else if (currentBufferEntries > 26) {
-                        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Calculated entries in Buffer: %d, Time since start: %dms\n", componentInstance->internals->cycles, currentBufferEntries, milisSinceStart);
+                        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Calculated entries in Buffer: %d, Time since start: %0.2fms\n", componentInstance->internals->cycles, currentBufferEntries, milisSinceStart);
 				    }
 
                     free(currentTime);
@@ -1518,7 +1518,7 @@ void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, e
             do {
                 struct timespec sleepTime;
                 sleepTime.tv_sec = 0;
-                sleepTime.tv_nsec = 100000; // = 100 μs = 0.1ms
+                sleepTime.tv_nsec = 200000; // = 200 μs = 0.2ms
                 clock_nanosleep(CLOCK_MONOTONIC, 0, &sleepTime, NULL);
  
                 struct timespec sleepEnd;
@@ -1526,7 +1526,7 @@ void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, e
 
                 actualSleepTimeMs = ((float)(sleepEnd.tv_sec - cycleEnd.tv_sec) * 1.0e9 + (float)(sleepEnd.tv_nsec - cycleEnd.tv_nsec)) / 1.0e6;
 
-            } while (actualSleepTimeMs <= (sleepTimeMs - 0.05));
+            } while (actualSleepTimeMs <= (sleepTimeMs - 0.15));
 
             if (actualSleepTimeMs > (sleepTimeMs + 3.0)) {
                 rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Overslept! Calculated %0.2fms, actual +%0.2fms\n", componentInstance->internals->cycles, sleepTimeMs, actualSleepTimeMs - sleepTimeMs);
