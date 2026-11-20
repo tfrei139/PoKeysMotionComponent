@@ -1328,6 +1328,17 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
                 motionEntries++;
 
+#ifdef TimeKeeping
+                long int currentEntries = componentInstance->internals->motion_buffer_entries + motionEntries;
+                if (currentEntries % 5000 == 0){
+                    struct timespec* currentTime1 = PMC_GetStartTime();
+                    float milisSinceStart1 = (currentTime1->tv_sec * 1.0e3) + (currentTime1->tv_nsec / 1.0e6);
+
+                    rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Mark %d, Time: %0.2f\n", componentInstance->internals->cycles, currentEntries, milisSinceStart1);
+                    free(currentTime1);
+                }
+#endif
+
                 streamReadable = hal_stream_readable(&stream);
             }
 
@@ -1337,7 +1348,6 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                 ret = PK_PEv2_BufferFill(device);
 
 #ifdef TimeKeeping
-                // TODO Test, remove
                 componentInstance->internals->motion_buffer_entries += device->PEv2.motionBufferEntriesAccepted;
                 if (componentInstance->internals->motion_first_send == NULL) {
                     componentInstance->internals->motion_first_send = PMC_GetStartTime();
@@ -1345,12 +1355,12 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
                     struct timespec* currentTime = PMC_GetStartTime();
                     struct timespec* firstSend = componentInstance->internals->motion_first_send;
 
-                    float milisSinceStart = ((float)(currentTime->tv_sec - firstSend->tv_sec) * 1.0e9 + (float)(currentTime->tv_nsec - firstSend->tv_nsec)) / 1.0e6;
+                    float milisSinceStart = ((long long)(currentTime->tv_sec - firstSend->tv_sec) * 1.0e9 + (long long)(currentTime->tv_nsec - firstSend->tv_nsec)) / 1.0e6;
                     int currentBufferEntries = componentInstance->internals->motion_buffer_entries - fabs(milisSinceStart); // 1 entry per MS expected
 
                     if (currentBufferEntries < 21) {
                         rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Calculated entries in Buffer: %d, Time since start: %0.2fms\n", componentInstance->internals->cycles, currentBufferEntries, milisSinceStart);
-				    } else if (currentBufferEntries > 26) {
+				    } else if (currentBufferEntries > 30) {
                         rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Calculated entries in Buffer: %d, Time since start: %0.2fms\n", componentInstance->internals->cycles, currentBufferEntries, milisSinceStart);
 				    }
 

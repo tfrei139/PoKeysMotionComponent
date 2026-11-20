@@ -40,7 +40,7 @@ hal_stream_t* MotionStream;      // Streaming exchange to the uspace component
 long long StartTimeNs = 0;              // Timestamp of cycle starting motion
 long MotionCycles = 0;
 long long LastStartTimeNs;         // Timestamp of the last period
-long long SummedTimeDifferenceUs = 0;  // TODO
+long int SummedTimeDifferenceUs = 0;  // TODO
 signed char HasTimeKeepingError = 0;   // Prevent logspam
 #endif
 
@@ -168,28 +168,33 @@ FUNCTION(_) {
             MotionCycles++;
         }
 
+        if (MotionCycles % 5000 == 0) {
+            float currentTimeMs = rtapi_get_time() / 1.0e6;
+            rtapi_print_msg(RTAPI_MSG_WARN, "Mark: %d, Time: %0.2f\n", MotionCycles, currentTimeMs);
+        }
+
         if (LastStartTimeNs > 0) {
-            long long deltaTimeUs = (long long)(startTimeNs - LastStartTimeNs) / 1000;
+            long int deltaTimeUs = (startTimeNs - LastStartTimeNs) / 1000;
             SummedTimeDifferenceUs += (deltaTimeUs - 1000);
 
             // Expected buffer is 20ms, total buffer on PoKeys is 125ms. If we exceed skipping 100ms time, we are likely to be refused adding motion entries.
             if (HasTimeKeepingError == 0 && SummedTimeDifferenceUs < -1000 * 100) {
-                long deltaTotalMs = (LastStartTimeNs - StartTimeNs) / 1.0e6;
+                long int deltaTotalMs = (LastStartTimeNs - StartTimeNs) / 1.0e6;
                 rtapi_print_msg(RTAPI_MSG_ERR, "Summed jitter exceeds -100ms: %dus. Cycles since start: %d. Time since start: %dms\n", SummedTimeDifferenceUs, MotionCycles, deltaTotalMs);
                 HasTimeKeepingError = -1;
             } else if (HasTimeKeepingError == -1 && SummedTimeDifferenceUs > -1000 * 95) {
-                long deltaTotalMs = (LastStartTimeNs - StartTimeNs) / 1.0e6;
+                long int deltaTotalMs = (LastStartTimeNs - StartTimeNs) / 1.0e6;
                 rtapi_print_msg(RTAPI_MSG_ERR, "Summed jitter recovered: %dus. Cycles since start: %d. Time since start: %dms\n", SummedTimeDifferenceUs, MotionCycles, deltaTotalMs);
                 HasTimeKeepingError = 0;
             }
 
             // If we are lagging 20ms behind, the buffer is likely to underrun.
             if (!HasTimeKeepingError == 0 && SummedTimeDifferenceUs > 1000 * 20) {
-                long deltaTotalMs = (LastStartTimeNs - StartTimeNs) / 1.0e6;
+                long int deltaTotalMs = (LastStartTimeNs - StartTimeNs) / 1.0e6;
                 rtapi_print_msg(RTAPI_MSG_ERR, "Summed jitter exceeds +20ms: %dus. Cycles since start: %d. Time since start: %dms\n", SummedTimeDifferenceUs, MotionCycles, deltaTotalMs);
                 HasTimeKeepingError = 1;
             } else if (HasTimeKeepingError == 1 && SummedTimeDifferenceUs < 1000 * 15) {
-                long deltaTotalMs = (LastStartTimeNs - StartTimeNs) / 1.0e6;
+                long int deltaTotalMs = (LastStartTimeNs - StartTimeNs) / 1.0e6;
                 rtapi_print_msg(RTAPI_MSG_ERR, "Summed jitter recovered: %dus. Cycles since start: %d. Time since start: %dms\n", SummedTimeDifferenceUs, MotionCycles, deltaTotalMs);
                 HasTimeKeepingError = 0;
             }
@@ -235,7 +240,7 @@ FUNCTION(_) {
         if (writeRes != 0 && motion_has_error == false) {
             rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun, error: %d\n", writeRes);
 #ifdef TimeKeeping
-            long long deltaTotalMs = (LastStartTimeNs - StartTimeNs);
+            long int deltaTotalMs = (LastStartTimeNs - StartTimeNs);
             rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun, current time difference %dus. Cycles since start: %d. Time since start: %dms\n", SummedTimeDifferenceUs, MotionCycles, deltaTotalMs);
 #endif
             motion_has_error = true;
