@@ -19,6 +19,11 @@ The drawback, that we consistently need to send unnecessary data. And add potent
 
 During my tests I did get occasional high cycle times for the user component (I assume due to the hardware). So the robustness of the mechanism is appreciated.
 
+## Design decision: Timekeeping
+TODO
+Userspace component uses a sleeping mechanism to keep the cycle time constant to 5ms.
+RT component is invoked in the servo thread with a defined interval of 1ms. On a RaspberryPi... 
+
 ## Design decision: Parametrization using HAL
 The primary configuration is done in the ini file.
 While a userpace component can read from the machine ini file, an RT component cannot.  

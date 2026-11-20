@@ -60,6 +60,8 @@ MODULE_LICENSE("GPL");
 #define SharedMemoryKey 57              // Arbitrary number
 #define EndOfMotionPacket 0x0101        // Arbitrary number > uint8
 
+#define TimeKeeping            // TODO
+
 typedef struct {
     uint32_t device_serial;
     uint8_t number_axes;
@@ -89,6 +91,11 @@ typedef struct {
     int32_t* encoders_buffer_values[NumberOfEncoders];
     // Comparative values for summing the encoder values
     int8_t encoders_value_previous[NumberOfEncoders];
+#ifdef TimeKeeping
+    // motion buffer tracking
+    uint32_t motion_buffer_entries;
+    struct timespec* motion_first_send;
+#endif
 } component_internals;
 
 struct __comp_state {
@@ -543,6 +550,12 @@ void user_mainloop(void) {
                     if (*currentInstance->machine_estop == true) {
                         *currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = MOTIONESTOP;
+
+#ifdef TimeKeeping
+                        free(currentInstance->internals->motion_first_send);
+                        currentInstance->internals->motion_first_send = NULL;
+                        currentInstance->internals->motion_buffer_entries = 0;
+#endif
                         break;
                     }
 
@@ -551,6 +564,12 @@ void user_mainloop(void) {
                         PMC_SetPulseEngineStatus(currentInstance, PK_PEState_peSTOPPED, "Set PE Stopped from MOVING(!)");
                         *currentInstance->motion_is_ready = false;
                         currentInstance->internal_state = MOTIONDISABLE;
+
+#ifdef TimeKeeping
+                        free(currentInstance->internals->motion_first_send);
+                        currentInstance->internals->motion_first_send = NULL;
+                        currentInstance->internals->motion_buffer_entries = 0;
+#endif
                         break;
                     }
 
@@ -1309,6 +1328,17 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
                 motionEntries++;
 
+#ifdef TimeKeeping
+                long int currentEntries = componentInstance->internals->motion_buffer_entries + motionEntries;
+                if (currentEntries % 5000 == 0){
+                    struct timespec* currentTime1 = PMC_GetStartTime();
+                    float milisSinceStart1 = (currentTime1->tv_sec * 1.0e3) + (currentTime1->tv_nsec / 1.0e6);
+
+                    rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Mark %d, Time: %0.2f\n", componentInstance->internals->cycles, currentEntries, milisSinceStart1);
+                    free(currentTime1);
+                }
+#endif
+
                 streamReadable = hal_stream_readable(&stream);
             }
 
@@ -1317,11 +1347,31 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
 
                 ret = PK_PEv2_BufferFill(device);
 
+#ifdef TimeKeeping
+                componentInstance->internals->motion_buffer_entries += device->PEv2.motionBufferEntriesAccepted;
+                if (componentInstance->internals->motion_first_send == NULL) {
+                    componentInstance->internals->motion_first_send = PMC_GetStartTime();
+                } else {
+                    struct timespec* currentTime = PMC_GetStartTime();
+                    struct timespec* firstSend = componentInstance->internals->motion_first_send;
+
+                    float milisSinceStart = ((long long)(currentTime->tv_sec - firstSend->tv_sec) * 1.0e9 + (long long)(currentTime->tv_nsec - firstSend->tv_nsec)) / 1.0e6;
+                    int currentBufferEntries = componentInstance->internals->motion_buffer_entries - fabs(milisSinceStart); // 1 entry per MS expected
+
+                    if (currentBufferEntries < 21) {
+                        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Calculated entries in Buffer: %d, Time since start: %0.2fms\n", componentInstance->internals->cycles, currentBufferEntries, milisSinceStart);
+				    } else if (currentBufferEntries > 30) {
+                        rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Calculated entries in Buffer: %d, Time since start: %0.2fms\n", componentInstance->internals->cycles, currentBufferEntries, milisSinceStart);
+				    }
+
+                    free(currentTime);
+                }
+#endif
+
                 if (device->PEv2.motionBufferEntriesAccepted != motionEntries) {
                     rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, PE Axes not all buffer entries accepted (%d, accepted %d) %d\n", componentInstance->internals->cycles, motionEntries, device->PEv2.motionBufferEntriesAccepted, ret);
                     nextState = MOTIONERROR;
-                    hal_stream_detach(&stream);
-                    return nextState;
+                    break;
                 }
 
                 motionEntries = 0;
@@ -1335,6 +1385,14 @@ enum State PMC_ProcessMoveCommand(struct ComponentStruct* componentInstance) {
     }
 
     hal_stream_detach(&stream);
+
+#ifdef TimeKeeping
+    if (nextState != MOVING) {
+        free(componentInstance->internals->motion_first_send);
+        componentInstance->internals->motion_first_send = NULL;
+        componentInstance->internals->motion_buffer_entries = 0;
+    }
+#endif
 
     return nextState;
 }
@@ -1439,7 +1497,7 @@ void PMC_SetActiveOutputsOff(struct ComponentStruct* componentInstance) {
 struct timespec* PMC_GetStartTime() {
     struct timespec* timeStamp;
     timeStamp = malloc(sizeof(struct timespec));
-    clock_gettime(CLOCK_REALTIME, timeStamp);
+    clock_gettime(CLOCK_MONOTONIC, timeStamp);
 
     return timeStamp;
 }
@@ -1450,7 +1508,7 @@ struct timespec* PMC_GetStartTime() {
 void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, enum State currentState, struct ComponentStruct* componentInstance) {
     enum State nextState = componentInstance->internal_state;
     struct timespec cycleEnd;
-    clock_gettime(CLOCK_REALTIME, &cycleEnd);
+    clock_gettime(CLOCK_MONOTONIC, &cycleEnd);
     float cycleTimeMs = ((float)(cycleEnd.tv_sec - cycleStart->tv_sec) * 1.0e9 + (float)(cycleEnd.tv_nsec - cycleStart->tv_nsec)) / 1.0e6;
     free(cycleStart);
 
@@ -1465,14 +1523,32 @@ void PMC_ProcessCycleTime(struct timespec* cycleStart, bool overrideCycleTime, e
 
     if (!overrideCycleTime) {
         if (cycleTimeMs <= CycleTimeMs) {
-            useconds_t sleepTimeUs = (CycleTimeMs - cycleTimeMs) * 1000;
-            usleep(sleepTimeUs);
+            float sleepTimeMs = (CycleTimeMs - cycleTimeMs);
+            float actualSleepTimeMs;
+            do {
+                struct timespec sleepTime;
+                sleepTime.tv_sec = 0;
+                sleepTime.tv_nsec = 200000; // = 200 μs = 0.2ms
+                clock_nanosleep(CLOCK_MONOTONIC, 0, &sleepTime, NULL);
+ 
+                struct timespec sleepEnd;
+                clock_gettime(CLOCK_MONOTONIC, &sleepEnd);
+
+                actualSleepTimeMs = ((float)(sleepEnd.tv_sec - cycleEnd.tv_sec) * 1.0e9 + (float)(sleepEnd.tv_nsec - cycleEnd.tv_nsec)) / 1.0e6;
+
+            } while (actualSleepTimeMs <= (sleepTimeMs - 0.15));
+
+            if (actualSleepTimeMs > (sleepTimeMs + 3.0)) {
+                rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Overslept! Calculated %0.2fms, actual +%0.2fms\n", componentInstance->internals->cycles, sleepTimeMs, actualSleepTimeMs - sleepTimeMs);
+            } else if (actualSleepTimeMs > (sleepTimeMs + 1.0)) {
+                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, Overslept, Calculated %0.2fms, actual +%0.2fms\n", componentInstance->internals->cycles, sleepTimeMs, actualSleepTimeMs - sleepTimeMs);
+            }
         } else {
             const char* currentStateName = PMC_GetStateName(currentState);
             const char* nextStateName = PMC_GetStateName(nextState);
 
             if (cycleTimeMs <= CycleTimeMs + 3.0) {
-                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, Greater than %0.1fms elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
+                rtapi_print_msg(RTAPI_MSG_WARN, "Cycle %d, Greater than %0.1fms, elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
             } else {
                 rtapi_print_msg(RTAPI_MSG_ERR, "Cycle %d, Greater than %0.1fms! elapsed %0.2fms, from %s to %s\n", componentInstance->internals->cycles, CycleTimeMs, cycleTimeMs, currentStateName, nextStateName);
             }
