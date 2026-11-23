@@ -9,6 +9,7 @@ pin in bit motion.jog_is_active = false "When the motion planner is jogging, 'in
 pin out bit motion.is_init = false "Flag whether the internal position is synchronised with the input pins (DEBUG)";
 pin out bit motion.is_streaming = false "Flag whether the motion is being streamed (DEBUG)";
 pin out bit motion.has_error = false "Indicates that the stream had an error. Prevents spamming from RT thread, only show error once (DEBUG)";
+pin out unsigned motion.error_count = 0 "Counts how many errors occured while streaming (DEBUG)";
 
 pin in float axis.#.position_command [8 : personality] "Commanded position by the motion controller";
 pin out float axis.#.last_position [8 : personality] "Internal tracking of last commanded position (DEBUG)";
@@ -40,6 +41,7 @@ hal_stream_t* MotionStream;      // Streaming exchange to the uspace component
 // ------------------------------------
 EXTRA_SETUP() {
 #ifdef MeasureTime
+    rtapi_set_msg_level(3);
     long long startTime = rtapi_get_time();
 #endif
 
@@ -107,6 +109,7 @@ FUNCTION(_) {
             }
 
             motion_has_error = false;
+            motion_error_count = 0;
             motion_is_streaming = false;
         }
 
@@ -181,9 +184,18 @@ FUNCTION(_) {
         }
 
         int writeRes = hal_stream_write(MotionStream, dataToSend);
-        if (writeRes != 0 && motion_has_error == false) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun: %d\n", writeRes);
-            motion_has_error = true;
+        if (writeRes != 0) {
+            motion_error_count++;
+
+            if (motion_has_error == false)
+            {
+                rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun, error: %d\n", writeRes);
+                motion_has_error = true;
+            }
+        } else if (writeRes == 0 && motion_has_error) {
+            rtapi_print_msg(RTAPI_MSG_ERR, "BUFFER overrun, recovered. Missed entries: %d\n", motion_error_count);
+            motion_has_error = false;
+            motion_error_count = 0;
         }
 
         motion_is_streaming = true;
@@ -208,10 +220,15 @@ FUNCTION(_) {
         int writeRes = hal_stream_write(MotionStream, dataToSend);
 
         if (writeRes != 0 && motion_has_error == false) {
-            rtapi_print_msg(RTAPI_MSG_ERR, "End of Motion BUFFER overrun: %d\n", writeRes);
+            rtapi_print_msg(RTAPI_MSG_ERR, "End of Motion, BUFFER overrun, error: %d\n", writeRes);
+        }
+
+        if (motion_has_error && motion_error_count > 0){
+            rtapi_print_msg(RTAPI_MSG_ERR, "End of Motion, Missed entries: %d\n", motion_error_count);
         }
 
         // reset stream error at the end of one motion.
         motion_has_error = false;
+        motion_error_count = 0;
     }
 }
